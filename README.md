@@ -7,7 +7,7 @@ Progetto Applied Statistics
 
 I file qui online sono quelli ufficiali. Ognuno poi nel proprio pc ha questi file ufficiali a cui eventualmente può fare modifiche. E github permette di gestire queste modifiche ai file in modo molto più easy:
 
-- quando ritenete definitive le modifiche che fate a certi file, cioè caricabili sui file ufficiali, aprite l'app di Github Desktop e fate "push" di quelle modifiche (prima di fare push chiederà di fare commit, cioè di commentare/spiegare brevemente le modifiche fatte). 
+- quando ritenete definitive le modifiche che fate a certi file, e quindi volete caricarle qui nei file ufficiali, aprite l'app di Github Desktop e fate "push" di quelle modifiche (prima di fare push chiederà di fare commit, cioè di commentare/spiegare brevemente le modifiche fatte). 
 
 In questo modo anche tutti gli altri potranno poi scaricare la versione aggiornata dei file modificati.
 
