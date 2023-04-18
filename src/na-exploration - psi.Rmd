@@ -1,0 +1,467 @@
+---
+title: "PISA dataset na exploration"
+output: 
+editor_options: 
+  chunk_output_type: inline
+---
+
+# POOLS OF VARIABLES OF INTEREST
+
+Here I select some variables about potentially interesting themes
+
+Some details about the computation of the indexes
+
+docs: <https://www.oecd-ilibrary.org/sites/0a428b07-en/index.html?itemId=/content/component/0a428b07-en>
+
+```{r}
+## Quick get meaning of a variable
+what_is <- new.env(hash = TRUE, parent = emptyenv(), size = NA)
+## insert into hash table
+what_is[["MMINS"]] = "Learning time (minutes per week) - <Mathematics>" 
+what_is[["LMINS"]] = "Learning time (minutes per week) - <test language>" 
+what_is[["SMINS"]] = "Learning time (minutes per week) - <science>" 
+what_is[["TMINS"]] = "Learning time (minutes per week) - in total" 
+what_is[["FCFMLRTY"]] = "Familiarity with concepts of finance (Sum)" 
+what_is[["SCCHANGE"]] = "Number of school changes" 
+what_is[["CHANGE"]] = "Number of changes in educational biography (Sum)" 
+what_is[["STUBMI"]] = "Body mass index of student" 
+what_is[["ESCS"]] = "Index of economic social and cultural status" 
+what_is[["UNDREM"]] = "Meta-cognition: understanding and remembering" 
+what_is[["METASUM"]] = "Meta-cognition: summarising" 
+what_is[["METASPAM"]] = "Meta-cognition: assess credibility" 
+what_is[["ICTHOME"]] = "ICT available at home" 
+what_is[["ICTSCH"]] = "ICT available at school" 
+what_is[["HOMEPOS"]] = "Home possessions (WLE)" 
+what_is[["CULTPOSS"]] = "Cultural possessions at home (WLE)" 
+what_is[["HEDRES"]] = "Home educational resources (WLE)" 
+what_is[["WEALTH"]] = "Family wealth (WLE)" 
+what_is[["ICTRES"]] = "ICT resources (WLE)" 
+what_is[["DISCLIMA"]] = "Disciplinary climate in test language lessons (WLE)" 
+what_is[["TEACHSUP"]] = "Teacher support in test language lessons (WLE)" 
+what_is[["DIRINS"]] = "Teacher-directed instruction (WLE)" 
+what_is[["PERFEED"]] = "Perceived feedback (WLE)" 
+what_is[["EMOSUPS"]] = "Parents' emotional support perceived by student (WLE)" 
+what_is[["STIMREAD"]] = "Teacher's stimulation of reading engagement perceived by student (WLE)" 
+what_is[["ADAPTIVITY"]] = "Adaptation of instruction (WLE)" 
+what_is[["TEACHINT"]] = "Perceived teacher's interest (WLE)" 
+what_is[["JOYREAD"]] = "Joy/Like reading (WLE)" 
+what_is[["SCREADCOMP"]] = "Self-concept of reading: Perception of competence (WLE)" 
+what_is[["SCREADDIFF"]] = "Self-concept of reading: Perception of difficulty (WLE)" 
+what_is[["PISADIFF"]] = "Perception of difficulty of the PISA test (WLE)" 
+what_is[["PERCOMP"]] = "Perception of competitiveness at school (WLE)" 
+what_is[["PERCOOP"]] = "Perception of cooperation at school (WLE)" 
+what_is[["ATTLNACT"]] = "Attitude towards school: learning activities (WLE)" 
+what_is[["COMPETE"]] = "Competitiveness (WLE)" 
+what_is[["WORKMAST"]] = "Work mastery (WLE)" 
+what_is[["GFOFAIL"]] = "General fear of failure (WLE)" 
+what_is[["EUDMO"]] = "Eudaemonia: meaning in life (WLE)" 
+what_is[["SWBP"]] = "Subjective well-being: Positive affect (WLE)" 
+what_is[["RESILIENCE"]] = "Resilience (WLE)" 
+what_is[["MASTGOAL"]] = "Mastery goal orientation (WLE)" 
+what_is[["GCSELFEFF"]] = "Self-efficacy regarding global issues (WLE)" 
+what_is[["GCAWARE"]] = "Student's awareness of global issues (WLE)" 
+what_is[["ATTIMM"]] = "Student's attitudes towards immigrants (WLE)" 
+what_is[["INTCULT"]] = "Student's interest in learning about other cultures (WLE)" 
+what_is[["PERSPECT"]] = "Perspective-taking (WLE)" 
+what_is[["COGFLEX"]] = "Cognitive flexibility/adaptability (WLE)" 
+what_is[["RESPECT"]] = "Respect for people from other cultures (WLE)" 
+what_is[["AWACOM"]] = "Awareness of intercultural communication (WLE)" 
+what_is[["GLOBMIND"]] = "Global-mindedness (WLE)" 
+what_is[["DISCRIM"]] = "Discriminating school climate (WLE)" 
+what_is[["BELONG"]] = "Subjective well-being: Sense of belonging to school (WLE)" 
+what_is[["BEINGBULLIED"]] = "Student's experience of being bullied (WLE)" 
+what_is[["ENTUSE"]] = "ICT use outside of school (leisure) (WLE)" 
+what_is[["HOMESCH"]] = "Use of ICT outside of school (for school work activities) (WLE)" 
+what_is[["USESCH"]] = "Use of ICT at school in general (WLE)" 
+what_is[["INTICT"]] = "Interest in ICT (WLE)" 
+what_is[["COMPICT"]] = "Perceived ICT competence (WLE)" 
+what_is[["AUTICT"]] = "Perceived autonomy related to ICT use (WLE)" 
+what_is[["SOIAICT"]] = "ICT as a topic in social interaction (WLE)" 
+what_is[["ICTCLASS"]] = "Subject-related ICT use during lessons (WLE)" 
+what_is[["ICTOUTSIDE"]] = "Subject-related ICT use outside of lessons (WLE)" 
+what_is[["INFOCAR"]] = "Information about careers (WLE)" 
+what_is[["INFOJOB1"]] = "Information about the labour market provided by the school (WLE)" 
+what_is[["INFOJOB2"]] = "Information about the labour market provided outside of school (WLE)" 
+what_is[["FLCONFIN"]] = "Confidence about financial matters (WLE)" 
+what_is[["FLCONICT"]] = "Confidence about financial matters using digital devices (WLE)" 
+what_is[["FLSCHOOL"]] = "Financial education in school lessons (WLE)" 
+what_is[["FLFAMILY"]] = "Parental involvement in matters of Financial Literacy (WLE)" 
+what_is[["CURSUPP"]] = "Current parental support for learning at home (WLE)" 
+what_is[["EMOSUPP"]] = "Parents' emotional support (WLE)" 
+what_is[["PQSCHOOL"]] = "Parents' perceived school quality (WLE)" 
+what_is[["PASCHPOL"]] = "School policies for parental involvement (WLE)" 
+what_is[["PRESUPP"]] = "Previous parental support for learning at home (WLE)" 
+what_is[["JOYREADP"]] = "Parents enjoyment of reading (WLE)" 
+what_is[["ATTIMMP"]] = "Parents' attitudes towards immigrants (WLE)" 
+what_is[["INTCULTP"]] = "Parents' interest in learning about other cultures (WLE)" 
+what_is[["GCAWAREP"]] = "Parents' awareness of global issues (WLE)" 
+what_is[["BODYIMA"]] = "Body image (WLE)" 
+what_is[["SOCONPA"]] = "Social Connections: Parents (WLE)"
+
+#usage
+what_is[["PISADIFF"]]
+what_is[["SCREADCOMP"]]
+what_is[["ATTLNACT"]]
+what_is[["COGFLEX"]]
+```
+
+
+
+```{r}
+#Anagraphics
+
+#Technology
+stu_ICT = c("ICTHOME", "ICTSCH", "ICTRES", "ENTUSE", "HOMESCH","USESCH","INTICT","COMPICT","AUTICT","SOIAICT","ICTCLASS","ICTOUTSIDE")
+sch_ICT = c("RATCMP1", "RATCMP2")
+
+#Learning time
+stu_LT = c("MMINS","LMINS","SMINS","TMINS")
+           # "METASUM","METASPAM","UNDREM")
+
+#Economic status
+stu_WEALTH = c("ESCS","WEALTH","HOMEPOS")
+
+#Relation with teachers
+stu_TCH = c("TEACHINT","TEACHSUP")
+          # "DIRINS",
+
+#Culture
+stu_CULT = c("CULTPOSS","HEDRES",
+             "JOYREAD","SCREADCOMP","PISADIFF","ATTLNACT","COGFLEX")
+
+#Well-being
+stu_WB = c("EMOSUPS","COMPETE","GFOFAIL","EUDMO","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERCOMP","PERCOOP","BODYIMA", "STUBMI","PERFEED")
+
+#Attitude to global issues
+stu_GLOBAL = c("GCSELFEFF","GCAWARE","ATTIMM","INTCULT","RESPECT","AWACOM","GLOBMIND","DISCRIM")
+
+#Concern for the future
+stu_FUT = c("MASTGOAL","WORKMAST","INFOCAR","INFOJOB1","INFOJOB2")
+
+#Family
+stu_FAM = c("CURSUPP","EMOSUPP","PQSCHOOL","PASCHPOL","PRESUPP",
+            "JOYREADP","SOCONPA")
+```
+
+```{r}
+#complete vectors
+# stu_vars = c(stu_ICT,stu_WB,stu_GLOBAL,stu_LT,stu_FUT,stu_FAM,stu_CULT,stu_WEALTH)
+# sch_vars = c(sch_ICT)
+# teach_vars = c()
+
+#Psi case
+# stu_vars = c(stu_LT,stu_WEALTH,stu_TCH,stu_CULT,stu_WB,stu_FAM) # more complete?
+stu_vars = c(stu_LT,stu_WEALTH,stu_TCH,stu_WB)
+sch_vars = c()
+tch_vars = c()
+```
+
+# PREPROCESSING
+
+```{r}
+working_dir = "/Users/feder/Desktop/Progetto Applied/src/"
+dataset_dir = "/Users/feder/Desktop/Progetto Applied/data/"
+setwd(working_dir)
+```
+
+Data loading
+
+```{r}
+library(intsvy) # package to analyze PISA dataset
+
+Europe = c("AUT","BEL","BGR","HRV","QCY","CZE","DNK","EST","FIN","FRA","DEU","GRC","HUN",
+           "IRL","ITA","LVA","LTU","LUX","NLD","POL","PRT","ROU","SVK","SVN","ESP","SWE","GBR")
+#selecting and merging
+pisa_europe <- pisa.select.merge(folder= dataset_dir,
+                               school.file="CY07_MSU_SCH_QQQ.sav", 
+                               student.file="CY07_MSU_STU_QQQ.sav",
+                               student= stu_vars,
+                               school = sch_vars,
+                               countries = Europe)    
+#pisa_world <- pisa.select.merge(folder= dataset_dir,school.file="CY07_MSU_SCH_QQQ.sav",  student.file="CY07_MSU_STU_QQQ.sav",student= stu_vars,school = sch_vars)   
+
+```
+
+Removing replicate weights (for simplicity: replicate weights have no NAs)
+
+We've also decided to remove PVs since they have less NAs and we want to focus on other variables.
+The analysis on PVs will be made later.
+
+Removing IDs, W_FSTUWT and W_FSTUWT_SC_SUM for the moment
+
+```{r}
+library(dplyr)
+#pisa_world <- pisa_world %>% select(-starts_with("W_FSTU")) 
+pisa_europe <- pisa_europe %>% select(-starts_with("W_FSTU")) 
+
+#pisa_world <- pisa_world %>% select(-starts_with("PV")) 
+pisa_europe <- pisa_europe %>% select(-starts_with("PV"))
+
+#pisa_world <- pisa_world %>% select(-starts_with("PV")) 
+pisa_europe <- pisa_europe %>% select(-starts_with("PV"))
+
+#pisa_world <- pisa_world %>% select(-c("CNTRYID","CNTSCHID","CNTSTUID","BOOKID")) 
+pisa_europe <- pisa_europe %>% select(-c("CNTRYID","CNTSCHID","CNTSTUID","BOOKID")) 
+```
+
+# GENERAL INSPECTION
+
+```{r}
+#select the variables of interest
+# stu_vars = c(stu_LT,stu_WEALTH,stu_TCH,stu_WB)
+inspect_europe <- pisa_europe[c("CNT",stu_LT,stu_WEALTH,stu_TCH,stu_WB)]
+#inspect_world <- pisa_world[c("CNT",stu_ICT,sch_ICT,stu_CULT,stu_FAM,stu_WB,stu_WEALTH)]
+```
+
+Inspecting the presence of NAs
+
+docs: <https://cran.r-project.org/web/packages/naniar/vignettes/naniar-visualisation.html>
+
+```{r}
+# install.packages("naniar")
+library(naniar)
+# plot the NAs by columns: we see that there are patterns for NAs (i.e. same observations have NAs in different features)
+vis_miss(inspect_europe,warn_large_data = FALSE)
+#vis_miss(inspect_world,warn_large_data = FALSE)
+```
+
+```{r}
+library(ggplot2)
+gg_miss_var(inspect_europe,show_pct = TRUE) 
+#gg_miss_var(inspect_world,show_pct = TRUE) 
+```
+
+See the combinantions of variables with more NAs
+
+```{r}
+library(UpSetR)
+# help(gg_miss_upset)
+gg_miss_upset(inspect_europe,nsets = 10)
+#gg_miss_upset(inspect_world,nsets = 10)
+# this graph tells us which combination of variables has the most common NA
+```
+
+Counting NAs by countries to see if we have countries with more NAs that we can exclude
+
+```{r}
+# help(gg_miss_case)
+#visually
+#gg_miss_case(inspect_world,facet = CNT)
+
+#analytically
+#na_count_by_group <- aggregate(. ~ inspect_world$CNT,inspect_world,function(x) { sum(is.na(x)) },na.action = NULL) 
+
+##add nations count to the dataframe
+#nation_count <- inspect_world %>% group_by(CNT) %>% summarise(total_count = n())
+#na_count_by_group["nation count"] <- nation_count$total_count
+```
+
+```{r}
+#gg_miss_fct(x = inspect_world,fct = CNT)
+gg_miss_fct(x = inspect_europe,fct = CNT)
+```
+
+# SELECTION OF COUNTRY AND VARIABLES
+
+```{r}
+inspect_df_NA <- function(df){
+  plot1 <- vis_miss(df,warn_large_data = FALSE)    
+  plot2 <- gg_miss_upset(df,nsets = 10)
+  plot3 <- gg_miss_fct(x = df,fct = CNT)
+  return(list(plot1,plot2,plot3))
+}
+```
+
+Select variables
+
+```{r}
+# BY PERCENTAGES
+# na_europe <- round(colSums(is.na(inspect_europe))/dim(inspect_europe)[1],digits = 1)
+# na_world <- round(colSums(is.na(inspect_world))/dim(inspect_world)[1],digits = 1)
+
+# threshold = 0.25
+# europe_sel <- inspect_europe[na_europe < threshold]
+# world_sel <- inspect_world[na_world < threshold]
+
+# BY SPECIFIC VARIABLES
+europe_sel <- inspect_europe %>% select(-c("BODYIMA","STUBMI","TMINS")) 
+#see the update
+plots <- inspect_df_NA(europe_sel)
+plots
+```
+
+Select country
+
+```{r,figures.side,fig.show='hold'}
+unique(europe_sel$CNT)
+europe_sel <- europe_sel %>% filter(!(CNT %in% c("ITA","BEL")))
+#see the update
+plots <- inspect_df_NA(europe_sel)
+plots
+```
+
+# TREATMENT OF NAs
+```{r}
+left_from_to = function(df_before,df_after){
+  print(paste("We are left with",dim(df_after)[1]/dim(df_before)[1]*100,"% of obs"))
+}
+```
+
+
+```{r}
+# 1) first option removing NAs with na.omit()
+europe_woNA_all <- na.omit(europe_sel)
+left_from_to(europe_sel,europe_woNA_all)
+
+# 2) filling with mean or median
+library(tidyr)
+europe_woNA <- europe_sel %>% group_by(CNT) %>% mutate_if(is.numeric, ~replace_na(.,median(., na.rm = TRUE)))
+#check if we have removed NAs
+left_from_to(europe_sel,europe_woNA)
+
+vis_miss(europe_woNA,warn_large_data = FALSE)
+
+# europe_woNA$CNT[which(is.na(europe_woNA$SWBP))]
+#L'italia dava problemi! e purtroppo su una variabile molto importante
+# europe_woNA_woITA=europe_woNA[europe_woNA$CNT!="ITA",]
+europe_woNA_woITA=europe_woNA
+#già tolta in un chunk precedente
+# unique(europe_woNA$CNT)
+left_from_to(europe_woNA,europe_woNA_woITA)
+
+vis_miss(europe_woNA_woITA,warn_large_data = FALSE)
+```
+
+# SAVING DATA
+
+```{r}
+write.csv(europe_woNA_woITA,file="pisa_wonA_woITA.csv")
+```
+
+# OBSERVATIONS AND TODO
+
+-   analysis for plausible values
+-   try filling with different methods
+
+# SOME CUTE FIRST PLOTS
+```{r}
+df=europe_woNA_woITA
+states = unique(df$CNT)
+len = length(unique(df$CNT))
+col.ramp = hcl.colors(len, palette = "viridis")
+
+boxplot(df$MMINS~ df$CNT,las=2)
+boxplot(df[,6:20],las=2)
+#provando a rimuovere gli outliers
+library(data.table)
+library(dataPreparation)
+df_woOUTL = remove_sd_outlier(df, cols="auto", n_sigmas = 2.5, verbose = TRUE)
+
+ad.test(df_woOUTL$EUDMO)$p.value
+hist(df_woOUTL$EUDMO)
+
+left_from_to(df,df_woOUTL)
+boxplot(df_woOUTL$MMINS~ df_woOUTL$CNT,las=2)
+
+boxplot(df_woOUTL[,2:4],las=2)
+boxplot(df_woOUTL[,5:20],las=2)
+
+
+boxplot(df_woOUTL$SWBP ~ df_woOUTL$CNT )
+
+#pairs non funziona ci sono troppe obs
+# pairs(europe_woNA_woITA[,6:10],col=col.ramp)
+
+```
+
+# PCA
+```{r}
+df_woOUTL_scaled = df_woOUTL
+df_woOUTL_scaled = scale(df_woOUTL[,2:20])
+df_woOUTL_scaled = data.frame(df_woOUTL_scaled)
+df_woOUTL_scaled["CNT"] = df_woOUTL$CNT
+#now cnt is the last one purtroppo
+
+summary(df_woOUTL_scaled)
+boxplot(df_woOUTL_scaled[,1:19],las=2)
+
+df=df_woOUTL_scaled
+pca_out = princomp(df_woOUTL_scaled[,1:19])
+summary(pca_out)
+pca_out$loadings
+```
+
+
+```{r}
+plot(cumsum(pca_out$sde^2)/sum(pca_out$sde^2), type='b', axes=F, xlab='Number of components', ylab='Contribution to the total variance', ylim=c(0,1))
+abline(h=1, col='blue')
+abline(h=0.8, lty=2, col='blue')
+box()
+axis(2,at=0:10/10,labels=0:10/10)
+axis(1,at=1:ncol(df_woOUTL_scaled),labels=1:ncol(df_woOUTL_scaled),las=2)
+```
+```{r}
+par(mfrow=c(2,1))
+for(i in 1:2)barplot(pca_out$loadings[,i], ylim = c(-1, 1),
+main=paste('Loadings PC ',i,sep=''),las=2)
+
+## Interpretation
+# La pc1 sembra fare la somma dei contributi positivi: cioè quasi tutti tranne GFOFAIL e BEINGBULLIED
+# quindi osservazioni con alta pc1 sembrano stare meglio
+# La pc2 sembra fare un contrasto tra valori più materiali (wealth, homeposs) e altri più morali (teachsup,
+# emosup, eudmo, reslience)
+for (i in colnames(df)){
+  print(what_is[[i]])
+}
+```
+
+
+```{r}
+#higher pcs
+par(mar = c(2,2,2,1), mfrow=c(3,1))
+for(i in 4:6)barplot(pca_out$loadings[,i], ylim = c(-1, 1),
+main=paste('Loadings PC ',i,sep=''),las=2)
+```
+
+```{r}
+for (x in unique(df$CNT)[1:4]) {
+  # print(x)
+  plot(pca_out$scores[which(df$CNT==x),1:2],main = paste(x))
+  abline(h=0, v=0, lty=2, col='grey')
+  points(0,0,pch=19,cex=1.4,col="orange")
+}
+```
+# ANOVA?
+## Gaussian assumption check
+```{r}
+M=tapply(df$SWBP, df$CNT, mean)
+M
+boxplot(df$SWBP ~ df$CNT)
+states
+length(states)
+library(nortest)
+Ps = c(ad.test(df$SWBP[df$CNT==states[1]])$p.value,
+       ad.test(df$SWBP[df$CNT==states[2]])$p.value,
+       ad.test(df$SWBP[df$CNT==states[3]])$p.value,
+       ad.test(df$SWBP[df$CNT==states[4]])$p.value,
+       ad.test(df$SWBP[df$CNT==states[5]])$p.value)
+Ps #ciaoneqqnorm(df$SWBP[df$CNT==states[3]])
+qqline(df$SWBP[df$CNT==states[3]])
+```
+
+
+```{r}
+# Box-cox?
+lambda.x = powerTransform(df$SWBP+abs(range(df$SWBP)[1])+1)
+bc.x = bcPower(df$SWBP+abs(range(df$SWBP)[1])+1, lambda.x$lambda)
+ad.test(bc.x)
+hist(df$SWBP+abs(range(df$SWBP)[1])+1)
+hist(bc.x)
+
+par(mfrow=c(1,2))
+hist(bc.x,col="red")
+# qqline(bc.x)
+hist(df$SWBP[df$CNT=="AUT"]+3,col="green",)
+# qqline(df$SWBP[df$CNT=="AUT"]+3,col="green",)
+```
+
