@@ -1,0 +1,58 @@
+---
+title: "PERMANOVA"
+output: html_document
+date: "2023-04-16"
+---
+
+# REFERENCES
+
+-   <https://uw.pressbooks.pub/appliedmultivariatestatistics/chapter/permanova/>
+-   working with large datasets and parallel computing: <https://cran.r-project.org/web/views/HighPerformanceComputing.html>
+
+# PRELIMINARY STUFF
+
+```{r}
+#directories
+working_dir = "/Users/marcogalliani/Desktop/PISA-dev-local"
+dataset_dir = "/Users/marcogalliani/Desktop/PISA-dev-local/data"
+include_dir = paste(working_dir,"/local-src/include/Utilities.R",sep="")
+#including utilities
+source(include_dir)
+#importing the dataset
+pisa_data <- read.csv(file=paste(dataset_dir,"/pisa-woNA.csv",sep=""))
+
+#select only ICT moments fot the moment
+library(dplyr)
+pisa_data <- pisa_data %>% dplyr::select(all_of(c("CNT",stu_ICT,sch_ICT)))
+#dropping RATCMP2
+pisa_data["RATCMP2"] <- NULL
+#dropping spain
+pisa_data <- pisa_data %>% filter(CNT!="ESP")
+```
+
+# PERMANOVA
+
+Try different implementations
+
+```{r}
+library(vegan)
+#try with smaller datasets
+small_pisa <- pisa_data %>% filter(CNT %in% c("FRA","GRC","IRL","SWE"))
+
+result <- adonis2(formula = small_pisa[,c(stu_ICT,"RATCMP1")]~CNT, data = small_pisa, method = "mahalanobis")
+```
+
+```{r}
+library(PERMANOVA)
+
+small_pisa <- pisa_data %>% filter(CNT %in% c("FRA","IRL","SWE"))
+
+pisa_std <- IniTransform(select_if(small_pisa,is.numeric)) #standardize data
+
+pisa_std <- as.matrix(pisa_std)
+
+D <- DistContinuous(pisa_std) #compute the matrix of distances
+pisa_std["CNT"] <- small_pisa$CNT 
+
+perm_pisa <- PERMANOVA(D,pisa_data$CNT)
+```

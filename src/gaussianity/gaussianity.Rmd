@@ -1,0 +1,105 @@
+---
+title: "gaussianity"
+output: 
+date: "2023-04-07"
+---
+
+# NOTES
+
+-   for MANOVA we need multivariate gaussianity for each group
+
+-   for ANOVA we need univariate gaussianity for each group
+
+-   we do not need multivariate gaussianity for the whole dataset since we do not want to perform tests on the mean for the whole dataset
+
+# REFERENCES
+
+-   <https://stats.stackexchange.com/questions/2492/is-normality-testing-essentially-useless>
+
+# PRELIMINARY STUFF
+
+```{r}
+#directories
+working_dir = "/Users/marcogalliani/Desktop/PISA-dev-local"
+dataset_dir = "/Users/marcogalliani/Desktop/PISA-dev-local/data"
+include_dir = paste(working_dir,"/local-src/include/Utilities.R",sep="")
+#including utilities
+source(include_dir)
+#importing the dataset
+pisa_data <- read.csv(file=paste(dataset_dir,"/pisa-woNA.csv",sep=""))
+
+#select only ICT moments fot the moment
+library(dplyr)
+pisa_data <- pisa_data %>% dplyr::select(all_of(c("CNT",stu_ICT,sch_ICT)))
+```
+
+# CHECKING GAUSSIANITY
+
+Reference: `Lab_4.R`
+
+From `Lab_4.R` we have many options to test normality of data:
+
+-   **Henze-Zikler's test**: initially it gives some weird errors about singularity, then after removing the variable RATCMP2 which had null estimated variance it begins to work
+
+-   **Shapiro-Wilk test family**: It is not possible to perform these kind of test on our data, since they are limited to 5000 observations
+
+-   We can reject Gaussianity also with univariate tests like the ANDERSON-DARLING test. However, we can only reject gaussianity and not accept it, since gaussianity of the conditions is a necessary condition for the multivariate gaussianity.
+
+## Problems
+
+-\> Null estimated variance of RATCMP2
+
+```{r}
+image(cov(select_if(pisa_data,is.numeric)))
+pisa_data$RATCMP2 <- NULL #RATCMP2 seems has null estimated variance and gives problems
+image(cov(select_if(pisa_data,is.numeric)))
+```
+
+-\> Unbalanced number of observations for Spain (too many)
+
+```{r}
+#number of observations b y group
+pisa_data %>% count(CNT,sort=TRUE)
+#here we can see that we have many observations about Spain. Maybe we can try excluding it to have a more balanced data
+pisa_data <- pisa_data %>% filter(CNT!="ESP")
+```
+
+## Testing
+
+In `result` we can see also the results of the univariate tests on gaussianity
+
+```{r}
+library(MVN)
+#multivariate Shapiro-Wilk test: not possible to perform
+#sample size is too big -> maybe perform the test sampling data from the datset
+result <- mvn(data = pisa_data, subset = "CNT", mvnTest = "hz",univariateTest = "AD")
+#to explore the options of mvn
+#help(mvn)
+```
+
+# REMOVING OUTLIERS
+
+```{r}
+M <- colMeans(select_if(pisa_data,is.numeric))
+S <- cov(select_if(pisa_data,is.numeric))
+#computing mahlanobis distance
+d2 <- matrix(mahalanobis(select_if(pisa_data,is.numeric), M, S))
+#removing over a certain distance from the mean
+pisa_wo_outliers<- pisa_data[which(d2 <= 10), ] #too many observations removed with 8
+
+#testing again on the dataset wo outliers
+result_wo_ouliers <- mvn(data = pisa_wo_outliers, subset = "CNT", mvnTest = "hz",univariateTest = "AD")
+```
+
+# TRANSFORMING
+
+```{r}
+library(car)
+bcn_param <- powerTransform(select_if(pisa_wo_outliers,is.numeric), family = "bcnPower") #take long
+trasformed_data <- bcnPower(U=select_if(pisa_wo_outliers,is.numeric),lambda=bcn_param$lambda, gamma=bcn_param$gamma)
+#add the CNT column
+transformed_data["CNT"] <- pisa_wo_outliers$CNT
+
+#testing on transformed data
+result_wo_ouliers <- mvn(data = transformed_data, subset = "CNT", mvnTest = "hz",univariateTest = "AD")
+```

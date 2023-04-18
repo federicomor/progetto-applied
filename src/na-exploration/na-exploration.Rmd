@@ -1,0 +1,157 @@
+---
+title: "PISA dataset na exploration"
+output: 
+editor_options: 
+  chunk_output_type: inline
+---
+
+# POOLS OF VARIABLES OF INTEREST
+
+Selected variables from `selected_variables.txt`
+
+Some details about the computation of the indexes [docs: <https://www.oecd-ilibrary.org/sites/0a428b07-en/index.html?itemId=/content/component/0a428b07-en>]
+
+```{r}
+#Anagraphics
+# ST004D01T: gender
+stu_GENDER = c("ST004D01T")
+
+#Technology
+stu_ICT = c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
+sch_ICT = c("RATCMP1", "RATCMP2")
+
+#Family
+stu_FAM = c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
+
+#Culture
+stu_CULT = c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
+
+#Well-being
+stu_WB = c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+
+#Professori
+stu_PROF = c("TEACHINT","TEACHSUP","STIMREAD")
+
+#School
+stu_SCH = c("PERCOMP","PERCOOP","ICTSCH")
+```
+
+```{r}
+#complete vectors
+stu_vars = c(stu_GENDER,stu_ICT,stu_FAM,stu_CULT,stu_WB,stu_PROF,stu_SCH)
+sch_vars = c(sch_ICT)
+teach_vars = c()
+```
+
+# SELECTED COUNTRIES
+
+```{r}
+selected_countries = c("HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","IRL","LTU","LUX","POL","SVK","SVN","ESP","SWE")
+```
+
+# PREPROCESSING
+
+```{r}
+working_dir = "/Users/marcogalliani/Desktop/PISA-dev-local"
+dataset_dir = "/Users/marcogalliani/Desktop/PISA-dev-local/data/PISA-dataset"
+
+```
+
+Data loading
+
+```{r}
+library(intsvy) # package to analyze PISA dataset
+
+#selecting and merging
+pisa_europe <- pisa.select.merge(folder= dataset_dir,
+                               school.file="CY07_MSU_SCH_QQQ.sav", 
+                               student.file="CY07_MSU_STU_QQQ.sav",
+                               student= stu_vars,
+                               school = sch_vars,
+                               countries = selected_countries)    
+
+```
+
+Removing replicate weights (for simplicity: replicate weights have no NAs)
+
+I've also decided to remove PVs since they have less NAs and I want to focus on other variables. The analysis on PVs will be made later.
+
+Removing IDs, W_FSTUWT and W_FSTUWT_SC_SUM for the moment
+
+```{r}
+library(dplyr)
+#pisa_world <- pisa_world %>% select(-starts_with("W_FSTU")) 
+pisa_europe <- pisa_europe %>% select(-starts_with("W_FSTU")) 
+
+#pisa_world <- pisa_world %>% select(-starts_with("PV")) 
+pisa_europe <- pisa_europe %>% select(-starts_with("PV"))
+
+#pisa_world <- pisa_world %>% select(-starts_with("PV")) 
+pisa_europe <- pisa_europe %>% select(-starts_with("PV"))
+
+#pisa_world <- pisa_world %>% select(-c("CNTRYID","CNTSCHID","CNTSTUID","BOOKID")) 
+pisa_europe <- pisa_europe %>% select(-c("CNTRYID","CNTSCHID","CNTSTUID","BOOKID")) 
+```
+
+# GENERAL INSPECTION
+
+Inspecting the presence of NAs
+
+docs: <https://cran.r-project.org/web/packages/naniar/vignettes/naniar-visualisation.html>
+
+```{r}
+library(naniar)
+library(ggplot2)
+library(UpSetR)
+
+inspect_df_NA <- function(df){
+  plot1 <- vis_miss(df,warn_large_data = FALSE)    
+  plot2 <- gg_miss_upset(df,nsets = 10)
+  plot3 <- gg_miss_fct(x = df,fct = CNT)
+  return(list(plot1,plot2,plot3))
+}
+```
+
+```{r}
+plots <- inspect_df_NA(pisa_europe)
+plots
+```
+
+Analytically
+
+```{r}
+# help(gg_miss_case)
+#visually
+#gg_miss_case(inspect_world,facet = CNT)
+
+#analytically
+#na_count_by_group <- aggregate(. ~ inspect_world$CNT,inspect_world,function(x) { sum(is.na(x)) },na.action = NULL) 
+
+##add nations count to the dataframe
+#nation_count <- inspect_world %>% group_by(CNT) %>% summarise(total_count = n())
+#na_count_by_group["nation count"] <- nation_count$total_count
+```
+
+# TREATMENT OF NAs
+
+```{r}
+# 1) first option removing NAs with na.omit()
+# europe_woNA <- na.omit(europe_sel)
+# 2) filling with mean or median
+library(tidyr)
+europe_woNA <- pisa_europe %>% group_by(CNT) %>% mutate_if(is.numeric, ~replace_na(.,mean(., na.rm = TRUE)))
+#check if we have removed NAs
+vis_miss(europe_woNA,warn_large_data = FALSE)
+```
+
+# SAVING DATA
+
+```{r,}
+saving_dir = paste(working_dir,"/data/pisa-woNA.csv",sep="")
+write.csv(europe_woNA,file=saving_dir)
+```
+
+# OBSERVATIONS AND TODO
+
+-   analysis for plausible values
+-   try filling with different methods

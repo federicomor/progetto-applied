@@ -1,0 +1,4 @@
+"0","mvn(data = select_if(pisa_data,is.numeric), mvnTest = ""hz"") 
+"
+"2","Error: vector memory exhausted (limit reached?)
+"

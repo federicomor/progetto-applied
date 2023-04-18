@@ -1,0 +1,105 @@
+---
+title: "R Notebook"
+output: 
+---
+
+# PRELIMINARY STUFF
+
+```{r}
+#directories
+working_dir = "/Users/marcogalliani/Desktop/PISA-dev-local"
+dataset_dir = "/Users/marcogalliani/Desktop/PISA-dev-local/data/PISA-dataset"
+```
+
+Selected variables and countries according to `selected_variables.txt`
+
+```{r}
+#countries
+selected_countries = c("HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","IRL","LTU","LUX","POL","SVK","SVN","ESP","SWE")
+
+#Gender
+stu_GENDER = c("ST004D01T")
+#Technology
+stu_ICT = c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
+sch_ICT = c("RATCMP1", "RATCMP2")
+#Family
+stu_FAM = c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
+#Culture
+stu_CULT = c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
+#Well-being
+stu_WB = c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+#Professori
+stu_PROF = c("TEACHINT","TEACHSUP","STIMREAD")
+#School
+stu_SCH = c("PERCOMP","PERCOOP","ICTSCH")
+
+#all together
+stu_vars = c(stu_GENDER,stu_ICT,stu_FAM,stu_CULT,stu_WB,stu_PROF,stu_SCH)
+sch_vars = c(sch_ICT)
+teach_vars = c()
+```
+
+Data loading
+
+```{r}
+library(intsvy)
+
+pisa_data <- pisa.select.merge(folder= dataset_dir,
+                               school.file="CY07_MSU_SCH_QQQ.sav", 
+                               student.file="CY07_MSU_STU_QQQ.sav",
+                               student= stu_vars,
+                               school = sch_vars,
+                               countries = selected_countries)    
+```
+
+```{r}
+#remove unused variables
+
+library(dplyr)
+#pisa_world <- pisa_world %>% select(-starts_with("W_FSTU")) 
+pisa_data <- pisa_data %>% select(-starts_with("W_FSTU")) 
+
+#pisa_world <- pisa_world %>% select(-starts_with("PV")) 
+pisa_data <- pisa_data %>% select(-starts_with("PV"))
+
+#pisa_world <- pisa_world %>% select(-starts_with("PV")) 
+pisa_data <- pisa_data %>% select(-starts_with("PV"))
+
+#pisa_world <- pisa_world %>% select(-c("CNTRYID","CNTSCHID","CNTSTUID","BOOKID")) 
+pisa_data <- pisa_data %>% select(-c("CNTRYID","CNTSTUID","BOOKID")) 
+```
+
+# NA TREATMENT
+
+```{r}
+library(dplyr)
+library(tidyr)
+pisa_data_woNA <- pisa_data %>% group_by(CNT) %>% mutate_if(is.numeric, ~replace_na(.,median(., na.rm = TRUE)))
+```
+
+## SAVING DATA
+
+```{r}
+library(utils)
+saving_dir = paste(working_dir,"/data/pisa-woNA.csv",sep="")
+write.csv(pisa_data_woNA,file=saving_dir)
+```
+
+## TESTING
+
+```{r}
+saved_data <- read.csv(saving_dir)
+summary(saved_data)
+```
+
+# GROUPING BY SCHOOL
+
+TO BE FIXED
+
+```{r}
+pisa_by_sch <- pisa_data_woNA %>% group_by(CNTSCHID) %>% summarise_at(vars(all_of(c(stu_vars,sch_vars))),list(name=mean))
+
+pisa_by_sch["CNT"] <- pisa_data_woNA$CNT[pisa_data_woNA$CNTSCHID==pisa_by_sch$CNTSCHID]
+
+length(levels(as.factor(pisa_data_woNA$CNTSCHID))) 
+```

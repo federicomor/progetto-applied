@@ -1,0 +1,214 @@
+---
+title: "PISA dataset na exploration"
+output: 
+editor_options: 
+  chunk_output_type: inline
+---
+
+# POOLS OF VARIABLES OF INTEREST
+
+Here I select some variables about potentially interesting themes
+
+Some details about the computation of the indexes
+
+docs: <https://www.oecd-ilibrary.org/sites/0a428b07-en/index.html?itemId=/content/component/0a428b07-en>
+
+```{r}
+#Anagraphics
+
+#Technology
+stu_ICT = c("ICTHOME", "ICTSCH", "ICTRES", "ENTUSE", "HOMESCH","USESCH","INTICT","COMPICT","AUTICT","SOIAICT","ICTCLASS","ICTOUTSIDE")
+sch_ICT = c("RATCMP1", "RATCMP2")
+
+#Learning time
+stu_LT = c("MMINS","LMINS","SMINS","TMINS")
+
+#Economic status
+stu_WEALTH = c("ESCS","WEALTH","HOMEPOS")
+
+#Culture
+stu_CULT = c("CULTPOSS","HEDRES")
+
+#Well-being
+stu_WB = c("TEACHSUP","EMOSUPS","COMPETE","GFOFAIL","EUDMO","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERCOMP","PERCOOP","BODYIMA")
+
+#Attitude to global issues
+stu_GLOBAL = c("GCSELFEFF","GCAWARE","ATTIMM","INTCULT","COGFLEX","RESPECT","AWACOM","GLOBMIND","DISCRIM")
+
+#Concern for the future
+stu_FUT = c("MASTGOAL","WORKMAST","INFOCAR","INFOJOB1","INFOJOB2")
+
+#Family
+stu_FAM = c("CURSUPP","EMOSUPP","PQSCHOOL","PASCHPOL","PRESUPP")
+```
+
+```{r}
+#complete vectors
+stu_vars = c(stu_ICT,stu_WB,stu_GLOBAL,stu_LT,stu_FUT,stu_FAM,stu_CULT,stu_WEALTH)
+sch_vars = c(sch_ICT)
+teach_vars = c()
+```
+
+# PREPROCESSING
+
+```{r}
+working_dir = "/Users/marcogalliani/Desktop/PISA-dev-local"
+dataset_dir = "/Users/marcogalliani/Desktop/PISA-dev-local/data/PISA-dataset"
+setwd(working_dir)
+```
+
+Data loading
+
+```{r}
+library(intsvy) # package to analyze PISA dataset
+
+Europe = c("AUT","BEL","BGR","HRV","QCY","CZE","DNK","EST","FIN","FRA","DEU","GRC","HUN","IRL","ITA","LVA","LTU","LUX","NLD","POL","PRT","ROU","SVK","SVN","ESP","SWE","GBR")
+#selecting and merging
+pisa_europe <- pisa.select.merge(folder= dataset_dir,
+                               school.file="CY07_MSU_SCH_QQQ.sav", 
+                               student.file="CY07_MSU_STU_QQQ.sav",
+                               student= stu_vars,
+                               school = sch_vars,
+                               countries = Europe)    
+#pisa_world <- pisa.select.merge(folder= dataset_dir,school.file="CY07_MSU_SCH_QQQ.sav",  student.file="CY07_MSU_STU_QQQ.sav",student= stu_vars,school = sch_vars)   
+
+```
+
+Removing replicate weights (for simplicity: replicate weights have no NAs)
+
+I've also decided to remove PVs since they have less NAs and I want to focus on other variables. The analysis on PVs will be made later.
+
+Removing IDs, W_FSTUWT and W_FSTUWT_SC_SUM for the moment
+
+```{r}
+library(dplyr)
+#pisa_world <- pisa_world %>% select(-starts_with("W_FSTU")) 
+pisa_europe <- pisa_europe %>% select(-starts_with("W_FSTU")) 
+
+#pisa_world <- pisa_world %>% select(-starts_with("PV")) 
+pisa_europe <- pisa_europe %>% select(-starts_with("PV"))
+
+#pisa_world <- pisa_world %>% select(-starts_with("PV")) 
+pisa_europe <- pisa_europe %>% select(-starts_with("PV"))
+
+#pisa_world <- pisa_world %>% select(-c("CNTRYID","CNTSCHID","CNTSTUID","BOOKID")) 
+pisa_europe <- pisa_europe %>% select(-c("CNTRYID","CNTSCHID","CNTSTUID","BOOKID")) 
+```
+
+# GENERAL INSPECTION
+
+```{r}
+#select the variables of interest
+inspect_europe <- pisa_europe[c("CNT",stu_ICT,sch_ICT,stu_CULT,stu_FAM,stu_WB,stu_WEALTH)]
+#inspect_world <- pisa_world[c("CNT",stu_ICT,sch_ICT,stu_CULT,stu_FAM,stu_WB,stu_WEALTH)]
+```
+
+Inspecting the presence of NAs
+
+docs: <https://cran.r-project.org/web/packages/naniar/vignettes/naniar-visualisation.html>
+
+```{r}
+# install.packages("naniar")
+library(naniar)
+# plot the NAs by columns: we see that there are patterns for NAs (i.e. same observations have NAs in different features)
+vis_miss(inspect_europe,warn_large_data = FALSE)
+#vis_miss(inspect_world,warn_large_data = FALSE)
+```
+
+```{r}
+library(ggplot2)
+gg_miss_var(inspect_europe,show_pct = TRUE) 
+#gg_miss_var(inspect_world,show_pct = TRUE) 
+```
+
+See the combinantions of variables with more NAs
+
+```{r}
+library(UpSetR)
+# help(gg_miss_upset)
+gg_miss_upset(inspect_europe,nsets = 10)
+#gg_miss_upset(inspect_world,nsets = 10)
+# this graph tells us which combination of variables has the most common NA
+```
+
+Counting NAs by countries to see if we have countries with more NAs that we can exclude
+
+```{r}
+# help(gg_miss_case)
+#visually
+#gg_miss_case(inspect_world,facet = CNT)
+
+#analytically
+#na_count_by_group <- aggregate(. ~ inspect_world$CNT,inspect_world,function(x) { sum(is.na(x)) },na.action = NULL) 
+
+##add nations count to the dataframe
+#nation_count <- inspect_world %>% group_by(CNT) %>% summarise(total_count = n())
+#na_count_by_group["nation count"] <- nation_count$total_count
+```
+
+```{r}
+#gg_miss_fct(x = inspect_world,fct = CNT)
+gg_miss_fct(x = inspect_europe,fct = CNT)
+```
+
+# SELECTION OF COUNTRY AND VARIABLES
+
+```{r}
+inspect_df_NA <- function(df){
+  plot1 <- vis_miss(df,warn_large_data = FALSE)    
+  plot2 <- gg_miss_upset(df,nsets = 10)
+  plot3 <- gg_miss_fct(x = df,fct = CNT)
+  return(list(plot1,plot2,plot3))
+}
+```
+
+Select variables
+
+```{r}
+# BY PERCENTAGES
+# na_europe <- round(colSums(is.na(inspect_europe))/dim(inspect_europe)[1],digits = 1)
+# na_world <- round(colSums(is.na(inspect_world))/dim(inspect_world)[1],digits = 1)
+
+# threshold = 0.25
+# europe_sel <- inspect_europe[na_europe < threshold]
+# world_sel <- inspect_world[na_world < threshold]
+
+# BY SPECIFIC VARIABLES
+europe_sel <- inspect_europe %>% select(-c("SOIAICT","PRESUPP","CURSUPP","EMOSUPP","PASCHPOL","PQSCHOOL","BODYIMA","SWBP")) 
+#see the update
+plots <- inspect_df_NA(europe_sel)
+plots
+```
+
+Select country
+
+```{r,figures.side,fig.show='hold'}
+europe_sel <- europe_sel %>% filter(!(CNT %in% c("AUT","BEL","BGR","DEU","GBR","NLD","PRT","ROU","DEU")))
+#see the update
+plots <- inspect_df_NA(europe_sel)
+plots
+```
+
+# TREATMENT OF NAs
+
+```{r}
+# 1) first option removing NAs with na.omit()
+# europe_woNA <- na.omit(europe_sel)
+# 2) filling with mean or median
+library(tidyr)
+europe_woNA <- europe_sel %>% group_by(CNT) %>% mutate_if(is.numeric, ~replace_na(.,mean(., na.rm = TRUE)))
+#check if we have removed NAs
+vis_miss(europe_woNA,warn_large_data = FALSE)
+```
+
+# SAVING DATA
+
+```{r}
+saving_dir = paste(working_dir,"/data/pisa-woNA.csv",sep="")
+write.csv(europe_woNA,file=saving_dir)
+```
+
+# OBSERVATIONS AND TODO
+
+-   analysis for plausible values
+-   try filling with different methods
