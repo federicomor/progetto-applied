@@ -15,6 +15,8 @@ In questo modo anche tutti gli altri potranno scaricare la versione aggiornata d
 
 Quindi questa operazione è consigliato farla praticamente sempre, per evitare di modificare file che in realtà erano già stati aggiornati.
 
+---
+
 Quindi è un modo per lavorare sempre con le versioni aggiornate dei file, e vedere quali update sono stati fatti, in quanto l'app di Github Desktop mostra anche gli update/le modifiche effettuate, cioè le differenze tra i file nuovi e quelli vecchi.
 
 # Struttura
