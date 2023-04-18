@@ -1,0 +1,353 @@
+Teacher questionnaire data file	
+NAME	VARLABEL
+
+CNTRYID	Country Identifier
+CNT	Country code 3-character
+CNTSCHID	Intl. School ID
+CNTTCHID	Intl. Teacher ID
+TEACHERID	Teacher identification code
+CYC	PISA Assessment Cycle (2 digits + 2 character Assessment type - MS/FT)
+NatCen	National Centre 6-digit Code
+Region	Region
+STRATUM	Stratum ID 7-character (cnt + region ID + original stratum ID)
+SUBNATIO	Adjudicated sub-region code 7-digit code (3-digit country code + region ID + stratum ID)
+OECD	OECD country
+ADMINMODE	Mode of Respondent
+LANGTEST	Language of Questionnaire/Assessment
+TC001Q01NA	Are you female or male?
+TC002Q01NA	How old are you?
+TC005Q01NA	What is your current employment status as a teacher? My employment status at this school
+TC007Q01NA	How many years of work experience do you have? Year(s) working as a teacher at this school
+TC007Q02NA	How many years of work experience do you have? Year(s) working as a teacher in total
+TC014Q01HA	Did you complete a teacher education or training programme?
+TC015Q01NA	How did you receive your initial teaching qualifications?
+TC018Q01NA	Included in teacher education, training or other qualification: Reading, writing and literature
+TC018Q01NB	Teach it in the <national modal grade for 15-year-olds> in the current school year: Reading, writing and literature
+TC018Q02NA	Included in teacher education, training or other qualification: Mathematics
+TC018Q02NB	Teach it in the <national modal grade for 15-year-olds> in the current school year: Mathematics
+TC018Q03NA	Included in teacher education, training or other qualification: Science
+TC018Q03NB	Teach it in the <national modal grade for 15-year-olds> in the current school year: Science
+TC018Q04NA	Included in teacher education, training or other qualification: Technology
+TC018Q04NB	Teach it in the <national modal grade for 15-year-olds> in the current school year: Technology
+TC018Q05NA	Included in teacher education, training or other qualification: Social studies
+TC018Q05NB	Teach it in the <national modal grade for 15-year-olds> in the current school year: Social studies
+TC018Q06NA	Included in teacher education, training or other qualification: Modern foreign languages
+TC018Q06NB	Teach it in the <national modal grade for 15-year-olds> in the current school year: Modern foreign languages
+TC018Q07NA	Included in teacher education, training or other qualification: Ancient languages (e.g. Latin)
+TC018Q07NB	Teach it in the <national modal grade for 15-year-olds> in the current school year: Ancient languages (e.g. Latin)
+TC018Q08NA	Included in teacher education, training or other qualification: Arts
+TC018Q08NB	Teach it in the <national modal grade for 15-year-olds> in the current school year: Arts
+TC018Q09NA	Included in teacher education, training or other qualification: Physical education
+TC018Q09NB	Teach it in the <national modal grade for 15-year-olds> in the current school year: Physical education
+TC018Q10NA	Included in teacher education, training or other qualification: Religion and/or ethics
+TC018Q10NB	Teach it in the <national modal grade for 15-year-olds> in the current school year: Religion and/or ethics
+TC018Q11NA	Included in teacher education, training or other qualification: Practical and vocational skills
+TC018Q11NB	Teach it in the <national modal grade for 15-year-olds> in the current school year: Practical and vocational skills
+TC045Q01NA	Included in teacher education, training or other qualification: Knowledge and understanding of my subject field(s)
+TC045Q01NB	Included in professional development during last 12 months: Knowledge and understanding of my subject field(s)
+TC045Q02NA	Included in teacher education, training or other qualification: Pedagogical competencies in teaching my subject field(s)
+TC045Q02NB	Included in professional development during last 12 months: Pedagogical competencies in teaching my subject field(s)
+TC045Q03NA	Included in teacher education, training or other qualification: Knowledge of the curriculum
+TC045Q03NB	Included in professional development during last 12 months: Knowledge of the curriculum
+TC045Q04NA	Included in teacher education, training or other qualification: Student assessment practices
+TC045Q04NB	Included in professional development during last 12 months: Student assessment practices
+TC045Q05NA	Included in teacher education, training or other qualification: ICT [...] skills for teaching
+TC045Q05NB	Included in professional development during last 12 months: ICT [...] skills for teaching
+TC045Q06NA	Included in teacher education, training or other qualification: Student behaviour and classroom management
+TC045Q06NB	Included in professional development during last 12 months: Student behaviour and classroom management
+TC045Q07NA	Included in teacher education, training or other qualification: School management and administration
+TC045Q07NB	Included in professional development during last 12 months: School management and administration
+TC045Q08NA	Included in teacher education, training or other qualification: Approaches to individualised learning
+TC045Q08NB	Included in professional development during last 12 months: Approaches to individualised learning
+TC045Q09NA	Included in teacher education, training or other qualification: Teaching students with special needs
+TC045Q09NB	Included in professional development during last 12 months: Teaching students with special needs
+TC045Q10NA	Included in teacher education, training or other qualification: Teaching in a multicultural or multilingual setting
+TC045Q10NB	Included in professional development during last 12 months: Teaching in a multicultural or multilingual setting
+TC045Q11NA	Included in teacher education, training or other qualification: Teaching cross-curricular skills [...]
+TC045Q11NB	Included in professional development during last 12 months: Teaching cross-curricular skills [...]
+TC045Q12NA	Included in teacher education, training or other qualification: Student career guidance and counselling
+TC045Q12NB	Included in professional development during last 12 months: Student career guidance and counselling
+TC045Q13NA	Included in teacher education, training or other qualification: Internal evaluation or self-evaluation of schools
+TC045Q13NB	Included in professional development during last 12 months: Internal evaluation or self-evaluation of schools
+TC045Q14NA	Included in teacher education, training or other qualification: Use of evaluation results
+TC045Q14NB	Included in professional development during last 12 months: Use of evaluation results
+TC045Q15NA	Included in teacher education, training or other qualification: Teacher-parent cooperation
+TC045Q15NB	Included in professional development during last 12 months: Teacher-parent cooperation
+TC045Q16HA	Included in teacher education, training or other qualification: Second language teaching
+TC045Q16HB	Included in professional development during last 12 months: Second language teaching
+TC045Q17HA	Included in teacher education, training or other qualification: Communicating with people from different cultures [...]
+TC045Q17HB	Included in professional development during last 12 months: Communicating with people from different cultures [...]
+TC045Q18HA	Included in teacher education, training or other qualification: Teaching about equity and diversity
+TC045Q18HB	Included in professional development during last 12 months: Teaching about equity and diversity
+TC021Q01NA	Are you required to take part in professional development activities?
+TC175Q01HA	About how much time per week do you spend reading for your work [...] out of your classes?
+TC198Q01HA	Agree: The advantages of being a teacher clearly outweigh the disadvantages.
+TC198Q02HA	Agree: If I could decide again, I would still choose to work as a teacher.
+TC198Q03HA	Agree: I would like to change to another school if that were possible.
+TC198Q04HA	Agree: I regret that I decided to become a teacher.
+TC198Q05HA	Agree: I enjoy working at this school.
+TC198Q06HA	Agree: I wonder whether it would have been better to choose another profession.
+TC198Q07HA	Agree: I would recommend my school as a good place to work.
+TC198Q08HA	Agree: I think that the teaching profession is valued in society.
+TC198Q09HA	Agree: I am satisfied with my performance in this school.
+TC198Q10HA	Agree: All in all, I am satisfied with my job.
+TC152Q01HA	Agree: Every teacher should be trained to teach reading comprehension.
+TC152Q02HA	Agree: Every teacher has a responsibility to improve students' reading comprehension skills.
+TC152Q03HA	Agree: I know how to diagnose the students' reading comprehension problems.
+TC152Q04HA	Agree: I am very confident in my capability to teach reading comprehension strategies.
+TC155Q02HA	In your lessons, how often do you teach: Summarizing strategies
+TC155Q03HA	In your lessons, how often do you teach: Connecting texts with prior content knowledge
+TC155Q04HA	In your lessons, how often do you teach: Monitoring comprehension
+TC155Q05HA	In your lessons, how often do you teach: Adapting the mode of reading depending on reading purposes
+TC155Q06HA	In your lessons, how often do you teach: Assessing credibility of information available on the Internet
+TC155Q07HA	In your lessons, how often do you teach: Searching and selecting relevant information on the Internet
+TC166Q01HA	In your lessons, have you ever taught: How to use keywords when using a search engine such as <Google>, <Yahoo>, etc.
+TC166Q02HA	In your lessons, have you ever taught: How to decide whether to trust information from the Internet
+TC166Q03HA	In your lessons, have you ever taught: How to compare different web pages and decide what information is more [...]
+TC166Q04HA	In your lessons, have you ever taught: To understand the consequences of making information publicly available [...]
+TC166Q05HA	In your lessons, have you ever taught: How to use the short description below the links in the list of results of [...]
+TC166Q06HA	In your lessons, have you ever taught: How to detect whether the information is subjective or biased
+TC166Q07HA	In your lessons, have you ever taught: How to detect phishing or spam emails
+TC164Q01HA	<this academic year>, how many pages was the longest piece of text your [...] students had to read for your lessons
+TC207Q01HA	In your lessons, opportunities to promote the following skills: Communicating with people from different cultures [...]
+TC207Q02HA	In your lessons, opportunities to promote the following skills: Knowledge of different cultures
+TC207Q03HA	In your lessons, opportunities to promote the following skills: Openness to people from other cultural backgrounds
+TC207Q04HA	In your lessons, opportunities to promote the following skills: Respect for cultural diversity
+TC207Q05HA	In your lessons, opportunities to promote the following skills: Foreign languages
+TC207Q06HA	In your lessons, opportunities to promote the following skills: Critical thinking skills
+TC178Q01HA	In your lessons, do you include: Climate change and global warming
+TC178Q02HA	In your lessons, do you include: Global health (e.g. epidemics)
+TC178Q04HA	In your lessons, do you include: Migration (movement of people)
+TC178Q07HA	In your lessons, do you include: International conflicts
+TC178Q08HA	In your lessons, do you include: Hunger or malnutrition in different parts of the world
+TC178Q09HA	In your lessons, do you include: Causes of poverty
+TC178Q12HA	In your lessons, do you include: Equality between men and women in different parts of the world
+TC184Q01HA	Does your school have a policy concerning the use of digital devices for teaching?
+TC176Q01HA	How often involved in: Reading emails
+TC176Q02HA	How often involved in: <Chat on line> (e.g. <Whatsapp>, <Messenger>)
+TC176Q03HA	How often involved in: Reading online news
+TC176Q05HA	How often involved in: Searching information online to learn about a particular topic
+TC176Q06HA	How often involved in: Taking part in online group discussions or forums
+TC176Q07HA	How often involved in: Searching for practical information online (e.g. schedules, events, tips, recipes)
+TC172Q01HA	Best describes how you read books
+TC173Q01HA	Best describes how you read the news (e.g. politics, culture, sport, local news)
+TC186Q01HA	Country of birth
+TC188Q01HA	Studied in a country other than [country of test]
+TC206Q01HA	Your education and training as a teacher: Have you received training on intercultural communication?
+TC206Q02HA	Your education and training as a teacher: Have you received training on conflict resolution strategies?
+TC206Q03HA	Your education and training as a teacher: Have you received training on the role education can play in confronting [...]
+TC206Q04HA	Your education and training as a teacher: Have you studied culturally-responsive teaching approaches and techniques?
+TC206Q05HA	Your education and training as a teacher: Have you received training on [...] teaching in multi-cultural classrooms?
+TC185Q01HA	Current need for professional development: Knowledge and understanding of my subject field(s)
+TC185Q02HA	Current need for professional development: Pedagogical competencies in teaching my subject field(s)
+TC185Q03HA	Current need for professional development: Knowledge of the curriculum
+TC185Q04HA	Current need for professional development: Student assessment practices
+TC185Q05HA	Current need for professional development: ICT (information and communication technology) skills for teaching
+TC185Q06HA	Current need for professional development: Student behaviour and classroom management
+TC185Q07HA	Current need for professional development: School management and administration
+TC185Q08HA	Current need for professional development: Approaches to individualised learning
+TC185Q09HA	Current need for professional development: Teaching students with special needs
+TC185Q10HA	Current need for professional development: Teaching in a multicultural or multilingual setting
+TC185Q11HA	Current need for professional development: Teaching cross-curricular skills (e.g. problem solving, learning-to-learn)
+TC185Q12HA	Current need for professional development: Student career guidance and counselling
+TC185Q13HA	Current need for professional development: Internal evaluation or self-evaluation of schools
+TC185Q14HA	Current need for professional development: Use of evaluation results
+TC185Q15HA	Current need for professional development: Teacher-parent cooperation
+TC185Q16HA	Current need for professional development: Second language teaching
+TC185Q17HA	Current need for professional development: Communicating with people from different cultures or countries
+TC185Q18HA	Current need for professional development: Teaching about equity and diversity
+TC193Q01HA	During the last 12 months, participated in: Courses/workshops [...]
+TC193Q02HA	During the last 12 months, participated in: Education conferences or seminars [...]
+TC193Q03HA	During the last 12 months, participated in: Observation visits to other schools
+TC193Q04HA	During the last 12 months, participated in: Observation visits to business premises, public organisations, [...]
+TC193Q05HA	During the last 12 months, participated in: In-service training courses in business premises, public organisations [...]
+TC020Q01NA	During the last 12 months, participated in: Qualification programme (e.g. a <degree programme>)
+TC020Q02NA	During the last 12 months, participated in: Participation in a network of teachers formed specifically for the [...]
+TC020Q03NA	During the last 12 months, participated in: Individual or collaborative research on a topic of interest to you [...]
+TC020Q04NA	During the last 12 months, participated in: Mentoring and/or peer observation and coaching, as part of a formal [...]
+TC020Q05NA	During the last 12 months, participated in: Reading professional literature (e.g. journals, evidence-based papers [...])
+TC020Q06NA	During the last 12 months, participated in: [...] informal dialogue with your colleagues on how to improve your teaching
+TC199Q01HA	In your teaching, to what extent can you do: Get students to believe they can do well in school work
+TC199Q02HA	In your teaching, to what extent can you do: Help my students value learning
+TC199Q03HA	In your teaching, to what extent can you do: Craft good questions for my students
+TC199Q04HA	In your teaching, to what extent can you do: Control disruptive behaviour in the classroom
+TC199Q05HA	In your teaching, to what extent can you do: Motivate students who show low interest in school work
+TC199Q06HA	In your teaching, to what extent can you do: Make my expectations about student behaviour clear
+TC199Q07HA	In your teaching, to what extent can you do: Help students think critically
+TC199Q08HA	In your teaching, to what extent can you do: Get students to follow classroom rules
+TC199Q09HA	In your teaching, to what extent can you do: Calm a student who is disruptive or noisy
+TC199Q10HA	In your teaching, to what extent can you do: Use a variety of assessment strategies
+TC199Q11HA	In your teaching, to what extent can you do: Provide an alternative explanation for example when students are confused
+TC199Q12HA	In your teaching, to what extent can you do: Implement alternative instructional strategies in my classroom
+TC046Q04NA	How often: Exchange teaching materials with colleagues
+TC046Q05NA	How often: Engage in discussions about the learning development of specific students
+TC046Q06NA	How often: Work with other teachers [...] to ensure common standards in evaluations for assessing student progress
+TC046Q07NA	How often: Attend team conferences
+TC028Q01NA	School's instruction hindered by: A lack of teaching staff.
+TC028Q02NA	School's instruction hindered by: Inadequate or poorly qualified teaching staff.
+TC028Q03NA	School's instruction hindered by: A lack of assisting staff.
+TC028Q04NA	School's instruction hindered by: Inadequate or poorly qualified assisting staff.
+TC028Q05NA	School's instruction hindered by: A lack of educational material [...]
+TC028Q06NA	School's instruction hindered by: Inadequate or poor quality educational material [...]
+TC028Q07NA	School's instruction hindered by: A lack of physical infrastructure [...]
+TC028Q08NA	School's instruction hindered by: Inadequate or poor quality physical infrastructure [...]
+TC169Q01HA	This school year, how often used for teaching: Tutorial software or practice programmes
+TC169Q02HA	This school year, how often used for teaching: Digital learning games
+TC169Q03HA	This school year, how often used for teaching: Word-processors or presentation software [...]
+TC169Q04HA	This school year, how often used for teaching: Spreadsheets (e.g. <Microsoft Excel>)
+TC169Q05HA	This school year, how often used for teaching: Multimedia production tools [...]
+TC169Q06HA	This school year, how often used for teaching: Concept mapping software (e.g. <Inspiration>, <Webspiration>)
+TC169Q07HA	This school year, how often used for teaching: Data logging and monitoring tools
+TC169Q08HA	This school year, how often used for teaching: Simulations and modelling software
+TC169Q09HA	This school year, how often used for teaching: Social media (e.g. <Facebook>, <Twitter>)
+TC169Q10HA	This school year, how often used for teaching: Communication software (e.g. email, blogs)
+TC169Q11HA	This school year, how often used for teaching: Computer-based information resources [...]
+TC169Q12HA	This school year, how often used for teaching: Interactive digital learning resources (e.g. learning objects)
+TC169Q13HA	This school year, how often used for teaching: Graphing or drawing software
+TC169Q14HA	This school year, how often used for teaching: E-portfolios
+TC054Q01NA	Assessing student learning, how often: I develop and administer my own assessment.
+TC054Q02NA	Assessing student learning, how often: I administer a <standardised test>.
+TC054Q03NA	Assessing student learning, how often: I have individual students answer questions in front of the class.
+TC054Q04NA	Assessing student learning, how often: Provide written feedback on student work in addition to a <mark [...]>.
+TC054Q05NA	Assessing student learning, how often: I let students judge their own progress.
+TC054Q06NA	Assessing student learning, how often: I observe students when working [...] and provide immediate feedback.
+TC054Q07NA	Assessing student learning, how often: I collect data from classroom assignments or home work.
+TC192Q01HA	How often in your lessons: I tell students how they are performing in my course.
+TC192Q02HA	How often in your lessons: I give students feedback on their strengths in my course.
+TC192Q03HA	How often in your lessons: I tell students in which areas they can still improve.
+TC192Q04HA	How often in your lessons: I tell students how they can improve their performance.
+TC192Q05HA	How often in your lessons: I advise students on how to reach their learning goals.
+TC209Q01HA	Teach in multicultural environments: I can cope with the challenges of a multicultural classroom.
+TC209Q02HA	Teach in multicultural environments: I can adapt my teaching to the cultural diversity of students.
+TC209Q05HA	Teach in multicultural environments: I can take care that students with and without migrant background work together.
+TC209Q06HA	Teach in multicultural environments: I can raise awareness for cultural differences amongst the students.
+TC209Q09HA	Teach in multicultural environments: I can contribute to reducing ethnic stereotypes between the students.
+TC208Q02HA	Opinion shared by teachers: It is important for students to learn that people from other cultures can have [...]
+TC208Q03HA	Opinion shared by teachers: Respecting other cultures is something that students should learn as early as possible.
+TC208Q07HA	Opinion shared by teachers: In the classroom, it is important that students of different origins recognize the [...]
+TC208Q08HA	Opinion shared by teachers: When there are conflicts between students of different origins, they should be [...]
+TC196Q02HA	Agree: Immigrant children should have the same opportunities for education that other children in the country have.
+TC196Q03HA	Agree: Immigrants who live in a country for several years should have the opportunity to vote in elections.
+TC196Q04HA	Agree: Immigrants should have the opportunity to continue their own customs and lifestyle.
+TC196Q05HA	Agree: Immigrants should have all the same rights that everyone else in the country has.
+TC203Q01HA	Proportion of your teacher education dedicated to: <Reading literacy> [...]
+TC203Q02HA	Proportion of your teacher education dedicated to: Pedagogy of <reading literacy> [...]
+TC203Q03HA	Proportion of your teacher education dedicated to: General pedagogical knowledge [...]
+TC150Q01HA	In your formal education and/or training, did you study: <Test language>
+TC150Q02HA	In your formal education and/or training, did you study: Pedagogy/teaching <test language>
+TC150Q03HA	In your formal education and/or training, did you study: Educational psychology
+TC150Q04HA	In your formal education and/or training, did you study: Remedial <test language>
+TC150Q05HA	In your formal education and/or training, did you study: Theoretical models and processes of reading
+TC150Q06HA	In your formal education and/or training, did you study: Special education
+TC150Q07HA	In your formal education and/or training, did you study: Pedagogy/teaching <test language> as a second [...] language
+TC150Q08HA	In your formal education and/or training, did you study: Assessment methods in reading comprehension
+TC204Q01HA	During the last 12 months, proportion of professional development dedicated to: <Reading Literacy> [...]
+TC204Q02HA	During the last 12 months, proportion of professional development dedicated to: Pedagogy of <reading literacy> [...]
+TC204Q03HA	During the last 12 months, proportion of professional development dedicated to: General pedagogical knowledge [...]
+TC163Q01HA	How important do you consider teaching the following skills in your lessons? Skills related to reading comprehension
+TC163Q02HA	How important do you consider teaching the following skills in your lessons? Skills related to writing
+TC163Q03HA	How important do you consider teaching the following skills in your lessons? Skills related to listening comprehension
+TC163Q04HA	How important do you consider teaching the following skills in your lessons? Skills related to oral communication
+TC202Q01HA	How often in your <test language lessons>: I tailor my teaching to meet the needs of my students.
+TC202Q02HA	How often in your <test language lessons>: I provide individual help when a student has difficulties understanding [...]
+TC202Q03HA	How often in your <test language lessons>: I change the structure of my lesson on a topic that most students [...]
+TC202Q04HA	How often in your <test language lessons>: I provide individual support for advanced students.
+TC202Q05HA	How often in your <test language lessons>: I tell students how they are performing in my course.
+TC202Q06HA	How often in your <test language lessons>: I give students feedback on their strengths in my course.
+TC202Q07HA	How often in your <test language lessons>: I tell students in which areas they can still improve.
+TC202Q08HA	How often in your <test language lessons>: I tell students how they can improve their performance.
+TC202Q09HA	How often in your <test language lessons>: I advise students on how to reach their learning goals.
+TC170Q01HA	How often in your <test language lessons>: Many students don't listen to what I say.
+TC170Q02HA	How often in your <test language lessons>: There is noise and disorder.
+TC170Q03HA	How often in your <test language lessons>: I have to wait a long time for students to quiet down.
+TC170Q04HA	How often in your <test language lessons>: Students cannot work well.
+TC170Q05HA	How often in your <test language lessons>: Students don't start working for a long time after the lesson begins.
+TC171Q01HA	How often in your <test language lessons>: I set clear goals for the students' learning.
+TC171Q02HA	How often in your <test language lessons>: I ask questions to check whether students have understood what was taught.
+TC171Q03HA	How often in your <test language lessons>: At the beginning [...], I present a short summary of the previous lesson.
+TC171Q04HA	How often in your <test language lessons>: I tell students what they have to learn.
+TC156Q05IA	In your <test language lessons>, how often: I encourage students to express their opinion about a text.
+TC156Q06IA	In your <test language lessons>, how often: I help students relate the stories they read to their lives.
+TC156Q07IA	In your <test language lessons>, how often: I show students how the information in texts builds on what they [...]
+TC156Q08IA	In your <test language lessons>, how often: I pose questions that motivate students to participate actively.
+TC157Q02HA	How often do you ask students to: Identify the main ideas of what they have read
+TC157Q03HA	How often do you ask students to: Explain or support their understanding of what they have read
+TC157Q07HA	How often do you ask students to: Draw inferences based on what they have read
+TC157Q08HA	How often do you ask students to: Describe the style or structure of the text they have read
+TC157Q09HA	How often do you ask students to: Determine the author's perspective or purpose
+TC167Q01HA	Within the last month, have digital devices [...] been used in your teaching of <test language lessons>?
+TC168Q01HA	During the last month, asked students to use digital devices for: Searching for subject-related information online
+TC168Q02HA	During the last month, asked students to use digital devices for: Working on extended projects (e.g. over several weeks)
+TC168Q03HA	During the last month, asked students to use digital devices for: Working on short assignments (e.g. within a week)
+TC168Q04HA	During the last month, asked students to use digital devices for: Working at their individual pace
+TC168Q05HA	During the last month, asked students to use digital devices for: Working on individualised material
+TC168Q06HA	During the last month, asked students to use digital devices for: Planning [...] learning activities for themselves
+TC168Q07HA	During the last month, asked students to use digital devices for: Submitting homework or classwork
+TC168Q08HA	During the last month, asked students to use digital devices for: Practicing or drilling
+TC168Q09HA	During the last month, asked students to use digital devices for: Coordinating schoolwork with other students
+TC168Q10HA	During the last month, asked students to use digital devices for: Following up on missed lessons or material
+TC168Q11HA	During the last month, asked students to use digital devices for: Reading texts electronically instead of paper versions
+TC168Q12HA	During the last month, asked students to use digital devices for: Writing a text such as a blog or a wiki
+TC031Q04NA	Teacher cooperation: We discuss the achievement requirements for <test language lessons> when setting tests.
+TC031Q11NA	Teacher cooperation: We discuss the criteria we use to grade written tests.
+TC031Q13NA	Teacher cooperation: We exchange tasks for lessons and homework that cover a range of different levels of difficulty.
+TC031Q14NA	Teacher cooperation: I prepare [...] units with my fellow teachers of <test language lessons>.
+TC031Q15NA	Teacher cooperation: We discuss ways to teach learning strategies and techniques to our students.
+TC031Q18NA	Teacher cooperation: My fellow teachers of <test language lessons> benefit from my specific skills and interests.
+TC031Q20NA	Teacher cooperation: We discuss ways to better identify students' individual strengths and weaknesses.
+TC039Q01NA	Is there any formal curriculum for <test language lessons> in <national modal grade for 15-year-olds>?
+TC043Q01NA	Are parents informed about the availability and content of the <test language lessons> curriculum [...]?
+TC182Q01HA	Does your school have special programmes for: Students with special needs
+TC182Q02HA	Does your school have special programmes for: Students whose <heritage language> is different from <test language>
+TC182Q03HA	Does your school have special programmes for: Students who struggle with reading
+COBN_T	Country of birth national categories - Teacher
+EMPLTIM	Teacher employment time - dichotomous
+OTT1	Originally trained teacher (strict definition): standard teacher training
+OTT2	Originally trained teacher (wide definition): standard, in-service, or work-based teacher training
+STTMG1	Overlap between initial education and teaching the modal grade - Reading, writing and literature
+STTMG2	Overlap between initial education and teaching the modal grade - Mathematics
+STTMG3	Overlap between initial education and teaching the modal grade - Science
+STTMG4	Overlap between initial education and teaching the modal grade - Technology
+STTMG5	Overlap between initial education and teaching the modal grade - Social Studies
+STTMG6	Overlap between initial education and teaching the modal grade - Modern foreign languages
+STTMG7	Overlap between initial education and teaching the modal grade - Ancient languages
+STTMG8	Overlap between initial education and teaching the modal grade - Arts
+STTMG9	Overlap between initial education and teaching the modal grade - Physical education
+STTMG10	Overlap between initial education and teaching the modal grade - Religion and-or ethics
+STTMG11	Overlap between initial education and teaching the modal grade - Practical and vocational skills
+NTEACH1	Subject included in initial training: Reading, writing and literature
+NTEACH2	Subject included in initial training: Mathematics
+NTEACH3	Subject included in initial training: Science
+NTEACH4	Subject included in initial training: Technology
+NTEACH5	Subject included in initial training: Social studies
+NTEACH6	Subject included in initial training: Modern foreign languages
+NTEACH7	Subject included in initial training: Ancient languages (e.g. Latin)
+NTEACH8	Subject included in initial training: Arts
+NTEACH9	Subject included in initial training: Physical education
+NTEACH10	Subject included in initial training: Religion and\or ethics
+NTEACH11	Subject included in initial training: Practical and vocational skills
+TCSTAFFSHORT	Teacher's view on staff shortage (WLE)
+TCEDUSHORT	Teacher's view on educational material shortage (WLE)
+COLT	Test language teacher collaboration (WLE)
+EXCHT	Exchange and co-ordination for teaching (WLE)
+SATJOB	Teacher's satisfaction with the current job environment (WLE)
+SATTEACH	Teacher's satisfaction with teaching profession (WLE)
+SEFFCM	Teacher's self-efficacy in classroom management (WLE)
+SEFFREL	Teacher's self-efficacy in maintaining positive relations with students (WLE)
+SEFFINS	Teacher's self-efficacy in instructional settings (WLE)
+TCOTLCOMP	Opportunity to learn (OTL) aspects of reading comprehension (WLE)
+TCSTIMREAD	Teacher's stimulation of reading engagement (WLE)
+TCSTRATREAD	Teacher's initiation of reading strategies (WLE)
+TCICTUSE	Teacher's use of specific ICT applications (WLE)
+TCDISCLIMA	Disciplinary climate in test language lessons (WLE)
+TCDIRINS	Direct teacher's instruction (WLE)
+FEEDBACK	Feedback provided by the teachers (WLE)
+ADAPTINSTR	Student assessment/use (adaption of instruction) (WLE)
+FEEDBINSTR	Feedback provided by the teachers (WLE)
+TCATTIMM	Teacher's attitudes towards immigrants (WLE)
+GCTRAIN	Teacher's training on global competence (WLE)
+TCMCEG	Teachers' multicultural and egalitarian beliefs (WLE)
+GCSELF	Teacher's self-efficacy in multicultural environments (WLE)
+W_SCHGRNRABWT	GRADE NONRESPONSE ADJUSTED SCHOOL BASE WEIGHT
+W_FSTUWT_SCH_SUM	Sum of W_FSTUWT
+VER_DAT	Date of the database creation
