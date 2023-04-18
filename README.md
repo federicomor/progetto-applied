@@ -21,3 +21,8 @@ Quindi è un modo per lavorare sempre con le versioni aggiornate dei file, e ved
 - *src* per i file di analisi effettiva, codice R, ecc
 - *data*, well, per i dataset, file csv, ecc
 - *showcase* per cose carine da includere nelle slide o nel potenziale poster, quindi grafici belli, interessanti, informativi, ecc, come anche solo promemoria
+
+# Recap termini
+- commit: confermare le proprie modifiche ai file, e aggiungere un piccolo commento/spiegazione
+- push: caricare, sul repository ufficiale su github, le proprie modifiche
+- pull: scaricare, dal repository ufficiale su github, i file aggiornati
