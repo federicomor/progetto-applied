@@ -663,7 +663,7 @@ for(i in 1:2){
 for (col in cat_curr_vec){
   print(paste(col,what_is[[col]]))
 }
-
+# arriva
 ```
 
 ### Scores plot
