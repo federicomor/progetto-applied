@@ -224,8 +224,11 @@ for (col in cat_curr_vec){
 
 ### Scores plot
 ```{r}
+i=0
 for (x in unique(df$CNT)) {
   # print(x)
+  if (i%%2==0) { par(mfrow=c(1,2))  }
+  i=i+1
   plot(pca$scores[which(df$CNT==x),1:2],main = paste(x))
   abline(h=0, v=0, lty=2, col='grey')
   points(0,0,pch=19,cex=1.4,col="orange")
@@ -309,8 +312,11 @@ for (col in cat_curr_vec){
 
 ### Scores plot
 ```{r}
+i=0
 for (x in unique(df$CNT)) {
   # print(x)
+  if (i%%2==0) { par(mfrow=c(1,2))  }
+  i=i+1
   plot(pca$scores[which(df$CNT==x),1:2],main = paste(x))
   abline(h=0, v=0, lty=2, col='grey')
   points(0,0,pch=19,cex=1.4,col="orange")
