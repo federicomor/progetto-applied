@@ -229,10 +229,12 @@ for (x in unique(df$CNT)) {
   # print(x)
   if (i%%2==0) { par(mfrow=c(1,2))  }
   i=i+1
-  plot(pca$scores[which(df$CNT==x),1:2],main = paste(x))
+  plot(pca$scores[which(df$CNT==x),1:2],main = paste0(toupper(cat_curr_name),": ",x))
+       # xlab = paste(cat_curr_name,"Comp.1"),ylab = paste(cat_curr_name,"Comp.2"))
   abline(h=0, v=0, lty=2, col='grey')
   points(0,0,pch=19,cex=1.4,col="orange")
 }
+
 
 ```
 
@@ -317,7 +319,8 @@ for (x in unique(df$CNT)) {
   # print(x)
   if (i%%2==0) { par(mfrow=c(1,2))  }
   i=i+1
-  plot(pca$scores[which(df$CNT==x),1:2],main = paste(x))
+  plot(pca$scores[which(df$CNT==x),1:2],main = paste0(toupper(cat_curr_name),": ",x))
+       # xlab = paste(cat_curr_name,"Comp.1"),ylab = paste(cat_curr_name,"Comp.2"))
   abline(h=0, v=0, lty=2, col='grey')
   points(0,0,pch=19,cex=1.4,col="orange")
 }
@@ -414,10 +417,12 @@ for (x in unique(df$CNT)) {
   # print(x)
   if (i%%2==0) { par(mfrow=c(1,2))  }
   i=i+1
-  plot(pca$scores[which(df$CNT==x),1:2],main = paste(x))
+  plot(pca$scores[which(df$CNT==x),1:2],main = paste0(toupper(cat_curr_name),": ",x))
+       # xlab = paste(cat_curr_name,"Comp.1"),ylab = paste(cat_curr_name,"Comp.2"))
   abline(h=0, v=0, lty=2, col='grey')
   points(0,0,pch=19,cex=1.4,col="orange")
 }
+
 
 ```
 
@@ -503,10 +508,12 @@ for (x in unique(df$CNT)) {
   # print(x)
   if (i%%2==0) { par(mfrow=c(1,2))  }
   i=i+1
-  plot(pca$scores[which(df$CNT==x),1:2],main = paste(x))
+  plot(pca$scores[which(df$CNT==x),1:2],main = paste0(toupper(cat_curr_name),": ",x))
+       # xlab = paste(cat_curr_name,"Comp.1"),ylab = paste(cat_curr_name,"Comp.2"))
   abline(h=0, v=0, lty=2, col='grey')
   points(0,0,pch=19,cex=1.4,col="orange")
 }
+
 
 ```
 
@@ -592,7 +599,8 @@ for (x in unique(df$CNT)) {
   # print(x)
   if (i%%2==0) { par(mfrow=c(1,2))  }
   i=i+1
-  plot(pca$scores[which(df$CNT==x),1:2],main = paste(x))
+  plot(pca$scores[which(df$CNT==x),1:2],main = paste0(toupper(cat_curr_name),": ",x))
+       # xlab = paste(cat_curr_name,"Comp.1"),ylab = paste(cat_curr_name,"Comp.2"))
   abline(h=0, v=0, lty=2, col='grey')
   points(0,0,pch=19,cex=1.4,col="orange")
 }
@@ -679,10 +687,12 @@ for (x in unique(df$CNT)) {
   # print(x)
   if (i%%2==0) { par(mfrow=c(1,2))  }
   i=i+1
-  plot(pca$scores[which(df$CNT==x),1:2],main = paste(x))
+  plot(pca$scores[which(df$CNT==x),1:2],main = paste0(toupper(cat_curr_name),": ",x))
+       # xlab = paste(cat_curr_name,"Comp.1"),ylab = paste(cat_curr_name,"Comp.2"))
   abline(h=0, v=0, lty=2, col='grey')
   points(0,0,pch=19,cex=1.4,col="orange")
 }
+
 ```
 
 
