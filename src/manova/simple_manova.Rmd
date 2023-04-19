@@ -1,0 +1,131 @@
+---
+title: 'One-way MANOVA'
+output: 
+editor_options: 
+  chunk_output_type: inline
+---
+
+# PRELIMINARY STUFF
+
+```{r}
+#directories
+working_dir = "/Users/marcogalliani/Desktop/progetto-applied"
+complete_data_dir = "/Users/marcogalliani/Desktop/PISA-dataset/PISA_file_sav"
+clean_data_dir = "/Users/marcogalliani/Desktop/PISA-dataset"
+include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
+
+#including utilities
+source(include_dir)
+#importing the dataset
+data <- read.csv(file=paste(clean_data_dir,"/pisa-woNA.csv",sep=""))
+```
+
+```{r}
+#select only ICT moments fot the moment
+library(dplyr)
+data <- data %>% dplyr::select(all_of(c("CNT",stu_ICT,sch_ICT)))
+```
+
+```{r}
+# what column identify the group?
+p = dim(data)[2]
+p <- p-1
+
+data.feats = data
+data.feats$CNT <- NULL
+data$CNT<-as.factor(data$CNT)
+
+# Dimensions
+n = length(data$CNT) # total number of obs.
+num_groups    = table(data$CNT)  # number of obs. in each group
+countries = levels(data$CNT) # levels of the treatment
+g = length(countries)      # number of levels (i.e., of groups)
+```
+
+# **ONE-WAY MANOVA** 
+
+## Checking the assumptions 
+
+lol
+
+## Fitting the model
+
+One-way it's the only thing that makes sense in our situation
+
+```{r}
+fit = manova(as.matrix(data.feats) ~ data$CNT)
+summary.manova(fit, test="Wilks")
+```
+
+## Confidence intervals
+
+Computation of the intervals
+
+```{r}
+alpha <- 0.05
+k <- p*g*(g-1)/2
+qT <- qt(1-alpha/(2*k), n-g)
+#computing the pooled estimate of the covariance matrix
+W <- summary.manova(fit)$SS$Residuals
+
+#means
+mean_vector <- sapply(data.feats,mean)
+mean_vector <- as.array(mean_vector)
+
+#means by groups
+group_means <- aggregate(data.feats, by=list(data$CNT), FUN=mean)
+group_means$Group.1 <- NULL
+
+#computing confidence intervals
+inf <- array(0,dim=c(g-1,g,p))
+sup <- array(0,dim=c(g-1,g,p))
+mean_diff <- array(0,dim=c(g-1,g,p))
+
+#filling the confidence intervals
+for(i in 1:(g-1)){
+  for(j in (i+1):g){
+    for(k in 1:p){
+      #difference of means
+      mean_diff[i,j,k] <- group_means[i,k]-group_means[j,k]
+      #lower bound
+      inf[i,j,k] <- (group_means[i,k]-group_means[j,k])-
+                    qT * sqrt(diag(W)[k]/(n-g) * (1/num_groups[i]+1/num_groups[j]))
+      #upper bound
+      sup[i,j,k] <- (group_means[i,k]-group_means[j,k])+
+                    qT * sqrt(diag(W)[k]/(n-g) * (1/num_groups[i]+1/num_groups[j]))
+    }
+  }
+}
+```
+
+Plotting
+
+```{r,}
+#plotting by variables
+ylim <- 1.5
+
+countries <- unique(data$CNT)
+cnt_comb <- combn(unique(countries),2)
+diff_index <- paste(cnt_comb[1,],"vs",cnt_comb[2,]) 
+
+for(k in 1:p){
+  plot(c(1,g*(g-1)/2),ylim=c(-ylim,ylim), xlim=c(c(1,g*(g-1)/2)), pch='',
+       xlab='', ylab=paste('CI',k), 
+       main=paste('CI',colnames(data.feats)[k]),xaxt='n')
+ for(i in 1:(g-1)){
+  for(j in (i+1):g){
+    ind <- (i-1)*g-i*(i-1)/2+(j-i)
+    #plotting the mean
+    points(ind, mean_diff[i,j,k], pch=16); 
+    #plotting inf and sup
+    lines (c(ind,ind), c(inf[i,j,k],sup[i,j,k])); 
+    points(ind, inf[i,j,k], col=rainbow(g)[j], pch=16); 
+    points(ind, sup[i,j,k], col=rainbow(g)[i], pch=16); 
+    
+   }
+  }
+  abline(h=0)
+  axis(1, at=1:(g*(g-1)/2), labels=diff_index[1:(g*(g-1)/2)],las=2,lwd=0.)
+}
+
+```

@@ -52,9 +52,8 @@ teach_vars = c()
 # PREPROCESSING
 
 ```{r}
-working_dir = "/Users/marcogalliani/Desktop/PISA-dev-local"
-dataset_dir = "/Users/marcogalliani/Desktop/PISA-dev-local/data/PISA-dataset"
-setwd(working_dir)
+dataset_dir = "/Users/marcogalliani/Desktop/PISA-dataset/PISA_file_sav"
+working_dir = "/Users/marcogalliani/Desktop/progetto-applied"
 ```
 
 Data loading
@@ -204,8 +203,8 @@ vis_miss(europe_woNA,warn_large_data = FALSE)
 # SAVING DATA
 
 ```{r}
-saving_dir = paste(working_dir,"/data/pisa-woNA.csv",sep="")
-write.csv(europe_woNA,file=saving_dir)
+#saving_dir = paste(working_dir,"/data/pisa-woNA.csv",sep="")
+#write.csv(europe_woNA,file=saving_dir)
 ```
 
 # OBSERVATIONS AND TODO

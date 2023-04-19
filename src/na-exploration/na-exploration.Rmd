@@ -52,8 +52,8 @@ selected_countries = c("HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","IRL","LT
 # PREPROCESSING
 
 ```{r}
-working_dir = "/Users/marcogalliani/Desktop/PISA-dev-local"
-dataset_dir = "/Users/marcogalliani/Desktop/PISA-dev-local/data/PISA-dataset"
+working_dir = "/Users/marcogalliani/Desktop/progetto-applied"
+dataset_dir = "/Users/marcogalliani/Desktop/PISA-dataset/PISA_file_sav"
 
 ```
 
@@ -147,8 +147,8 @@ vis_miss(europe_woNA,warn_large_data = FALSE)
 # SAVING DATA
 
 ```{r,}
-saving_dir = paste(working_dir,"/data/pisa-woNA.csv",sep="")
-write.csv(europe_woNA,file=saving_dir)
+# saving_dir = paste(working_dir,"/data/pisa-woNA.csv",sep="")
+# write.csv(europe_woNA,file=saving_dir)
 ```
 
 # OBSERVATIONS AND TODO
