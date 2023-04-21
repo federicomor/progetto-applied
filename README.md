@@ -5,7 +5,7 @@ Progetto Applied Statistics
 1. Scaricate github desktop.
 2. Fate il "clone" di questo repository in una vostra cartella locale.
 
-I file qui online sono quelli ufficiali. Ognuno poi nel proprio pc ha questi file ufficiali a cui eventualmente può fare modifiche. E github permette di gestire queste modifiche ai file in modo molto più easy:
+I file qui online sono quelli ufficiali. Ognuno poi nel proprio pc ha questi file ufficiali a cui eventualmente può fare modifiche, che verranno poi "sincronizzate" con i file qui presenti. E github permette di gestire queste modifiche ai file in modo molto più easy:
 
 - quando ritenete definitive le modifiche che fate a certi file, e quindi volete caricarle qui nei file ufficiali, aprite l'app di Github Desktop e fate "push" di quelle modifiche (prima di fare push chiederà di fare commit, cioè di commentare/spiegare brevemente le modifiche fatte). 
 
