@@ -148,7 +148,7 @@ col.ramp = hcl.colors(len, palette = "viridis")
 
 ## SWBP for states
 ```{r}
-boxplot(df$SWBP ~ df$CNT,las=2, col=col.ramp)
+boxplot(df$SWBP ~ df$CNT,las=2, col=col.ramp, main="SWBP for states, by-school dataset")
 ```
 
 ## SWBP for schools in states
@@ -158,6 +158,35 @@ unique(df$CNT)
 for(state in states){
 	plot(df$SWB[which(df$CNT==state)] ~ df$schID[which(df$CNT==state)], main=paste("SWBP for the schools in",state))
 }
+```
+
+## Comparison of the means in states
+```{r}
+psi=c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+for (val in psi){
+	print(what_is[[val]])
+}
+# pos_val =c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","SWBP","RESILIENCE","BELONG","PERFEED")
+# neg_val =c("GFOFAIL","BEINGBULLIED")
+
+# plot(df$SWB[which(df$CNT==state)] ~ df$schID[which(df$CNT==state)], main=paste("SWBP for the schools in",state))
+vec_medie = rep(0,length(unique(states)))
+it=0
+for(state in states){
+	vec_medie[it] = mean(df$SWB[which(df$CNT==state)])
+	it=it+1
+}
+length(vec_medie)
+length(states)
+delta=1/20
+plot(1:length(unique(states)),vec_medie, main="SWBP mean in states, by-school dataset",
+	 ylim=c(min(vec_medie),max(vec_medie)+delta), col=col.ramp, pch=19)
+x=1
+for(state in states){
+	text(x,vec_medie[x]+delta,state)
+	x=x+1
+}
+states
 ```
 
 
