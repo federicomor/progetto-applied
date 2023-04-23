@@ -1,6 +1,8 @@
 ---
 title: "R Notebook"
 output: 
+editor_options: 
+  chunk_output_type: inline
 ---
 
 # PRELIMINARY STUFF
@@ -31,7 +33,7 @@ stu_WB = c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE",
 #Professori
 stu_PROF = c("TEACHINT","TEACHSUP","STIMREAD")
 #School
-stu_SCH = c("CNTSCHID","PERCOMP","PERCOOP","ICTSCH")
+stu_SCH = c("PERCOMP","PERCOOP","ICTSCH")
 
 #all together
 stu_vars = c(stu_GENDER,stu_ICT,stu_FAM,stu_CULT,stu_WB,stu_PROF,stu_SCH)
@@ -89,15 +91,28 @@ colnames(pisa_by_sch)
 TO BE FIXED
 
 ```{r}
-pisa_by_sch <- pisa_by_sch %>% group_by(pisa_by_sch$CNTSCHID,pisa_by$CNT) %>% summarise_at(vars(sch_vars),list(name=mean))  
-
-dim(pisa_by_sch)
-colnames(pisa_by_sch)
+pisa_by_school <-aggregate(x = pisa_by_sch, by= list(pisa_by_sch$CNTSCHID,pisa_by_sch$CNT), FUN=mean)
 ```
 
 
 ```{r}
-pisa_by_sch["CNT"] <- pisa_data_woNA$CNT[pisa_data_woNA$CNTSCHID==pisa_by_sch$CNTSCHID]
-
-length(levels(as.factor(pisa_data_woNA$CNTSCHID))) 
+dim(pisa_by_school)
+colnames(pisa_by_school)
+head(pisa_by_school)
+pisa_by_school[stu_GENDER]
 ```
+```{r}
+pisa_by_school <- pisa_by_school %>% select(-starts_with("CNT")) 
+pisa_by_school <- pisa_by_school %>% select(-starts_with("x")) 
+pisa_by_school_final <- pisa_by_school
+colnames(pisa_by_school_final)[c(1,2,3)]<-c("schID","CNT","gender_prop")
+colnames(pisa_by_school_final)
+
+```
+```{r}
+saving_dir = paste(working_dir,"/pisa-woNA_school_final.csv",sep="")
+write.csv(pisa_by_school_final,file=saving_dir)
+```
+
+
+
