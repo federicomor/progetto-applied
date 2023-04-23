@@ -189,5 +189,23 @@ for(state in states){
 states
 ```
 
+```{r}
+# install.packages("pracma")
+library(pracma)
+len_states=length(states)
+len_psi=length(psi)
+A=matrix(nrow = len_states, ncol = len_psi)
+# A[,1]=states # morally
+
+
+for(i in 1:len_states){
+	for(j in 1:len_psi){
+		A[i,j]=mean(df[which(df$CNT==states[i]),psi[j]])
+	}
+}
+andrewsplot(A, f=as.factor(states), style = "pol", scaled = FALSE, npts = 101)
+andrewsplot(A, f=as.factor(states), style = "cart", scaled = FALSE, npts = 101)
+# ci fosse la legenda, ma andrewsplot non sembra implementarla, quindi i colori boh
+```
 
 
