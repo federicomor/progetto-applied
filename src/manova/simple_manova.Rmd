@@ -2,7 +2,7 @@
 title: 'One-way MANOVA'
 output: 
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 # PRELIMINARY STUFF
@@ -185,6 +185,7 @@ mean_list = list()
 for(i in 1:(g-1)) {
   for(j in (i+1):g) {
     ind <- (i-1)*g-i*(i-1)/2+(j-i)
+    print(ind)
     inf_list[ind] <- list(m_list[[i]]- m_list[[j]] - qT * sqrt( diag(W)/(n-g)
                                                                 *(1/n_list[[i]]+1/n_list[[j]])))
     mean_list[ind]<-list(m_list[[i]]- m_list[[j]])
@@ -197,9 +198,10 @@ CI = list()
 for(i in 1:ind){
   CI[i] <- list(cbind(inf = inf_list[[i]],mean = mean_list[[i]], sup = sup_list[[i]]))
 }
-print("CONFIDENCE INTERVALS")
-CI
+```
 
+
+```{r, warning=FALSE, message=FALSE}
 # Now we have a complete frame (intervals for all the components of tau_i)
 
 # Comment
@@ -210,43 +212,47 @@ CI
 # Plot: different panels -> different features
 
 
-for(j in 1:p){
-  group_ordered <- with(data,                       # Order boxes by median
-                      reorder(data$label,
-                              data.feats[,j],
-                              mean))
-  boxplot(data.feats[,j]~group_ordered, main=paste(colnames(data.feats)[j]),las=2,
-          ylim=c(round(min(data.feats[,j])),
-          round(max(data.feats[,j]))), col = rainbow(g))
-   abline(h=0)
-}
-#### ADAPT YLIM
-ylim = 15
+
 ### cambia nome titolo
 for(k in 1:p){
-  plot(c(1,g*(g-1)/2), xlim=c(c(1,g*(g-1)/2)), pch='',ylim=c(-2,5),
-       xlab='pairs treat', ylab=paste('CI tau',colnames(data.feats)[k]), main=paste('CI tau',colnames(data.feats)[k]))
+  x11()
+  par(mfrow=c(2,1))
+   # Order boxes by median
+  group_ordered <- with(data,
+                        reorder(data$label,data.feats[,k],mean))
   
- for(i in 1:(g-1)) {
-  for(j in (i+1):g) {
-    ind <- (i-1)*g-i*(i-1)/2+(j-i)
-    
-    lines (c(ind,ind), c(CI[[ind]][k,1],CI[[ind]][k,2])); 
-    points(ind, mg[i,k]-mg[j,k], pch=16); 
-    points(ind, CI[[ind]][k,1], col=rainbow(g)[j], pch=16); 
-    points(ind, CI[[ind]][k,2], col=rainbow(g)[i], pch=16); 
-   }
-  }
+  boxplot(data.feats[,k]~group_ordered, main=paste(colnames(data.feats)[k]),las=2,
+        ylim=c(round(min(data.feats[,k])),
+        round(max(data.feats[,k]))), col = rainbow(g))
   abline(h=0)
+  plot(c(1,g*(g-1)/2), xlim=c(c(1,g*(g-1)/2)), pch='',ylim=c(min(unlist(CI)),max(unlist(CI))),
+     xlab='pairs treat', ylab=paste('CI tau',colnames(data.feats)[k]),
+     main=paste('CItau',colnames(data.feats)[k]))
+    abline(h=0)
+
+ for(i in 1:(g-1)) {
+   flag=0
+     for(j in (i+1):g) {
+        ind <- (i-1)*g-i*(i-1)/2+(j-i)
+        ii = which( levels(group_ordered)==treat[i])
+        jj = which( levels(group_ordered)==treat[j])
+        ind2 <- (ii-1)*g-ii*(ii-1)/2+(jj-ii)
+        if(CI[[ind2]][k,1]*CI[[ind2]][k,3]<0 && flag==0){
+          flag=1
+            lines (c(ind,ind), c(CI[[ind2]][k,1],CI[[ind2]][k,3])); 
+            #points(ind, mg[ii,k]-mg[jj,k], pch=16); 
+            points(ind, CI[[ind2]][k,1], col=rainbow(g)[jj], pch=16); 
+            points(ind, CI[[ind2]][k,2], col="black", pch=16); 
+            points(ind, CI[[ind2]][k,3], col=rainbow(g)[ii], pch=16); 
+        }
+
+     }
+  }
+
 }
-  
+      
 # Comment
 #   If no one contains 0 it means that every group has relevance in every feature.
 ```
-# ordered by mean
-```{r}
 
-
-
-```
 
