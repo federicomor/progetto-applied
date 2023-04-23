@@ -29,7 +29,7 @@ library(mvnormtest)
 ```{r}
 #select only ICT moments fot the moment
 library(dplyr)
-data <- data %>% dplyr::select(all_of(c("CNT",stu_WB)))
+data <- data %>% dplyr::select(all_of(c("CNT",stu_PROF)))
 ```
 
 # **1.** Data
@@ -157,7 +157,7 @@ summary.aov(fit,test="Wilks")
 We want to know the level (of the labels) that introduces the difference.
 We have to create g*(g-1)/2 intervals.
 ```{r, warning=FALSE, message=FALSE}
-alpha = 0.1
+alpha = 0.0001
 k     = p*g*(g-1)/2
 qT    = qt(1-alpha/(2*k), n-g)
 
@@ -211,7 +211,11 @@ CI
 
 
 for(j in 1:p){
-  boxplot(data.feats[,j]~data$label, main=paste(colnames(data.feats)[j]),
+  group_ordered <- with(data,                       # Order boxes by median
+                      reorder(data$label,
+                              data.feats[,j],
+                              mean))
+  boxplot(data.feats[,j]~group_ordered, main=paste(colnames(data.feats)[j]),las=2,
           ylim=c(round(min(data.feats[,j])),
           round(max(data.feats[,j]))), col = rainbow(g))
    abline(h=0)
@@ -239,3 +243,10 @@ for(k in 1:p){
 # Comment
 #   If no one contains 0 it means that every group has relevance in every feature.
 ```
+# ordered by mean
+```{r}
+
+
+
+```
+
