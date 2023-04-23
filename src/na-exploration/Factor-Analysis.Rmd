@@ -7,15 +7,24 @@ editor_options:
 
 source: <https://www.geo.fu-berlin.de/en/v/soga/Geodata-analysis/factor-analysis/A-simple-example-of-FA/index.htmlZ>
 ```{r}
-working_dir ="C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/progetto-applied"
-dataset_dir = "../data"
-include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
+# working_dir ="C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/progetto-applied"
+# dataset_dir = "../data"
+## dovrebbe funzionare anche senza dare il percorso completo ma usando solo questo:
+dataset_dir = "../../data/"
+## cioè usaando la posizione relativa dal file
+## perché vuol dire vai due cartelle indietro da qui, e poi in data
+
+## e quindi anche qui
+# include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
+include_dir = "../include/Utilities.R"
+
 #including utilities
 source(include_dir)
 #importing the dataset
 #including utilities
-pisa_data <- read.csv(file=paste(working_dir,"/data/pisa-woNA_school_final.csv",sep=""))
+pisa_data <- read.csv(file=paste0(dataset_dir,"/pisa-woNA_school_final.csv",sep=""))
 ```
+
 ```{r}
 #variabili finite nel dataset
 tec=c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
@@ -39,10 +48,26 @@ pisa.fa
 pisa.pca <-princomp(pisa_data[,4:p])
 pisa.fa$loadings
 pisa.load = pisa.pca$loadings
+
 x11()
-par(mfcol=c(5,1))
-for(i in 1:5) barplot(pisa.load[,i] ,las=2,ylim = c(-1, 1), main=paste("PC Loadings",i))
+par(mfcol=c(3,1))
+for(i in 1:2) barplot(pisa.load[,i] ,las=2,ylim = c(-1, 1), main=paste("PC Loadings",i))
+x11()
+par(mfcol=c(3,1))
+for(i in 3:4:5) barplot(pisa.load[,i] ,las=2,ylim = c(-1, 1), main=paste("PC Loadings",i))
 ```
+
+# analisi sospetti
+```{r}
+# i factor più importanti sembrano mmins e lmins, perché?
+colnames(pisa_data)
+x11()
+boxplot(pisa_data[,5:44], las=2, main="pisa cols")
+# forse le prende perché hanno alta varianza?
+
+
+```
+
 
 ```{r}
 #fam,2

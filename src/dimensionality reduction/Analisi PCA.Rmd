@@ -114,7 +114,7 @@ fam=c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
 tch=c("TEACHINT","TEACHSUP","STIMREAD")
 sch=c("PERCOMP","PERCOOP","ICTSCH","RATCMP1","RATCMP2")
 
-df=read.csv("../data/pisa-woNA.csv")
+df=read.csv("../../data/pisa-woNA.csv")
 colnames(df)
 unique(df$ST004D01T) #gender, non penso ci interessa per la pca
 df=df[,-c(1,3)] #remove gender and X (index) column
