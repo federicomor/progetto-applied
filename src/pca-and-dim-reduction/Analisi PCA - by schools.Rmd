@@ -189,6 +189,28 @@ for(state in states){
 states
 ```
 
+# Gaussianity test
+```{r}
+unique(df$CNT)
+states
+
+for(state in states){
+	qqnorm(df$SWB[which(df$CNT==state)], main=paste("SWBP qqnorm for the schools in",state))
+	qqline(df$SWB[which(df$CNT==state)], main=paste("SWBP qqnorm for the schools in",state))
+}
+for(state in states){
+	print(paste0(state,"'s pvalue for gaussianity: ",shapiro.test(df$SWB[which(df$CNT==state)])$p.value))
+}
+# Sembra in effetti si possa sistemare, rimuovendo tipo gli outlier, e fare manova sulle medie di SWBP
+```
+
+
+
+
+
+
+
+# Andrews plot, piccolo intermezzo
 ```{r}
 # install.packages("pracma")
 library(pracma)
