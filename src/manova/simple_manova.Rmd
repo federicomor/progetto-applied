@@ -2,7 +2,7 @@
 title: 'One-way MANOVA'
 output: 
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 # PRELIMINARY STUFF
@@ -161,8 +161,6 @@ alpha = 0.0001
 k     = p*g*(g-1)/2
 qT    = qt(1-alpha/(2*k), n-g)
 
-
-
 W1 <- diag(t(fit$res) %*% fit$res) # fit$re^2 
 SSres <- sum(W1)
 var = SSres/(n-g)
@@ -182,10 +180,10 @@ inf_list = list()
 sup_list = list()
 mean_list = list()
 ## be careful, order could be reversed 
+
 for(i in 1:(g-1)) {
   for(j in (i+1):g) {
     ind <- (i-1)*g-i*(i-1)/2+(j-i)
-    print(ind)
     inf_list[ind] <- list(m_list[[i]]- m_list[[j]] - qT * sqrt( diag(W)/(n-g)
                                                                 *(1/n_list[[i]]+1/n_list[[j]])))
     mean_list[ind]<-list(m_list[[i]]- m_list[[j]])
@@ -198,6 +196,15 @@ CI = list()
 for(i in 1:ind){
   CI[i] <- list(cbind(inf = inf_list[[i]],mean = mean_list[[i]], sup = sup_list[[i]]))
 }
+
+names_CI<-c()
+for(i in 1:(g-1)) {
+  for(j in (i+1):g) {
+    names_CI<-c(names_CI,paste(treat[i],treat[j]))
+
+  }
+}
+names(CI)<-names_CI
 ```
 
 
@@ -215,8 +222,8 @@ for(i in 1:ind){
 
 ### cambia nome titolo
 for(k in 1:p){
-  x11()
-  par(mfrow=c(2,1))
+  #x11()
+  #par(mfrow=c(2,1))
    # Order boxes by median
   group_ordered <- with(data,
                         reorder(data$label,data.feats[,k],mean))
@@ -225,29 +232,34 @@ for(k in 1:p){
         ylim=c(round(min(data.feats[,k])),
         round(max(data.feats[,k]))), col = rainbow(g))
   abline(h=0)
-  plot(c(1,g*(g-1)/2), xlim=c(c(1,g*(g-1)/2)), pch='',ylim=c(min(unlist(CI)),max(unlist(CI))),
+  plot(c(1,5), xlim=c(c(1,5)), pch='',ylim=c(min(unlist(CI)),max(unlist(CI))),
      xlab='pairs treat', ylab=paste('CI tau',colnames(data.feats)[k]),
      main=paste('CItau',colnames(data.feats)[k]))
     abline(h=0)
-
- for(i in 1:(g-1)) {
-   flag=0
-     for(j in (i+1):g) {
-        ind <- (i-1)*g-i*(i-1)/2+(j-i)
-        ii = which( levels(group_ordered)==treat[i])
-        jj = which( levels(group_ordered)==treat[j])
-        ind2 <- (ii-1)*g-ii*(ii-1)/2+(jj-ii)
-        if(CI[[ind2]][k,1]*CI[[ind2]][k,3]<0 && flag==0){
-          flag=1
-            lines (c(ind,ind), c(CI[[ind2]][k,1],CI[[ind2]][k,3])); 
-            #points(ind, mg[ii,k]-mg[jj,k], pch=16); 
-            points(ind, CI[[ind2]][k,1], col=rainbow(g)[jj], pch=16); 
-            points(ind, CI[[ind2]][k,2], col="black", pch=16); 
-            points(ind, CI[[ind2]][k,3], col=rainbow(g)[ii], pch=16); 
-        }
-
-     }
-  }
+    ######
+    i=1
+    j=2
+    h=1
+    while(i!=g&&j!=g-1){
+      print(c(i,j))
+      temp <- sort(c(levels(group_ordered)[i],levels(group_ordered)[j]))
+      ind<-paste(temp[1],temp[2])
+      if(CI[[ind]][k,1]*CI[[ind]][k,3]<0){ # zero in the interval
+        j=j+1 
+      }
+      else{
+        print( names(CI[ind]))
+        lines (c(h,h), c(CI[[ind]][k,1],CI[[ind]][k,3])); 
+        #points(ind, mg[ii,k]-mg[jj,k], pch=16); 
+        points(h, CI[[ind]][k,1], col=rainbow(g)[j], pch=16); 
+        points(h, CI[[ind]][k,2], col="black", pch=16); 
+        points(h, CI[[ind]][k,3], col=rainbow(g)[i], pch=16); 
+        i=j
+        j=i+1
+        h=h+1
+      }
+    }
+    print("####")
 
 }
       
