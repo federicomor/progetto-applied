@@ -241,7 +241,6 @@ for(k in 1:p){
     j=2
     h=1
     while(i!=g&&j!=g-1){
-      print(c(i,j))
       temp <- sort(c(levels(group_ordered)[i],levels(group_ordered)[j]))
       ind<-paste(temp[1],temp[2])
       if(CI[[ind]][k,1]*CI[[ind]][k,3]<0){ # zero in the interval
@@ -250,7 +249,6 @@ for(k in 1:p){
       else{
         print( names(CI[ind]))
         lines (c(h,h), c(CI[[ind]][k,1],CI[[ind]][k,3])); 
-        #points(ind, mg[ii,k]-mg[jj,k], pch=16); 
         points(h, CI[[ind]][k,1], col=rainbow(g)[j], pch=16); 
         points(h, CI[[ind]][k,2], col="black", pch=16); 
         points(h, CI[[ind]][k,3], col=rainbow(g)[i], pch=16); 
