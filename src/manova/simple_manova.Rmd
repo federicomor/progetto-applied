@@ -33,6 +33,7 @@ data <- data %>% dplyr::select(all_of(c("CNT",stu_PROF)))
 ```
 
 # **1.** Data
+
 ```{r, warning=FALSE, message=FALSE}
 # what column identify the group?
 lab_index <- 1
@@ -51,11 +52,6 @@ data.feats = data[,feats]
 data$label<-as.factor(data$label)
 
 p     = length(feats) #don't count the column of labels
-
-```
-
-# **2.** Exploration
-```{r, warning=FALSE, message=FALSE}
 
 # Dimensions
 n     = length(data$label) # total number of obs.
@@ -76,14 +72,20 @@ n=0
 for(j in 1:g) {
   n = n +  n_list[[j]]
 }
+
+```
+
+# **2.** Exploration
+
+```{r, warning=FALSE, message=FALSE}
 # Plot: different panels -> different group
-x11()
+#x11()
 par(mfrow=c(2,g/4))
 for (j in 1:(g/2)){
   boxplot(data.feats[as.numeric(indeces[[j]]),], main=paste('group ',j),  ylim=c(round(min(data.feats)),
           round(max(data.feats))), col = rainbow(g)[j])
 }
-x11()
+#x11()
 par(mfrow=c(4,g/8))
 for (j in (g/2+1):g){
   boxplot(data.feats[as.numeric(indeces[[j]]),], main=paste('group ',j),  ylim=c(round(min(data.feats)),
@@ -98,19 +100,20 @@ for (j in 1:p){
 
 ```
 
-# **ONE-WAY MANOVA** 
-
-## Checking the assumptions 
-
-lol
-
-## Fitting the model
-
-One-way it's the only thing that makes sense in our situation
-
-```{r}
+# **4.** One-way MANOVA
+```{r, warning=FALSE, message=FALSE}
 fit = manova(as.matrix(data.feats) ~ data$label)
 summary.manova(fit, test="Wilks")
+# Pr(>F) = p-value of H0 vs. H1
+# If it is very small -> H1 -> the treatment was effective
+
+# Comment
+# If p<=2 and g<=3 we have an exact test (with Wilks)
+```
+
+## **4.1** Checking the assumptions
+
+```{r}
 Ps_mvn <- NULL
 for(j in 1:g) {
   mvn.test <- mvn(data = data[indeces[[j]] , feats])
@@ -135,9 +138,9 @@ for (j in 1:g){
       breaks = quantile(temp, (0:100)/100, na.rm=TRUE))
 }
 ```
-ì
-# **5.** Which supplement is responsible?
-(In the case we accept H1)
+
+## **5.** Which supplement is responsible? (In the case we accept H1)
+
 ```{r, warning=FALSE, message=FALSE}
 # First of all:
 #   Let's see on which variables the group has an effect.
@@ -151,11 +154,10 @@ summary.aov(fit,test="Wilks")
 # for which the groups differ.
 ```
 
-
 ## **6.**Bonferroni CI: CHOOSE ALPHA
 
-We want to know the level (of the labels) that introduces the difference.
-We have to create g*(g-1)/2 intervals.
+We want to know the level (of the labels) that introduces the difference. We have to create g\*(g-1)/2 intervals.
+
 ```{r, warning=FALSE, message=FALSE}
 alpha = 0.0001
 k     = p*g*(g-1)/2
@@ -206,7 +208,7 @@ for(i in 1:(g-1)) {
 }
 names(CI)<-names_CI
 ```
-
+## **7.** visualization
 
 ```{r, warning=FALSE, message=FALSE}
 # Now we have a complete frame (intervals for all the components of tau_i)
@@ -218,51 +220,63 @@ names(CI)<-names_CI
 
 # Plot: different panels -> different features
 
-
+country_groups = list()
 
 ### cambia nome titolo
 for(k in 1:p){
   #x11()
   #par(mfrow=c(2,1))
-   # Order boxes by median
+   # Order boxes by mean (could also be done by median)
   group_ordered <- with(data,
                         reorder(data$label,data.feats[,k],mean))
+  
+  
+  group_k = list()
+  counter = 1
+  
   
   boxplot(data.feats[,k]~group_ordered, main=paste(colnames(data.feats)[k]),las=2,
         ylim=c(round(min(data.feats[,k])),
         round(max(data.feats[,k]))), col = rainbow(g))
   abline(h=0)
-  plot(c(1,5), xlim=c(c(1,5)), pch='',ylim=c(min(unlist(CI)),max(unlist(CI))),
+  plot(c(1,g-1), xlim=c(c(1,g-1)), pch='',ylim=c(min(unlist(CI)),max(unlist(CI))),
      xlab='pairs treat', ylab=paste('CI tau',colnames(data.feats)[k]),
      main=paste('CItau',colnames(data.feats)[k]))
     abline(h=0)
-    ######
     i=1
+    subgroup = levels(group_ordered)[i]
     j=2
     h=1
-    while(i!=g&&j!=g-1){
+    while(j!=g){
       temp <- sort(c(levels(group_ordered)[i],levels(group_ordered)[j]))
       ind<-paste(temp[1],temp[2])
+      
       if(CI[[ind]][k,1]*CI[[ind]][k,3]<0){ # zero in the interval
+        
+        subgroup <- c(subgroup, levels(group_ordered)[j] )
+        
         j=j+1 
       }
       else{
+        group_k[counter]<-list(subgroup)
+        counter = counter +1
+        
         print( names(CI[ind]))
         lines (c(h,h), c(CI[[ind]][k,1],CI[[ind]][k,3])); 
         points(h, CI[[ind]][k,1], col=rainbow(g)[j], pch=16); 
         points(h, CI[[ind]][k,2], col="black", pch=16); 
         points(h, CI[[ind]][k,3], col=rainbow(g)[i], pch=16); 
         i=j
+        subgroup = levels(group_ordered)[i]
         j=i+1
         h=h+1
       }
     }
     print("####")
-
+    group_k[counter]<-list(levels(group_ordered)[i:length(levels(group_ordered))])
+    country_groups[k] = list(group_k)
 }
-      
+print(country_groups)
 # Comment
 #   If no one contains 0 it means that every group has relevance in every feature.
 ```
-
-
