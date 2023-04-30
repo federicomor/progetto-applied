@@ -39,7 +39,7 @@ pisa_data <- pisa_data %>% filter(CNT!="ESP")
 
 # NON-PARAMETRIC MANOVA
 
-## ADONIS2 
+## ADONIS2
 
 Computationally expensive: need a really small dataset
 

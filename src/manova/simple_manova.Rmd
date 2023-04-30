@@ -42,9 +42,9 @@ countries = levels(data$CNT) # levels of the treatment
 g = length(countries)      # number of levels (i.e., of groups)
 ```
 
-# **ONE-WAY MANOVA** 
+# **ONE-WAY MANOVA**
 
-## Checking the assumptions 
+## Checking the assumptions
 
 lol
 
@@ -127,5 +127,4 @@ for(k in 1:p){
   abline(h=0)
   axis(1, at=1:(g*(g-1)/2), labels=diff_index[1:(g*(g-1)/2)],las=2,lwd=0.)
 }
-
 ```
