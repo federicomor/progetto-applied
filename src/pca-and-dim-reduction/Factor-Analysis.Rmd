@@ -1,0 +1,94 @@
+---
+title: "Factor Analysis"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+source: <https://www.geo.fu-berlin.de/en/v/soga/Geodata-analysis/factor-analysis/A-simple-example-of-FA/index.htmlZ>
+```{r}
+# working_dir ="C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/progetto-applied"
+# dataset_dir = "../data"
+## dovrebbe funzionare anche senza dare il percorso completo ma usando solo questo:
+dataset_dir = "../../data/"
+## cioè usaando la posizione relativa dal file
+## perché vuol dire vai due cartelle indietro da qui, e poi in data
+
+## e quindi anche qui
+# include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
+include_dir = "../include/Utilities.R"
+
+#including utilities
+source(include_dir)
+#importing the dataset
+#including utilities
+pisa_data <- read.csv(file=paste0(dataset_dir,"/pisa-woNA_school_final.csv",sep=""))
+```
+
+```{r}
+#variabili finite nel dataset
+tec=c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
+psi=c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+clt=c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
+fam=c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
+tch=c("TEACHINT","TEACHSUP","STIMREAD")
+sch=c("PERCOMP","PERCOOP","ICTSCH","RATCMP1") #,"RATCMP2")
+
+variabole_groups = list(tec,psi,clt,fam,sch)
+G = length(variabole_groups)
+```
+
+
+```{r}
+n = dim(pisa_data)[1]
+p = dim(pisa_data)[2]
+# all toghether
+pisa.fa <- factanal(pisa_data[,c(4:p)], factors = 5, rotation = "varimax")
+pisa.fa
+pisa.pca <-princomp(pisa_data[,4:p])
+pisa.fa$loadings
+pisa.load = pisa.pca$loadings
+
+x11()
+par(mfcol=c(3,1))
+for(i in 1:2) barplot(pisa.load[,i] ,las=2,ylim = c(-1, 1), main=paste("PC Loadings",i))
+x11()
+par(mfcol=c(3,1))
+for(i in 3:4:5) barplot(pisa.load[,i] ,las=2,ylim = c(-1, 1), main=paste("PC Loadings",i))
+```
+
+# analisi sospetti
+```{r}
+# i factor più importanti sembrano mmins e lmins, perché?
+colnames(pisa_data)
+x11()
+boxplot(pisa_data[,5:44], las=2, main="pisa cols")
+# forse le prende perché hanno alta varianza?
+
+
+```
+
+
+```{r}
+#fam,2
+#tec,5
+#tch,1
+var = tch
+factors= 2
+pisa.fa <- factanal(pisa_data[,var], factors = factors,rotation = "varimax")
+pisa.fa
+
+pisa.load = pisa.pca$loadings
+
+x11()
+par(mfcol=c(5,1))
+for(i in 1:5) barplot(pisa.load[,i] ,las=2,ylim = c(-1, 1), main=paste("PC Loadings",i))
+plot(pisa.fa$loadings[,1], 
+     pisa.fa$loadings[,2],
+     xlab = "Factor 1", 
+     ylab = "Factor 2",
+     ylim = c(-1,1),
+     xlim = c(-1,1),
+     main = "Promax rotation")
+abline(h = 0, v = 0)
+```

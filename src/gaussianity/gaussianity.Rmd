@@ -2,6 +2,8 @@
 title: "gaussianity"
 output: 
 date: "2023-04-07"
+editor_options: 
+  chunk_output_type: inline
 ---
 
 # NOTES
@@ -18,19 +20,22 @@ date: "2023-04-07"
 
 # PRELIMINARY STUFF
 
-```{r}
+```{r setup}
 #directories
-working_dir = "/Users/marcogalliani/Desktop/PISA-dev-local"
-dataset_dir = "/Users/marcogalliani/Desktop/PISA-dev-local/data"
-include_dir = paste(working_dir,"/local-src/include/Utilities.R",sep="")
+#working_dir = "/Users/marcogalliani/Desktop/PISA-dev-local"
+working_dir ="C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/progetto-applied"
+dataset_dir = "../data"
+include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
 #including utilities
 source(include_dir)
 #importing the dataset
-pisa_data <- read.csv(file=paste(dataset_dir,"/pisa-woNA.csv",sep=""))
-
+pisa_data <- read.csv(file=paste(working_dir,"/data/pisa-woNA_school_final.csv",sep=""))
+dim(pisa_data)
+colnames(pisa_data)
 #select only ICT moments fot the moment
 library(dplyr)
-pisa_data <- pisa_data %>% dplyr::select(all_of(c("CNT",stu_ICT,sch_ICT)))
+#pisa_data <- pisa_data %>% dplyr::select(all_of(c("CNT",stu_ICT,"RATCMP1")))
+
 ```
 
 # CHECKING GAUSSIANITY
@@ -51,8 +56,30 @@ From `Lab_4.R` we have many options to test normality of data:
 
 ```{r}
 image(cov(select_if(pisa_data,is.numeric)))
-pisa_data$RATCMP2 <- NULL #RATCMP2 seems has null estimated variance and gives problems
-image(cov(select_if(pisa_data,is.numeric)))
+pisa_data$RATCMP1 <- NULL #RATCMP2 seems has null estimated variance and gives problems
+#image(cov(select_if(pisa_data,is.numeric)))
+```
+
+# QQPLOT
+```{r}
+qq_plot_gaussianity <- function(data){
+  # Compute the quantiles of the data
+  quantiles <- quantile(data, probs = seq(0, 1, by = 0.01))
+
+  # Compute the theoretical quantiles of a normal distribution
+  norm_quantiles <- qnorm(seq(0, 1, by = 0.01), mean = mean(data), sd = sd(data))
+
+  # Create the QQ-plot
+  plot(norm_quantiles, quantiles, main = "QQ-plot", xlab = "Theoretical quantiles", ylab = "Sample quantiles")
+  abline(0, 1, col = "red")  # add a reference line
+}
+
+
+# Call the QQ-plot function with the dataset
+for(i in 4:dim(pisa_data)[2]){
+  qq_plot_gaussianity(pisa_data[,i])
+}
+
 ```
 
 -\> Unbalanced number of observations for Spain (too many)
@@ -72,9 +99,12 @@ In `result` we can see also the results of the univariate tests on gaussianity
 library(MVN)
 #multivariate Shapiro-Wilk test: not possible to perform
 #sample size is too big -> maybe perform the test sampling data from the datset
-result <- mvn(data = pisa_data, subset = "CNT", mvnTest = "hz",univariateTest = "AD")
+result <- mvn(data = pisa_data, subset = "CNT", mvnTest = "hz",univariateTest = "SW")
+library(mvnormtest)
+mshapiro.test(t(pisa_data[-c(1,2,3)]))  
 #to explore the options of mvn
 #help(mvn)
+ks.test(select_if(pisa_data,is.numeric),"pnorm")
 ```
 
 # REMOVING OUTLIERS
@@ -85,8 +115,9 @@ S <- cov(select_if(pisa_data,is.numeric))
 #computing mahlanobis distance
 d2 <- matrix(mahalanobis(select_if(pisa_data,is.numeric), M, S))
 #removing over a certain distance from the mean
-pisa_wo_outliers<- pisa_data[which(d2 <= 10), ] #too many observations removed with 8
-
+pisa_wo_outliers<- pisa_data[which(d2 <= 8), ] #too many observations removed with 8
+dim(pisa_data)
+dim(pisa_wo_outliers)
 #testing again on the dataset wo outliers
 result_wo_ouliers <- mvn(data = pisa_wo_outliers, subset = "CNT", mvnTest = "hz",univariateTest = "AD")
 ```
@@ -95,7 +126,7 @@ result_wo_ouliers <- mvn(data = pisa_wo_outliers, subset = "CNT", mvnTest = "hz"
 
 ```{r}
 library(car)
-bcn_param <- powerTransform(select_if(pisa_wo_outliers,is.numeric), family = "bcnPower") #take long
+bcn_param <- powerTransform(select_if(pisa_data,is.numeric), family = "bcnPower") #take long
 trasformed_data <- bcnPower(U=select_if(pisa_wo_outliers,is.numeric),lambda=bcn_param$lambda, gamma=bcn_param$gamma)
 #add the CNT column
 transformed_data["CNT"] <- pisa_wo_outliers$CNT
