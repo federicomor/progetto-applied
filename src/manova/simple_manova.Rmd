@@ -101,6 +101,7 @@ for (j in 1:p){
 ```
 
 # **4.** One-way MANOVA
+
 ```{r, warning=FALSE, message=FALSE}
 fit = manova(as.matrix(data.feats) ~ data$label)
 summary.manova(fit, test="Wilks")
@@ -208,6 +209,7 @@ for(i in 1:(g-1)) {
 }
 names(CI)<-names_CI
 ```
+
 ## **7.** visualization
 
 ```{r, warning=FALSE, message=FALSE}
