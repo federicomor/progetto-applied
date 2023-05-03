@@ -1,3 +1,10 @@
+---
+title: "PISA dataset na exploration"
+output: 
+editor_options: 
+  chunk_output_type: inline
+---
+```{r}
 # setwd("/")
 # dovrebbe non servire usando alla riga dopo del read.csv la "posizione relativa"
 # usando ..
@@ -7,32 +14,35 @@ library(dplyr)
 library(MVN)
 library(car)
 
-rm(list=ls())
+# rm(list=ls())
 
 # vuol dire "da dove siamo ora vai indietro di una cartella (..), e da lì vai in data
 stu=read.csv("../data/pisa-woNA_school_final.csv")
 
 colnames(stu)
 summary(stu)
+```
 
+
+```{r}
 for(i in c(4:44))
 {
-  x11()
-  barplot(stu[,i], main=paste('Histogram of ', colnames(stu)[i], sep=''), xlab=paste('V', i, sep=''))
+  # # x11()
+  hist(stu[,i], main=paste('Histogram of ', colnames(stu)[i], sep=''), xlab=paste('V', i, sep=''))
   lines(900:2800, dnorm(900:2800,mean(stu[,i]),sd(stu[,i])), col='blue', lty=2)
   qqnorm(stu[,i], main=paste('QQplot of ', colnames(stu)[i], sep=''))
   qqline(stu[,i])
-  print(shapiro.test(stu[,i])$p)
+  print(paste(colnames(stu)[i], "->", shapiro.test(stu[,i])$p))
 }
 #shapiro test infinitesimali -> no gaussianità per nessuna variabile
 #ordine di grandezza tra e-15 ed e-76
 #analisi visiva:
 #comportamento terribile su code -> outliers
 #ictoutside, icthome, ictclass, genderprop sembrano i peggiori
+```
 
 
-
-x11()
+```{r}
 boxplot(stu[,4:44])
 #rimuovere outliers evidenziati dal boxplot
 data=stu
@@ -49,13 +59,18 @@ print(sapply(data,function(x) sum(is.na(x))))
 #no colonne con troppi otliers rispetto alle altre
 data=na.omit(data)
 #restano 2814 osservazioni, circa il 58%
+```
 
-x11()
+
+```{r}
 boxplot(data[,4:44])
+```
 
+
+```{r}
 for(i in c(4:44))
 {
-  x11()
+  # # x11()
   barplot(data[,i], main=paste('Histogram of ', colnames(data)[i], sep=''), xlab=paste('V', i, sep=''))
   lines(900:2800, dnorm(900:2800,mean(data[,i]),sd(data[,i])), col='blue', lty=2)
   qqnorm(data[,i], main=paste('QQplot of ', colnames(data)[i], sep=''))
@@ -64,10 +79,10 @@ for(i in c(4:44))
 }
 #sensibile miglioramento shapiro ma ancora insufficiente 
 #ordine di grandezza ancora tra e-1 ed e-27
+```
 
 
-
-
+```{r}
 #Tentativo di normalizzare con boxcox
 
 #boxcox funziona solo con dati strettamente positivi -> serve traslare dataset 
@@ -80,9 +95,11 @@ for(i in c(1:41)){
   BC[i+3]=bcPower(dati[,i], lambda$lambda[i])   #dataset trasformato
 }
 
+write.csv(BC,"pisa-woNA_school_final_wo_Outl.csv")
+
 for(i in c(4:44))
 {
-  x11()
+  # x11()
   barplot(BC[,i], main=paste('Histogram of ', colnames(BC)[i], sep=''), xlab=paste('V', i, sep=''))
   lines(900:2800, dnorm(900:2800,mean(BC[,i]),sd(BC[,i])), col='blue', lty=2)
   qqnorm(BC[,i], main=paste('QQplot of ', colnames(BC)[i], sep=''))
@@ -91,4 +108,4 @@ for(i in c(4:44))
 }
 #miglioramento ma ancora non sufficiente per accettare ipotesi di gaussianità
 #ordine di grandezza tra e-1 ed e-16
-
+```
