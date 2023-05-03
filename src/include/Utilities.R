@@ -84,6 +84,12 @@ what_is[["INTCULTP"]] = "Parents' interest in learning about other cultures (WLE
 what_is[["GCAWAREP"]] = "Parents' awareness of global issues (WLE)" 
 what_is[["BODYIMA"]] = "Body image (WLE)" 
 what_is[["SOCONPA"]] = "Social Connections: Parents (WLE)"
+what_is[["BFMJ2"]] = "ISEI of father"
+what_is[["BMMJ1"]] = "ISEI of mother"
+what_is[["HISCED"]] = "Highest Education of parents"
+what_is[["HISEI"]] = "Index highest parental occupational status"
+what_is[["RATCMP1"]] = "Number of available computers per student at modal grade"
+
 
 ## (2) variable names----
 #countries
