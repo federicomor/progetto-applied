@@ -70,7 +70,7 @@ boxplot(data[,4:44])
 ```{r}
 for(i in c(4:44))
 {
-  # # x11()
+  # x11()
   barplot(data[,i], main=paste('Histogram of ', colnames(data)[i], sep=''), xlab=paste('V', i, sep=''))
   lines(900:2800, dnorm(900:2800,mean(data[,i]),sd(data[,i])), col='blue', lty=2)
   qqnorm(data[,i], main=paste('QQplot of ', colnames(data)[i], sep=''))
@@ -94,7 +94,10 @@ BC=data
 for(i in c(1:41)){
   BC[i+3]=bcPower(dati[,i], lambda$lambda[i])   #dataset trasformato
 }
+```
 
+
+```{r}
 write.csv(BC,"pisa-woNA_school_final_wo_Outl.csv")
 
 for(i in c(4:44))
