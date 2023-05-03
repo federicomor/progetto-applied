@@ -1,0 +1,753 @@
+---
+title: "PISA dataset na exploration"
+output: 
+editor_options: 
+  chunk_output_type: inline
+---
+
+# Map for variable meaning
+```{r}
+source("../include/Utilities.R")
+```
+
+
+# Setup
+```{r}
+#variabili finite nel dataset
+tec=c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
+psi=c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+clt=c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
+fam=c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
+tch=c("TEACHINT","TEACHSUP","STIMREAD")
+sch=c("PERCOMP","PERCOOP","ICTSCH","RATCMP1") #,"RATCMP2")
+
+old_df=read.csv("../../data/pisa-woNA_school_final.csv")
+df=read.csv("../../data/pisa-woNA_school_final_wo_Outl.csv")
+
+vec=df$SWB[which(df$CNT=="DNK")]
+print(paste("DNK",length(vec)))
+# DEN ne ha uno solo, lo togliamo
+row_DNK = which(df$CNT=="DNK")
+row_DNK
+data = df[c(1:170,172:dim(df)[1]),]
+# forse c'erano metodi migliori per toglierlo
+dim(data)
+dim(df)
+df = data
+
+boxplot(old_df[,5:44], main="old df")
+boxplot(df[,5:44], main="df")
+# sembra in effetti meglio :)
+```
+
+
+```{r}
+colnames(df)
+head(df)
+df=df[,-c(1)] #remove  X (index) column
+
+sort(colnames(df[,-c(1,2,3)])) == sort(c(tec,psi,clt,fam,tch,sch))
+#c'è tutto ora
+#variabili nuove
+colnames(df)[c(1,2,3)]
+
+head(df$schID)
+length(unique(df$schID))
+dim(df) #è davvero un id allora
+
+head(df$gender_prop) #??
+
+df_tec = df[,colnames(df) %in% tec]
+df_psi = df[,colnames(df) %in% psi]
+df_clt = df[,colnames(df) %in% clt]
+df_fam = df[,colnames(df) %in% fam]
+df_tch = df[,colnames(df) %in% tch]
+df_sch = df[,colnames(df) %in% sch]
+```
+
+# States
+```{r}
+states = unique(df$CNT)
+states
+len = length(unique(df$CNT))
+len
+hcl.pals()
+col.ramp = hcl.colors(len, palette = "viridis")
+```
+
+## SWBP for states
+```{r}
+boxplot(old_df$SWBP ~ old_df$CNT,las=2, col=col.ramp, main="(old_df) SWBP for states, by-school dataset")
+boxplot(df$SWBP ~ df$CNT,las=2, col=col.ramp, main="(df) SWBP for states, by-school dataset")
+```
+
+## SWBP for schools in states
+```{r}
+unique(df$CNT)
+
+for(state in states){
+	plot(df$SWB[which(df$CNT==state)] ~ df$schID[which(df$CNT==state)], main=paste("SWBP for the schools in",state))
+}
+```
+
+## Comparison of the means in states
+```{r}
+psi=c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+for (val in psi){
+	print(what_is[[val]])
+}
+# pos_val =c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","SWBP","RESILIENCE","BELONG","PERFEED")
+# neg_val =c("GFOFAIL","BEINGBULLIED")
+
+# plot(df$SWB[which(df$CNT==state)] ~ df$schID[which(df$CNT==state)], main=paste("SWBP for the schools in",state))
+vec_medie = rep(0,length(unique(states)))
+it=0
+for(state in states){
+	vec_medie[it] = mean(df$SWB[which(df$CNT==state)])
+	it=it+1
+}
+length(vec_medie)
+length(states)
+delta=1/20
+plot(1:length(unique(states)),vec_medie, main="SWBP mean in states, by-school dataset",
+	 ylim=c(min(vec_medie),max(vec_medie)+delta), col=col.ramp, pch=19)
+x=1
+for(state in states){
+	text(x,vec_medie[x]+delta,state)
+	x=x+1
+}
+
+states
+```
+
+# Gaussianity test
+```{r}
+unique(df$CNT)
+states
+
+for(state in states){
+	qqnorm(df$SWB[which(df$CNT==state)], main=paste("SWBP qqnorm for the schools in",state))
+	qqline(df$SWB[which(df$CNT==state)], main=paste("SWBP qqnorm for the schools in",state))
+}
+```
+
+
+```{r}
+for(state in states){
+	vec=df$SWB[which(df$CNT==state)]
+	# head(vec)
+	# print(vec[1:10])
+	print(paste(state,length(vec)))
+	print(paste0(state,"'s pvalue for gaussianity: ",shapiro.test(vec[1:min(length(vec),4900)])$p.value))
+}
+# Sembra in effetti si possa sistemare, rimuovendo tipo gli outlier, e fare manova sulle medie di SWBP
+```
+
+Quella fatta prima era un po' fuffa riguardante manova o altre cose.
+Ora inizia davvero la PCA.
+
+# PCA on categories
+## tec
+```{r}
+cat_curr_vec = tec
+cat_curr_name = "tec"
+df_curr = df_tec
+
+###############################################################################
+colnames(df_curr)
+boxplot(df_curr, las=2)
+want_to_scale=1
+
+if(want_to_scale==1){
+  df2 = scale(df_curr[,])
+} else{
+  df2 = df_curr
+}
+df2 = data.frame(df2)
+df2["CNT"] = df$CNT
+df_pca = df2
+head(df_pca)
+#now CNT is the last one purtroppo
+
+pca = princomp(df_pca[,1:dim(df_pca)[2]-1])
+summary(pca)
+
+###############################################################################
+plot(cumsum(pca$sde^2)/sum(pca$sde^2), type='b', axes=F, xlab='Number of components',
+     ylab='Contribution to the total variance', ylim=c(0,1),
+     main=paste("Case of",cat_curr_name))
+abline(h=1, col='blue')
+abline(h=0.8, lty=2, col='blue')
+box()
+axis(2,at=0:10/10,labels=0:10/10)
+axis(1,at=1:ncol(df_curr),labels=1:ncol(df_curr),las=2)
+
+print("loadings plot")
+sort(pca$loadings[,1]) #test soglia
+quantile(pca$loadings[,1],0.8) #test soglia
+mean(pca$loadings[,1]) #test soglia
+median(pca$loadings[,1]) #test soglia
+
+###############################################################################
+par(mfrow=c(2,1))
+for(i in 1:2){
+  # soglia = quantile(pca$loadings[,i],0.6)),i]
+  soglia = 0
+  barplot(
+      # pca$loadings[which(abs(pca$loadings[,i])>0.02),i],
+      # pca$loadings[which(abs(pca$loadings[,i])>soglia)],
+      pca$loadings[,i],
+      main=paste('Loadings PC',i),las=2
+      )
+      # pca$loadings[which(abs(pca$loadings[,i])>mean(pca$loadings[,i]))])
+}
+
+###############################################################################
+# higher pcs
+# par(mar = c(2,2,2,1), mfrow=c(3,1))
+# for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
+# main=paste('Loadings PC ',i,sep=''),las=2)
+```
+
+### Interpretation
+```{r}
+for (col in cat_curr_vec){
+  print(paste(col,what_is[[col]]))
+}
+# PC1 seems to collect the amount of tecnology in which lo studente si ritrova immerso
+# -> PC1 alta -> alta disponibilità di tecnologia
+# 
+# PC2 seems to contrast il mero uso della tecnologia (a scuola, casa, nelle lezioni, ecc)
+# contro il vero interesse/dedizione dello studente per la tecnologia (vedi le tre variabili negative)
+# -> PC2 bassa -> gli studenti sono molto interessati alla tecnologia malgrado la poca disponibilità
+# -> PC2 alta -> gli studenti avrebbero anche molta tecnologia a disposizione ma non sembrano interessati/bravi
+```
+
+### Scores plot
+```{r}
+i=0
+for (x in unique(df$CNT)) {
+  # print(x)
+  if (i%%2==0) { par(mfrow=c(1,2))  }
+  i=i+1
+  plot(pca$scores[which(df$CNT==x),1:2],main = paste0(toupper(cat_curr_name),": ",x))
+       # xlab = paste(cat_curr_name,"Comp.1"),ylab = paste(cat_curr_name,"Comp.2"))
+  abline(h=0, v=0, lty=2, col='grey')
+  points(0,0,pch=19,cex=1.4,col="orange")
+}
+
+
+```
+
+## psi
+```{r}
+cat_curr_vec = psi
+cat_curr_name = "psi"
+df_curr = df_psi
+
+###############################################################################
+colnames(df_curr)
+boxplot(df_curr, las=2)
+want_to_scale=1
+
+if(want_to_scale==1){
+  df2 = scale(df_curr[,])
+} else{
+  df2 = df_curr
+}
+df2 = data.frame(df2)
+df2["CNT"] = df$CNT
+df_pca = df2
+head(df_pca)
+#now CNT is the last one purtroppo
+
+pca = princomp(df_pca[,1:dim(df_pca)[2]-1])
+summary(pca)
+
+###############################################################################
+plot(cumsum(pca$sde^2)/sum(pca$sde^2), type='b', axes=F, xlab='Number of components',
+     ylab='Contribution to the total variance', ylim=c(0,1),
+     main=paste("Case of",cat_curr_name))
+abline(h=1, col='blue')
+abline(h=0.8, lty=2, col='blue')
+box()
+axis(2,at=0:10/10,labels=0:10/10)
+axis(1,at=1:ncol(df_curr),labels=1:ncol(df_curr),las=2)
+
+print("loadings plot")
+sort(pca$loadings[,1]) #test soglia
+quantile(pca$loadings[,1],0.8) #test soglia
+mean(pca$loadings[,1]) #test soglia
+median(pca$loadings[,1]) #test soglia
+
+###############################################################################
+par(mfrow=c(2,1))
+for(i in 1:2){
+  # soglia = quantile(pca$loadings[,i],0.6)),i]
+  soglia = 0
+  barplot(
+      # pca$loadings[which(abs(pca$loadings[,i])>0.02),i],
+      # pca$loadings[which(abs(pca$loadings[,i])>soglia)],
+      pca$loadings[,i],
+      main=paste('Loadings PC',i),las=2
+      )
+      # pca$loadings[which(abs(pca$loadings[,i])>mean(pca$loadings[,i]))])
+}
+
+###############################################################################
+# higher pcs
+# par(mar = c(2,2,2,1), mfrow=c(3,1))
+# for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
+# main=paste('Loadings PC ',i,sep=''),las=2)
+```
+
+### Interpretation
+```{r}
+for (col in cat_curr_vec){
+  print(paste(col,what_is[[col]]))
+}
+# PC1 sembra fare la somma dei contributi positivi contro quelli negativi: cioè tutti
+# sommati tranne gfofail e beingbullied
+# -> PC1 alta -> gli studenti stanno molto bene
+#
+# PC2 sembra un po' difficile da interpretare. Forse
+# pc2 bassa -> gli studenti se la cavano bene da soli (percepiscono buoni feedback, acquistano
+# resilienza, magari dopo essere bullizzati, e competitvità e fiducia nella vita)
+```
+
+### Scores plot
+```{r}
+i=0
+for (x in unique(df$CNT)) {
+  # print(x)
+  if (i%%2==0) { par(mfrow=c(1,2))  }
+  i=i+1
+  plot(pca$scores[which(df$CNT==x),1:2],main = paste0(toupper(cat_curr_name),": ",x))
+       # xlab = paste(cat_curr_name,"Comp.1"),ylab = paste(cat_curr_name,"Comp.2"))
+  abline(h=0, v=0, lty=2, col='grey')
+  points(0,0,pch=19,cex=1.4,col="orange")
+}
+
+```
+
+
+
+## clt
+```{r}
+cat_curr_vec = clt
+cat_curr_name = "clt"
+df_curr = df_clt
+
+###############################################################################
+colnames(df_curr)
+boxplot(df_curr, las=2)
+# df_new = df_curr
+# df_new$LMINS = log(df_curr$LMINS+1)
+# df_new$MMINS = log(df_curr$MMINS+1)
+# boxplot(df_new)
+# df_curr = df_new
+# non cambia molto la pca
+want_to_scale=1
+
+if(want_to_scale==1){
+  df2 = scale(df_curr[,])
+} else{
+  df2 = df_curr
+}
+df2 = data.frame(df2)
+df2["CNT"] = df$CNT
+df_pca = df2
+head(df_pca)
+#now CNT is the last one purtroppo
+
+pca = princomp(df_pca[,1:dim(df_pca)[2]-1])
+summary(pca)
+
+###############################################################################
+plot(cumsum(pca$sde^2)/sum(pca$sde^2), type='b', axes=F, xlab='Number of components',
+     ylab='Contribution to the total variance', ylim=c(0,1),
+     main=paste("Case of",cat_curr_name))
+abline(h=1, col='blue')
+abline(h=0.8, lty=2, col='blue')
+box()
+axis(2,at=0:10/10,labels=0:10/10)
+axis(1,at=1:ncol(df_curr),labels=1:ncol(df_curr),las=2)
+
+print("loadings plot")
+sort(pca$loadings[,1]) #test soglia
+quantile(pca$loadings[,1],0.8) #test soglia
+mean(pca$loadings[,1]) #test soglia
+median(pca$loadings[,1]) #test soglia
+
+###############################################################################
+par(mfrow=c(2,1))
+for(i in 1:2){
+  # soglia = quantile(pca$loadings[,i],0.6)),i]
+  soglia = 0
+  barplot(
+      # pca$loadings[which(abs(pca$loadings[,i])>0.02),i],
+      # pca$loadings[which(abs(pca$loadings[,i])>soglia)],
+      pca$loadings[,i],
+      main=paste('Loadings PC',i),las=2
+      )
+      # pca$loadings[which(abs(pca$loadings[,i])>mean(pca$loadings[,i]))])
+}
+
+###############################################################################
+# higher pcs
+# par(mar = c(2,2,2,1), mfrow=c(3,1))
+# for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
+# main=paste('Loadings PC ',i,sep=''),las=2)
+```
+
+### Interpretation
+```{r}
+for (col in cat_curr_vec){
+  print(paste(col,what_is[[col]]))
+}
+# pc1 alta -> gli studenti hanno molta cultura nel senso di lettura
+# pc1 bassa -> gli studenti spendono più tempo nello studio effettivo che nel leggere per cultura
+# 
+# pc2 alta -> gli studenti dedicano molto tempo allo studio ma comunque apprezzano anche la lettura
+# tipo per proprio diletto
+
+```
+
+### Scores plot
+```{r}
+i=0
+for (x in unique(df$CNT)) {
+  # print(x)
+  if (i%%2==0) { par(mfrow=c(1,2))  }
+  i=i+1
+  plot(pca$scores[which(df$CNT==x),1:2],main = paste0(toupper(cat_curr_name),": ",x))
+       # xlab = paste(cat_curr_name,"Comp.1"),ylab = paste(cat_curr_name,"Comp.2"))
+  abline(h=0, v=0, lty=2, col='grey')
+  points(0,0,pch=19,cex=1.4,col="orange")
+}
+
+
+```
+
+
+## fam
+```{r}
+cat_curr_vec = fam
+cat_curr_name = "fam"
+df_curr = df_fam
+
+###############################################################################
+colnames(df_curr)
+boxplot(df_curr, las=2)
+want_to_scale=1
+
+if(want_to_scale==1){
+  df2 = scale(df_curr[,])
+} else{
+  df2 = df_curr
+}
+df2 = data.frame(df2)
+df2["CNT"] = df$CNT
+df_pca = df2
+head(df_pca)
+#now CNT is the last one purtroppo
+
+pca = princomp(df_pca[,1:dim(df_pca)[2]-1])
+summary(pca)
+
+###############################################################################
+plot(cumsum(pca$sde^2)/sum(pca$sde^2), type='b', axes=F, xlab='Number of components',
+     ylab='Contribution to the total variance', ylim=c(0,1),
+     main=paste("Case of",cat_curr_name))
+abline(h=1, col='blue')
+abline(h=0.8, lty=2, col='blue')
+box()
+axis(2,at=0:10/10,labels=0:10/10)
+axis(1,at=1:ncol(df_curr),labels=1:ncol(df_curr),las=2)
+
+print("loadings plot")
+sort(pca$loadings[,1]) #test soglia
+quantile(pca$loadings[,1],0.8) #test soglia
+mean(pca$loadings[,1]) #test soglia
+median(pca$loadings[,1]) #test soglia
+
+###############################################################################
+par(mfrow=c(2,1))
+for(i in 1:2){
+  # soglia = quantile(pca$loadings[,i],0.6)),i]
+  soglia = 0
+  barplot(
+      # pca$loadings[which(abs(pca$loadings[,i])>0.02),i],
+      # pca$loadings[which(abs(pca$loadings[,i])>soglia)],
+      pca$loadings[,i],
+      main=paste('Loadings PC',i),las=2
+      )
+      # pca$loadings[which(abs(pca$loadings[,i])>mean(pca$loadings[,i]))])
+}
+
+###############################################################################
+# higher pcs
+# par(mar = c(2,2,2,1), mfrow=c(3,1))
+# for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
+# main=paste('Loadings PC ',i,sep=''),las=2)
+```
+
+### Interpretation
+```{r}
+for (col in cat_curr_vec){
+  print(paste(col,what_is[[col]]))
+}
+# ISEI is an International Socio-Economic Index of occupational status
+
+
+# pc1 fa una media di tutto, quindi 
+# pc1 alta -> tutto va bene in famiglia, almeno a livello economico
+# 
+# pc2 fa contrasto tra possessioni materiali (wealth, homeposs) e culturali
+# -> pc2 bassa (intesa naturalmente anche come <0) -> maggiore peso culturale
+# -> pc2 alta -> la famiglia è più facoltosa nella realtà di quanto non magari culturalmente buona
+```
+
+### Scores plot
+```{r}
+i=0
+for (x in unique(df$CNT)) {
+  # print(x)
+  if (i%%2==0) { par(mfrow=c(1,2))  }
+  i=i+1
+  plot(pca$scores[which(df$CNT==x),1:2],main = paste0(toupper(cat_curr_name),": ",x))
+       # xlab = paste(cat_curr_name,"Comp.1"),ylab = paste(cat_curr_name,"Comp.2"))
+  abline(h=0, v=0, lty=2, col='grey')
+  points(0,0,pch=19,cex=1.4,col="orange")
+}
+
+
+```
+
+
+
+## tch
+```{r}
+cat_curr_vec = tch
+cat_curr_name = "tch"
+df_curr = df_tch
+
+###############################################################################
+colnames(df_curr)
+boxplot(df_curr, las=2)
+want_to_scale=0
+
+if(want_to_scale==1){
+  df2 = scale(df_curr[,])
+} else{
+  df2 = df_curr
+}
+df2 = data.frame(df2)
+df2["CNT"] = df$CNT
+df_pca = df2
+head(df_pca)
+#now CNT is the last one purtroppo
+
+pca = princomp(df_pca[,1:dim(df_pca)[2]-1])
+summary(pca)
+
+###############################################################################
+plot(cumsum(pca$sde^2)/sum(pca$sde^2), type='b', axes=F, xlab='Number of components',
+     ylab='Contribution to the total variance', ylim=c(0,1),
+     main=paste("Case of",cat_curr_name))
+abline(h=1, col='blue')
+abline(h=0.8, lty=2, col='blue')
+box()
+axis(2,at=0:10/10,labels=0:10/10)
+axis(1,at=1:ncol(df_curr),labels=1:ncol(df_curr),las=2)
+
+print("loadings plot")
+sort(pca$loadings[,1]) #test soglia
+quantile(pca$loadings[,1],0.8) #test soglia
+mean(pca$loadings[,1]) #test soglia
+median(pca$loadings[,1]) #test soglia
+
+###############################################################################
+par(mfrow=c(2,1))
+for(i in 1:2){
+  # soglia = quantile(pca$loadings[,i],0.6)),i]
+  soglia = 0
+  barplot(
+      # pca$loadings[which(abs(pca$loadings[,i])>0.02),i],
+      # pca$loadings[which(abs(pca$loadings[,i])>soglia)],
+      pca$loadings[,i],
+      main=paste('Loadings PC',i),las=2
+      )
+      # pca$loadings[which(abs(pca$loadings[,i])>mean(pca$loadings[,i]))])
+}
+
+###############################################################################
+# higher pcs
+# par(mar = c(2,2,2,1), mfrow=c(3,1))
+# for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
+# main=paste('Loadings PC ',i,sep=''),las=2)
+```
+
+### Interpretation tch
+```{r}
+for (col in cat_curr_vec){
+  print(paste(col,what_is[[col]]))
+}
+# pc1 fa una media dei vari contributi
+# -> pc1 alta -> grande supporto dei prof per gli studenti
+# 
+# pc2 fa contrasto tra eh, queste variabili non hanno una spiegazione molto chiara. Forse
+# -> pc2 alta -> il prof supporta molto i suoi studenti, ma in modo più pratico
+# -> pc2 bassa (naturalmente anche <0) -> il prof dà più stimoli culturali (supporto alla lettura
+# per esempio) che pratici
+```
+
+### Scores plot
+```{r}
+i=0
+for (x in unique(df$CNT)) {
+  # print(x)
+  if (i%%2==0) { par(mfrow=c(1,2))  }
+  i=i+1
+  plot(pca$scores[which(df$CNT==x),1:2],main = paste0(toupper(cat_curr_name),": ",x))
+       # xlab = paste(cat_curr_name,"Comp.1"),ylab = paste(cat_curr_name,"Comp.2"))
+  abline(h=0, v=0, lty=2, col='grey')
+  points(0,0,pch=19,cex=1.4,col="orange")
+}
+
+```
+
+
+
+
+## sch
+```{r}
+cat_curr_vec = sch
+cat_curr_name = "sch"
+df_curr = df_sch
+
+###############################################################################
+colnames(df_curr)
+boxplot(df_curr, las=2)
+want_to_scale=1
+
+if(want_to_scale==1){
+  df2 = scale(df_curr[,])
+} else{
+  df2 = df_curr
+}
+df2 = data.frame(df2)
+df2["CNT"] = df$CNT
+df_pca = df2
+head(df_pca)
+#now CNT is the last one purtroppo
+
+pca = princomp(df_pca[,1:dim(df_pca)[2]-1])
+summary(pca)
+
+###############################################################################
+plot(cumsum(pca$sde^2)/sum(pca$sde^2), type='b', axes=F, xlab='Number of components',
+     ylab='Contribution to the total variance', ylim=c(0,1),
+     main=paste("Case of",cat_curr_name))
+abline(h=1, col='blue')
+abline(h=0.8, lty=2, col='blue')
+box()
+axis(2,at=0:10/10,labels=0:10/10)
+axis(1,at=1:ncol(df_curr),labels=1:ncol(df_curr),las=2)
+
+print("loadings plot")
+sort(pca$loadings[,1]) #test soglia
+quantile(pca$loadings[,1],0.8) #test soglia
+mean(pca$loadings[,1]) #test soglia
+median(pca$loadings[,1]) #test soglia
+
+###############################################################################
+par(mfrow=c(2,1))
+for(i in 1:2){
+  # soglia = quantile(pca$loadings[,i],0.6)),i]
+  soglia = 0
+  barplot(
+      # pca$loadings[which(abs(pca$loadings[,i])>0.02),i],
+      # pca$loadings[which(abs(pca$loadings[,i])>soglia)],
+      pca$loadings[,i],
+      main=paste('Loadings PC',i),las=2
+      )
+      # pca$loadings[which(abs(pca$loadings[,i])>mean(pca$loadings[,i]))])
+}
+
+###############################################################################
+# higher pcs
+# par(mar = c(2,2,2,1), mfrow=c(3,1))
+# for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
+# main=paste('Loadings PC ',i,sep=''),las=2)
+```
+
+### Interpretation
+```{r}
+for (col in cat_curr_vec){
+  print(paste(col,what_is[[col]]))
+}
+# pc1 alta -> buono clima nella scuola? (alta competitività, ma anche cooperazione, e ICT available)
+# pc2 sembra invece contrastare il contesto sociale con quello tecnologico
+# pc2 alta -> la scuola ha un bel clima sociale
+# pc2 bassa -> la scuola ha un contesto più ricco sul lato tecnologico (quindi peggio dal lato umano forse) 
+```
+
+### Scores plot
+```{r}
+i=0
+for (x in unique(df$CNT)) {
+  # print(x)
+  if (i%%2==0) { par(mfrow=c(1,2))  }
+  i=i+1
+  plot(pca$scores[which(df$CNT==x),1:2],main = paste0(toupper(cat_curr_name),": ",x))
+       # xlab = paste(cat_curr_name,"Comp.1"),ylab = paste(cat_curr_name,"Comp.2"))
+  abline(h=0, v=0, lty=2, col='grey')
+  points(0,0,pch=19,cex=1.4,col="orange")
+}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Andrews plot, piccolo intermezzo
+```{r}
+# install.packages("pracma")
+library(pracma)
+len_states=length(states)
+len_psi=length(psi)
+A=matrix(nrow = len_states, ncol = len_psi)
+# A[,1]=states # morally
+
+
+for(i in 1:len_states){
+	for(j in 1:len_psi){
+		A[i,j]=mean(df[which(df$CNT==states[i]),psi[j]])
+	}
+}
+andrewsplot(A, f=as.factor(states), style = "pol", scaled = FALSE, npts = 101)
+andrewsplot(A, f=as.factor(states), style = "cart", scaled = FALSE, npts = 101)
+# ci fosse la legenda, ma andrewsplot non sembra implementarla, quindi i colori boh
+```
+
+
