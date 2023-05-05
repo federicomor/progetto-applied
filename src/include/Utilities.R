@@ -91,7 +91,7 @@ what_is[["HISEI"]] = "Index highest parental occupational status"
 what_is[["RATCMP1"]] = "Number of available computers per student at modal grade"
 
 
-## (2) variable names----
+## (2) variable groups----
 #countries
 selected_countries = c("HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","IRL","LTU","LUX","POL","SVK","SVN","ESP","SWE")
 #Gender
