@@ -1,0 +1,31 @@
+---
+title: "R Notebook"
+output: 
+---
+
+# EXPLORATORY ANALYSIS: SCHOOL DATASET
+
+In this notebook I collect some useful plots made to across the other notebooks that help better understanding the dataset
+
+## PRELIMINARY STUFF
+
+```{r setup}
+#directories
+working_dir ="/Users/marcogalliani/Desktop/progetto-applied"
+dataset_dir = paste(working_dir,"/data/pisa-woNA_school_final.csv",sep="")
+include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
+#setting wd
+setwd(working_dir)
+#including utilities
+source(include_dir)
+#importing the dataset
+pisa_data <- read.csv(file=dataset_dir)
+```
+
+## CORRELATION
+
+```{r}
+library(GGally)
+library(ggplot2)
+ggcorr(select_if(pisa_data,is.numeric))
+```
