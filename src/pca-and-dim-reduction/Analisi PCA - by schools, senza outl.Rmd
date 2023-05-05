@@ -22,18 +22,19 @@ tch=c("TEACHINT","TEACHSUP","STIMREAD")
 sch=c("PERCOMP","PERCOOP","ICTSCH","RATCMP1") #,"RATCMP2")
 
 old_df=read.csv("../../data/pisa-woNA_school_final.csv")
-df=read.csv("../../data/pisa-woNA_school_final_wo_Outl.csv")
+df=read.csv("../../data/")
 
 vec=df$SWB[which(df$CNT=="DNK")]
 print(paste("DNK",length(vec)))
 # DEN ne ha uno solo, lo togliamo
-row_DNK = which(df$CNT=="DNK")
-row_DNK
-data = df[c(1:170,172:dim(df)[1]),]
+# aveva! aveva solo uno, il nuovo dataset ha sistemato questo
+# row_DNK = which(df$CNT=="DNK")
+# row_DNK
+# data = df[c(1:170,172:dim(df)[1]),]
 # forse c'erano metodi migliori per toglierlo
-dim(data)
-dim(df)
-df = data
+# dim(data)
+# dim(df)
+# df = data
 
 boxplot(old_df[,5:44], main="old df")
 boxplot(df[,5:44], main="df")
@@ -147,6 +148,11 @@ Quella fatta prima era un po' fuffa riguardante manova o altre cose.
 Ora inizia davvero la PCA.
 
 # PCA on categories
+```{r}
+# prepariamo il dataset in cui salvare gli score
+df_sc = NULL
+```
+
 ## tec
 ```{r}
 cat_curr_vec = tec
@@ -202,11 +208,30 @@ for(i in 1:2){
       # pca$loadings[which(abs(pca$loadings[,i])>mean(pca$loadings[,i]))])
 }
 
+par(mfrow=c(3,1))
+for(i in 3:5){
+  # soglia = quantile(pca$loadings[,i],0.6)),i]
+  soglia = 0
+  barplot(
+      # pca$loadings[which(abs(pca$loadings[,i])>0.02),i],
+      # pca$loadings[which(abs(pca$loadings[,i])>soglia)],
+      pca$loadings[,i],
+      main=paste('Loadings PC',i),las=2
+      )
+      # pca$loadings[which(abs(pca$loadings[,i])>mean(pca$loadings[,i]))])
+}
+
+
+
 ###############################################################################
 # higher pcs
 # par(mar = c(2,2,2,1), mfrow=c(3,1))
 # for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
 # main=paste('Loadings PC ',i,sep=''),las=2)
+```
+
+```{r}
+df_sc = pca$scores[,1:5]
 ```
 
 ### Interpretation
@@ -221,6 +246,7 @@ for (col in cat_curr_vec){
 # contro il vero interesse/dedizione dello studente per la tecnologia (vedi le tre variabili negative)
 # -> PC2 bassa -> gli studenti sono molto interessati alla tecnologia malgrado la poca disponibilità
 # -> PC2 alta -> gli studenti avrebbero anche molta tecnologia a disposizione ma non sembrano interessati/bravi
+# 
 ```
 
 ### Scores plot
@@ -235,7 +261,6 @@ for (x in unique(df$CNT)) {
   abline(h=0, v=0, lty=2, col='grey')
   points(0,0,pch=19,cex=1.4,col="orange")
 }
-
 
 ```
 
@@ -300,6 +325,12 @@ for(i in 1:2){
 # for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
 # main=paste('Loadings PC ',i,sep=''),las=2)
 ```
+
+```{r}
+dim(df_sc)
+df_sc = cbind(df_sc, pca$scores[,1:5])
+```
+
 
 ### Interpretation
 ```{r}
@@ -400,6 +431,11 @@ for(i in 1:2){
 # main=paste('Loadings PC ',i,sep=''),las=2)
 ```
 
+```{r}
+dim(df_sc)
+df_sc = cbind(df_sc, pca$scores[,1:3])
+```
+
 ### Interpretation
 ```{r}
 for (col in cat_curr_vec){
@@ -491,6 +527,12 @@ for(i in 1:2){
 # for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
 # main=paste('Loadings PC ',i,sep=''),las=2)
 ```
+
+```{r}
+dim(df_sc)
+df_sc = cbind(df_sc, pca$scores[,1])
+```
+
 
 ### Interpretation
 ```{r}
@@ -588,6 +630,12 @@ for(i in 1:2){
 # main=paste('Loadings PC ',i,sep=''),las=2)
 ```
 
+
+```{r}
+dim(df_sc)
+df_sc = cbind(df_sc, pca$scores[,1])
+```
+
 ### Interpretation tch
 ```{r}
 for (col in cat_curr_vec){
@@ -616,9 +664,6 @@ for (x in unique(df$CNT)) {
 }
 
 ```
-
-
-
 
 ## sch
 ```{r}
@@ -681,6 +726,14 @@ for(i in 1:2){
 # for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
 # main=paste('Loadings PC ',i,sep=''),las=2)
 ```
+
+
+
+```{r}
+dim(df_sc)
+df_sc = cbind(df_sc, pca$scores[,1:3])
+```
+
 
 ### Interpretation
 ```{r}
