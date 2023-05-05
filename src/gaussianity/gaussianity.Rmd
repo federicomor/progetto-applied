@@ -99,7 +99,8 @@ In `result` we can see also the results of the univariate tests on gaussianity
 library(MVN)
 #multivariate Shapiro-Wilk test: not possible to perform
 #sample size is too big -> maybe perform the test sampling data from the datset
-result <- mvn(data = pisa_data, subset = "CNT", mvnTest = "hz",univariateTest = "SW")
+pisa_data$schID<-as.factor(pisa_data$schID)
+result <- mvn(data = select_if(pisa_data,is.numeric), mvnTest = "hz",univariateTest = "SW")
 library(mvnormtest)
 mshapiro.test(t(pisa_data[-c(1,2,3)]))  
 #to explore the options of mvn
@@ -110,8 +111,15 @@ ks.test(select_if(pisa_data,is.numeric),"pnorm")
 # REMOVING OUTLIERS
 
 ```{r}
+pisa_data$schID<-as.factor(pisa_data$schID)
 M <- colMeans(select_if(pisa_data,is.numeric))
 S <- cov(select_if(pisa_data,is.numeric))
+heatmap(S)
+image(S,col=heat.colors(1000))
+library(plot.matrix)
+plot(as.cor(pisa_data))
+x11()
+plot(S,breaks = c(-1,1),las=2)
 #computing mahlanobis distance
 d2 <- matrix(mahalanobis(select_if(pisa_data,is.numeric), M, S))
 #removing over a certain distance from the mean
