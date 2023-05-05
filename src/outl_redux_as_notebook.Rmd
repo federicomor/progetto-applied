@@ -43,21 +43,47 @@ for(i in c(4:44))
 
 
 ```{r}
-boxplot(stu[,4:44])
-#rimuovere outliers evidenziati dal boxplot
-data=stu
-for(col in colnames(stu)[4:44]){
-  q1=quantile(stu[[col]],probs=0.25)
-  q3=quantile(stu[[col]],probs=0.75)
-  IQR=(q3-q1)  #range interquartile
-  x = stu[[col]] > q3+IQR*1.5 | stu[[col]] < q1-IQR*1.5
-  data[[col]][x]=NA
-}
+a=2.2
+b=2.6
+delta=0.005
+svec = seq(a,b,by=delta)
+pvec = NULL
 
-sum(is.na(data))  
-print(sapply(data,function(x) sum(is.na(x))))
-#no colonne con troppi otliers rispetto alle altre
+soglia=2.41
+# for(soglia in seq(1.5,6,by=0.05)){
+# for(soglia in seq(a,b,by=delta)){
+  # boxplot(stu[,4:44])
+  #rimuovere outliers evidenziati dal boxplot
+  data=stu
+  for(col in colnames(stu)[4:44]){
+    q1=quantile(stu[[col]],probs=0.25)
+    q3=quantile(stu[[col]],probs=0.75)
+    IQR=(q3-q1)  #range interquartile
+    x = stu[[col]] > q3+IQR*soglia | stu[[col]] < q1-IQR*soglia
+    data[[col]][x]=NA
+  }
+  
+  # sum(is.na(data))  
+  # print(sapply(data,function(x) sum(is.na(x))))
+  #no colonne con troppi otliers rispetto alle altre
+  x = 100*dim(na.omit(data))[1]/dim(data)[1]
+  print(paste("soglia=", soglia,"-> ",x))
+  pvec = c(pvec,x)
+  # print(paste("soglia=", soglia,"produce", round(na.omit(data)[1]/4876*100, digits=2)))
+# }
+dim(data)
 data=na.omit(data)
+dim(na.omit(data))
+```
+
+
+```{r}
+plot(svec,pvec,type="b")
+# abline(h=svec[19])
+min(pvec[1:length(pvec)-1]-pvec[2:length(pvec)])
+pvec[1:length(pvec)-1]-pvec[2:length(pvec)]
+pvec[19]-pvec[20]
+svec[19]
 #restano 2814 osservazioni, circa il 58%
 ```
 
@@ -90,16 +116,24 @@ dati=data[,4:44]
 dati=dati+abs(min(dati))+1e-5 #1e-5 epsilon per ottenere disuguaglianza stretta
 lambda = powerTransform(dati)    
 lambda
+```
+
+
+```{r}
 BC=data  
 for(i in c(1:41)){
-  BC[i+3]=bcPower(dati[,i], lambda$lambda[i])   #dataset trasformato
+  BC[i+3]=bcPower(dati[,i], lambda$lambda[i]) #dataset trasformato
 }
 ```
 
 
 ```{r}
-write.csv(BC,"pisa-woNA_school_final_wo_Outl.csv")
+write.csv(BC,"pisa-woNA_school_final_wo_Outl_BoxCox.csv")
+write.csv(data,"pisa-woNA_school_final_wo_Outl_ClassicData.csv")
+```
 
+
+```{r}
 for(i in c(4:44))
 {
   # x11()
