@@ -22,18 +22,19 @@ tch=c("TEACHINT","TEACHSUP","STIMREAD")
 sch=c("PERCOMP","PERCOOP","ICTSCH","RATCMP1") #,"RATCMP2")
 
 old_df=read.csv("../../data/pisa-woNA_school_final.csv")
-df=read.csv("../../data/pisa-woNA_school_final_wo_Outl.csv")
+df=read.csv("../../data/")
 
 vec=df$SWB[which(df$CNT=="DNK")]
 print(paste("DNK",length(vec)))
 # DEN ne ha uno solo, lo togliamo
-row_DNK = which(df$CNT=="DNK")
-row_DNK
-data = df[c(1:170,172:dim(df)[1]),]
+# aveva! aveva solo uno, il nuovo dataset ha sistemato questo
+# row_DNK = which(df$CNT=="DNK")
+# row_DNK
+# data = df[c(1:170,172:dim(df)[1]),]
 # forse c'erano metodi migliori per toglierlo
-dim(data)
-dim(df)
-df = data
+# dim(data)
+# dim(df)
+# df = data
 
 boxplot(old_df[,5:44], main="old df")
 boxplot(df[,5:44], main="df")
