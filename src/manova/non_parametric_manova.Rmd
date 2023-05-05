@@ -7,7 +7,7 @@ date: "2023-04-16"
 # NOTES
 
 -   Permutational MANOVA tests are computationally expensive: we need a much smaller dataset than the one we're working on. We may reduce our dataset grouping by schools. Considering less countries does not work: still too many rows for a permutational test
--   I'm exploring options such
+-   I'm exploring options such as kruskal-wallis tests to see if I can make it work
 
 # REFERENCES
 
@@ -34,7 +34,7 @@ pisa_data <- read.csv(file=paste(clean_data_dir,"/pisa-woNA.csv",sep=""))
 library(dplyr)
 pisa_data <- pisa_data %>% dplyr::select(all_of(c("CNT",stu_ICT,sch_ICT)))
 
-#dropping spain
+#dropping spain since it is quite an unbalanced group
 pisa_data <- pisa_data %>% filter(CNT!="ESP")
 ```
 
@@ -85,11 +85,19 @@ Another non-parametric test, less computationally expensive
 library(coin)
 help("kruskal.test")
 pisa_data$CNT <- as.factor(pisa_data$CNT)
-kruskal_test(cbind(ICTCLASS,ICTHOME,ENTUSE) ~ CNT,data = pisa_data)
+
+#constructing the matrix to be fed to kruskal test
+kruskal.test(ICTHOME ~ CNT, data = pisa_data)
+
 ```
 
 ```{r}
-#TO BE EXPLORED
+library(pgirmess)
+```
+
+Still need to be fixed
+
+```{r eval=FALSE, include=FALSE}
 library(npmv)
 help(npmv)
 
