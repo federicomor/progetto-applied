@@ -1,0 +1,135 @@
+---
+title: "gaussianity"
+output: 
+date: "2023-04-07"
+editor_options: 
+  chunk_output_type: inline
+---
+
+# NOTES
+
+-   for MANOVA we need multivariate gaussianity for each group
+
+-   for ANOVA we need univariate gaussianity for each group
+
+-   we do not need multivariate gaussianity for the whole dataset since we do not want to perform tests on the mean for the whole dataset
+
+# REFERENCES
+
+-   stats.stackechange post that tells that it is highly improbable to have gaussianity with a large number of observations: <https://stats.stackexchange.com/questions/2492/is-normality-testing-essentially-useless> (confirmed by one of Masci mails)
+
+# PRELIMINARY STUFF
+
+```{r, setup}
+#DIRECTORIES
+working_dir ="/Users/marcogalliani/Desktop/progetto-applied"
+dataset_dir = paste(working_dir,"/data/pisa-woNA_school_final.csv",sep="")
+include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
+#SETTING wd
+knitr::opts_knit$set(root.dir = working_dir)
+##this commmand set the working directory for all the chunks. If you type getwd() and run the ##code chunk it will use this wd.
+##However if you type getwd() directly in the console you have a different wd
+
+#INCLUDING UTILITIES
+source(include_dir)
+
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_dir)
+```
+
+# CHECKING GAUSSIANITY
+
+Reference: `Lab_4.R`
+
+From `Lab_4.R` we have many options to test normality of data:
+
+-   **Henze-Zikler's test**: initially it gives some weird errors about singularity, then after removing the variable RATCMP2 which had null estimated variance it begins to work
+
+-   **Shapiro-Wilk test family**: It is not possible to perform these kind of test on our data, since they are limited to 5000 observations
+
+-   We can reject Gaussianity also with univariate tests like the ANDERSON-DARLING test. However, we can only reject gaussianity and not accept it, since gaussianity of the conditions is a necessary condition for the multivariate gaussianity.
+
+## Problems
+
+-   Singular estimated covariance matrix S
+
+```{r}
+#plotting the correlation matrix between variables top have an insight on the
+library(GGally)
+library(ggplot2)
+library(dplyr)
+ggcorr(select_if(pisa_data,is.numeric))
+
+#removing/modifying variables
+pisa_data$X <- NULL
+pisa_data$schID <- as.factor(pisa_data$schID)
+
+#computing the determinant of the covariance matrix
+det(cov(select_if(subset(pisa_data,select = -c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI)),is.numeric)))
+image(cov(select_if(subset(pisa_data,select = -c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI)),is.numeric)))
+```
+
+# QQPLOT
+
+```{r}
+qq_plot_gaussianity <- function(data){
+  # Compute the quantiles of the data
+  quantiles <- quantile(data, probs = seq(0, 1, by = 0.01))
+
+  # Compute the theoretical quantiles of a normal distribution
+  norm_quantiles <- qnorm(seq(0, 1, by = 0.01), mean = mean(data), sd = sd(data))
+
+  # Create the QQ-plot
+  plot(norm_quantiles, quantiles, main = "QQ-plot", xlab = "Theoretical quantiles", ylab = "Sample quantiles")
+  abline(0, 1, col = "red")  # add a reference line
+}
+
+# Call the QQ-plot function with the dataset
+for(i in 4:dim(pisa_data)[2]){
+  qq_plot_gaussianity(pisa_data[,i])
+}
+```
+
+# TESTING NORMALITY
+
+In `result` we can see also the results of the univariate tests on gaussianity
+
+```{r}
+library(MVN)
+#multivariate Shapiro-Wilk test: not possible to perform
+#sample size is too big -> maybe perform the test sampling data from the datset
+result <- mvn(data = select_if(pisa_data,is.numeric), subset = "CNT", mvnTest = "hz",univariateTest = "SW")
+library(mvnormtest)
+mshapiro.test(t(pisa_data[-c(1,2,3)]))  
+#to explore the options of mvn
+#help(mvn)
+ks.test(select_if(pisa_data,is.numeric),"pnorm")
+```
+
+# REMOVING OUTLIERS
+
+```{r}
+M <- colMeans(select_if(pisa_data,is.numeric))
+S <- cov(select_if(pisa_data,is.numeric))
+#computing mahlanobis distance
+d2 <- matrix(mahalanobis(select_if(pisa_data,is.numeric), M, S))
+#removing over a certain distance from the mean
+pisa_wo_outliers<- pisa_data[which(d2 <= 8), ] #too many observations removed with 8
+dim(pisa_data)
+dim(pisa_wo_outliers)
+#testing again on the dataset wo outliers
+result_wo_ouliers <- mvn(data = pisa_wo_outliers, subset = "CNT", mvnTest = "hz",univariateTest = "AD")
+```
+
+# TRANSFORMING
+
+```{r}
+library(car)
+bcn_param <- powerTransform(select_if(pisa_data,is.numeric), family = "bcnPower") #take long
+trasformed_data <- bcnPower(U=select_if(pisa_wo_outliers,is.numeric),lambda=bcn_param$lambda, gamma=bcn_param$gamma)
+#add the CNT column
+transformed_data["CNT"] <- pisa_wo_outliers$CNT
+
+#testing on transformed data
+result_wo_ouliers <- mvn(data = transformed_data, subset = "CNT", mvnTest = "hz",univariateTest = "AD")
+```
