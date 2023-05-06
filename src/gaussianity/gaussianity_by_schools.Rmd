@@ -6,16 +6,13 @@ editor_options:
   chunk_output_type: inline
 ---
 
-# NOTES
+# REFERENCES AND NOTES
 
--   for MANOVA we need multivariate gaussianity for each group
+-   for MANOVA we need multivariate gaussianity for each group, for ANOVA we need univariate gaussianity for each group
 
--   for ANOVA we need univariate gaussianity for each group
-
--   we do not need multivariate gaussianity for the whole dataset since we do not want to perform tests on the mean for the whole dataset
-
-# REFERENCES
-
+```{=html}
+<!-- -->
+```
 -   stats.stackechange post that tells that it is highly improbable to have gaussianity with a large number of observations: <https://stats.stackexchange.com/questions/2492/is-normality-testing-essentially-useless> (confirmed by one of Masci mails)
 
 # PRELIMINARY STUFF
@@ -43,87 +40,106 @@ Reference: `Lab_4.R`
 
 From `Lab_4.R` we have many options to test normality of data:
 
--   **Henze-Zikler's test:** giving subset = CNT as an option since we want to check normality in the groups
+-   **Henze-Zikler's test:** giving subset = CNT as an option we check normality in the groups
 
 -   **Shapiro-Wilk test family**: limited to 5000 observations
 
--   We can reject Gaussianity also with univariate tests like the ANDERSON-DARLING test. However, we can only reject gaussianity and not accept it, since gaussianity of the components is a necessary (but not sufficient) condition for the multivariate gaussianity.
+-   We can reject Gaussianity also with univariate tests like the ANDERSON-DARLING or SHAPIRO-WILK test. However, we can only reject gaussianity and not accept it, since gaussianity of the components is a necessary (but not sufficient) condition for the multivariate gaussianity.
 
 # TESTING NORMALITY
 
-In `result` we can see also the results of the univariate tests on gaussianity
+Normality in the full dataset highly improbable (almost 5000 obs, -\>see the stats.stackexchange post in the references)
 
 ```{r}
 library(MVN)
 library(dplyr)
-#Heinze-Zikler to test multivariate normality
-result <- mvn(data = subset(pisa_data,select = -schID), subset = "CNT", mvnTest = "hz",univariateTest = "SW")
-#With the dataset grouped by schools we can perform also the multivariate version of shapiro test
+#Heinze-Zikler: in result we can see also the results of the univariate tests on gaussianity
+result_hz <- mvn(data = select_if(pisa_data,is.numeric), mvnTest = "hz",univariateTest = "SW")
+#multivariate shapiro on the whole dataset
+result_shapiro <- mshapiro.test(t(select_if(pisa_data,is.numeric)))
+```
+
+Normality in the groups (MANOVA assumption)
+
+```{r}
+#Heinze-Zikler: in result we can see also the results of the univariate tests on gaussianity
+result_hz_cntry <- mvn(data = subset(pisa_data,select = -schID), subset = "CNT", mvnTest = "hz",univariateTest = "SW")
+
+#Multivariate Shapiro-test
 library(mvnormtest)
-for(){
-  
+result_shapiro_cntry <- list()
+
+for(cntry in unique(pisa_data$CNT)){
+  result_shapiro_cntry[[cntry]] <- mshapiro.test(t(select_if(pisa_data[pisa_data$CNT==cntry,],is.numeric)))
 }
 
-#non capisco cosa sia questo
+#non ho capito cos'è questo 
 #ks.test(select_if(pisa_data,is.numeric),"pnorm")
 ```
 
-# QQPLOT
+# QQPLOTS
+
+Normality in the whole dataset for each variable
 
 ```{r}
-qq_plot_gaussianity <- function(data){
+qq_plot_gaussianity <- function(data,variable_name){
   # Compute the quantiles of the data
   quantiles <- quantile(data, probs = seq(0, 1, by = 0.01))
-
   # Compute the theoretical quantiles of a normal distribution
   norm_quantiles <- qnorm(seq(0, 1, by = 0.01), mean = mean(data), sd = sd(data))
-
   # Create the QQ-plot
-  plot(norm_quantiles, quantiles, main = "QQ-plot", xlab = "Theoretical quantiles", ylab = "Sample quantiles")
+  plot(norm_quantiles, quantiles, main = variable_name, xlab = "Theoretical quantiles", ylab = "Sample quantiles")
   abline(0, 1, col = "red")  # add a reference line
 }
 
-# Call the QQ-plot function with the dataset
+#Call the QQ-plot function with the full dataset
 for(i in 4:dim(pisa_data)[2]){
-  qq_plot_gaussianity(pisa_data[,i])
+  qq_plot_gaussianity(pisa_data[,i],colnames(pisa_data)[i])
+}
+```
+
+Normality by groups for each variable
+
+TODO: finish the implementation
+
+```{r}
+qq_plot_gaussianity <- function(data,variable_name){
+  #plot call
+  plot(1, type = "n", xlab = "Theoretical quantiles", ylab = "Sample quantiles", main = variable_name)
+  #looping over countries
+  for(cntry in unique(pisa_data$CNT)){
+    # Compute the quantiles of the data
+    quantiles[cntry] <- quantile(data[data$CNT==cntry,], probs = seq(0, 1, by = 0.01))
+    # Compute the theoretical quantiles of a normal distribution
+    norm_quantiles[cntry] <- qnorm(seq(0, 1, by = 0.01), mean = mean(data[data$CNT==cntry,]), sd = sd(data[data$CNT==cntry,]))
+    #plotting
+    points(norm_quantiles[cntry], quantiles[cntry], col = )
+  }
+  #final touches
+  legend()
+  abline(0, 1, col = "red")  # add a reference line
 }
 ```
 
 # REMOVING OUTLIERS
 
-## Problems
-
--   Singular estimated covariance matrix S: according to chatGPT one of the causes of singular covariance matrices could be the presence of highly correlated variables. As shown in \`exploratory-analysis/exploring-data-by-schools.Rmd\` it is also our case. The problem maybe solve by PCA by groups, since we're transforming our data to obtain uncorrelated variables (i.e. Principal Components)
-
 ```{r}
-#plotting the correlation matrix between variables top have an insight on the
-library(GGally)
-library(ggplot2)
-library(dplyr)
-ggcorr(select_if(pisa_data,is.numeric))
+#computing estimated mean and covariance
+M <- colMeans(select_if(pisa_data,is.numeric))
+S <- cov(select_if(pisa_data,is.numeric))
+#chack that S is non-singular
+det(S)
+#computing mahlanobis distance from the mean for each observation
+d2 <- matrix(mahalanobis(select_if(pisa_data,is.numeric), M, S))
 
-#removing/modifying variables
-pisa_data$X <- NULL
-pisa_data$schID <- as.factor(pisa_data$schID)
-
-#computing the determinant of the covariance matrix
-det(cov(select_if(subset(pisa_data,select = -c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI)),is.numeric)))
-image(cov(select_if(subset(pisa_data,select = -c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI)),is.numeric)))
+#removing over a certain distance from the mean:
+threshold_dist <- 50 #we need to tune this parameter
+pisa_wo_outliers<- pisa_data[which(d2 <= threshold_dist), ] 
 ```
 
 ```{r}
-pisa_data$schID<-as.factor(pisa_data$schID)
-M <- colMeans(select_if(pisa_data,is.numeric))
-S <- cov(select_if(pisa_data,is.numeric))
-
-#computing mahlanobis distance
-d2 <- matrix(mahalanobis(select_if(pisa_data,is.numeric), M, S))
-#removing over a certain distance from the mean
-pisa_wo_outliers<- pisa_data[which(d2 <= 8), ] #too many observations removed with 8
-dim(pisa_data)
-dim(pisa_wo_outliers)
 #testing again on the dataset wo outliers
-result_wo_ouliers <- mvn(data = pisa_wo_outliers, subset = "CNT", mvnTest = "hz",univariateTest = "AD")
+result_wo_ouliers <- mvn(data = subset(pisa_wo_outliers,select = -schID), subset = "CNT", mvnTest = "hz",univariateTest = "SW")
 ```
 
 # TRANSFORMING
@@ -134,7 +150,17 @@ bcn_param <- powerTransform(select_if(pisa_data,is.numeric), family = "bcnPower"
 trasformed_data <- bcnPower(U=select_if(pisa_wo_outliers,is.numeric),lambda=bcn_param$lambda, gamma=bcn_param$gamma)
 #add the CNT column
 transformed_data["CNT"] <- pisa_wo_outliers$CNT
+```
 
-#testing on transformed data
+```{r}
+#testing again on transformed data
 result_wo_ouliers <- mvn(data = transformed_data, subset = "CNT", mvnTest = "hz",univariateTest = "AD")
 ```
+
+# ISSUES LOGBOOK
+
+-   Singular estimated covariance matrix S
+
+    -   according to chatGPT one of the causes of singular covariance matrices could be the presence of highly correlated variables. As shown in \`exploratory-analysis/exploring-data-by-schools.Rmd\` it is also our case. The problem may be solveD by PCA by groups, since we're transforming our data to obtain uncorrelated variables (i.e. Principal Components)
+
+    -   Anyway, it was not our case this time, since the singular covariance matrix was due to some variable included in the dataset
