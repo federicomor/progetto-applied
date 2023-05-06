@@ -59,22 +59,26 @@ for(i in 1:length(states)){
 
 }
 
+avg_vals
+avg_vals[3:18,]=avg_vals[3:18,]+abs(min(avg_vals[3:18,]))
+avg_vals
+
 for(j in 1:6){
 	avg_vals[1,j] = max(avg_vals[3:dim(avg_vals)[1],j])
 	avg_vals[2,j] = min(avg_vals[3:dim(avg_vals)[1],j])
 }
 
-avg_vals
+
 avg_vals_df=as.data.frame(avg_vals)
 avg_vals_df
 ```
 
 
 ```{r}
-avg_vals
+# avg_vals
 for(i in 1:length(states)){
-	# avg_vals_df[c(1,2,i),]
-	radarchart(avg_vals_df[c(1,2,i),],title=states[i])
+	# show(avg_vals_df[c(1,2,i+2),])
+	radarchart(avg_vals_df[c(1,2,i+2),],title=states[i])
 }
 ```
 
