@@ -109,3 +109,23 @@ stu_WB = c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE",
 stu_PROF = c("TEACHINT","TEACHSUP","STIMREAD")
 #School
 stu_SCH = c("PERCOMP","PERCOOP","ICTSCH")
+############################################################################
+
+## SCORE dataset
+tec = c("scPC1_tec","scPC2_tec","scPC3_tec","scPC4_tec","scPC5_tec")
+
+psi = c( "scPC1_psi", "scPC2_psi", "scPC3_psi", "scPC4_psi", "scPC5_psi")
+
+clt = c("scPC1_clt", "scPC2_clt", "scPC3_clt")
+
+fam = "scPC1_fam"
+
+tch = "scPC1_tch"
+
+sch = c("scPC1_sch","scPC2_sch")
+
+
+
+
+
+
