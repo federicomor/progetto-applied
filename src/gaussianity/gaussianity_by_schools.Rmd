@@ -66,6 +66,10 @@ for(){
 
 #non capisco cosa sia questo
 #ks.test(select_if(pisa_data,is.numeric),"pnorm")
+# https://it.wikipedia.org/wiki/Test_di_Kolmogorov-Smirnov#Descrizione_del_test_a_due_code_-_un_campione
+# sembra un test per studiare se un insieme di dati hanno una certa distribuzione
+# / H0: F(x) = F0(X), tipo legge normale
+# \ H1: ecc
 ```
 
 # QQPLOT
