@@ -19,47 +19,94 @@ library(car)
 library(dbscan)
 library(cluster)
 library(fields)
-```
 
-## **1.** Hierarchical Clustering (generic p,g, in this case: p=4, g=3)
-```{r, warning=FALSE, message=FALSE}
 #directories
-working_dir ="C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/progetto-applied"
-dataset_dir = "../data"
-include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
+dataset_dir = "../../data/"
+include_dir = "../include/Utilities.R"
 #including utilities
 #including utilities
 source(include_dir)
 #importing the dataset
-pisa_data <- read.csv(file=paste(working_dir,"/data/pisa-woNA_school_final.csv",sep=""))
+pisa_data <- read.csv(file=paste(dataset_dir,"pisa-woNA_school_final_wo_Outl_ClassicData_PCA_SCORES.csv",sep=""))
 head(pisa_data)
 
-data_grezzi = pisa_data
+categories_variables = list(tec,psi,clt,fam,tch,sch)
+categories_variables_names = c("tec","psi","clt","fam","tch","sch")
+data_grezzi = pisa_data[,c("CNT",tec)]
+head(data_grezzi)
 # Dimensions
 n = dim(data_grezzi)[1]
 p = dim(data_grezzi)[2]
 
-# Data without labels
-meas_labels<-c(4:p)
+
+meas_labels<-c(2:p)
 measures = data_grezzi[,meas_labels]
-## note: rescale the variables if ther's a high order of magnitude
-# Data'slabels
+## note: rescale the variables if there's a high order of magnitude
 
-have_labels = 0
-labels<-2
-if(have_labels == 1){
-  factors = as.factor(data_grezzi[,labels])
-  livelli <- levels(factors)
-  g = length(livelli)
-}
-
-# Simple EDA
-#pairs(measures, pch = 19)
-
-## If there is no label:
-## n = dim(data)[1]
-## p = dim(data)[2]
 ```
+# **0.** Exploration: choice of measure and linkage
+```{r}
+
+for(var in categories_variables){
+  
+  data_grezzi = pisa_data[,c("CNT",var)]
+  meas_labels<-c(2: dim(data_grezzi)[2])
+  measures = data_grezzi[,meas_labels]
+
+data.e = dist(measures, method="euclidean")
+data.m = dist(measures, method="manhattan")
+data.c = dist(measures, method="canberra")
+
+distances = list(data.e,data.m,data.c)
+names = c("euclidean","manhattan","canberra")
+
+
+i=1
+for(dist_chosen in distances ){
+data_grezzi = pisa_data[,c("CNT",tec)]
+name_dist_chosen <- names[i]
+i=i+1
+
+# linkages: "single", "average", "complete", "ward","ward.D2"
+
+data.ds = hclust(dist_chosen, method='single')
+data.da = hclust(dist_chosen, method='average')
+data.dc = hclust(dist_chosen, method='complete')
+data.dw = hclust(dist_chosen, method="ward")
+data.dw2 = hclust(dist_chosen, method="ward.D2")
+
+par(mfrow=c(2,2))
+plot(data.dc, main=paste(name_dist_chosen,'complete'), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+plot(data.da, main=paste(name_dist_chosen,'average'), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+plot(data.dw, main=paste(name_dist_chosen,'ward'), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+plot(data.dw2, main=paste(name_dist_chosen,'wardD2'), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+
+
+# Cophenetic Matrices
+
+coph.dc <- cophenetic(data.dc)
+coph.da <- cophenetic(data.da)
+coph.dw <- cophenetic(data.dw)
+coph.dw2 <- cophenetic(data.dw2)
+
+# Cophenetic Coefficients
+
+dc = cor(data.e, coph.dc)
+da = cor(data.e, coph.da)
+dw = cor(data.e, coph.dw)
+dw2 = cor(data.e, coph.dw2)
+
+print(categories_variables_names[i],c(dc,da,dw,dw2))
+}
+}
+# euclidian average : 0.6, but ward seems so much better from the dendogram
+# manhatta average 0.55 but ward seems so much better from the dendogram
+# terrible canberra
+```
+
+
+
+
 
 ### **1.1.** Compute dissimilarities
 ```{r, warning=FALSE, message=FALSE}
@@ -130,13 +177,6 @@ coph.mat <- cophenetic(data.hclust)
 coph.coeff = cor(data.dist, coph.mat)
 coph.coeff
 
-
-# Interpret the clusters (ONLY if we have the true labels)
-if(have_labels == 1){
-  table(label.true = factors, label.cluster = cluster.cutree)
-}
-# Plot
-#plot(measures, col=ifelse(cluster.cutree==1,'red','blue'), pch=19)
 
 ```
 
