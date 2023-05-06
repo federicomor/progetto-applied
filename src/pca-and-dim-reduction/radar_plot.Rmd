@@ -103,6 +103,6 @@ create_beautiful_radarchart <- function(data, color = "#00AFBB",
 
 for(i in 1:length(states)){
 	# avg_vals_df[c(1,2,i),]
-	create_beautiful_radarchart(avg_vals_df[c(1,2,i),],title=states[i])
+	create_beautiful_radarchart(avg_vals_df[c(1,2,i+2),],title=states[i])
 }
 ```
