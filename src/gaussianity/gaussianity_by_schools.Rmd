@@ -22,19 +22,19 @@ editor_options:
 
 ```{r, setup}
 #DIRECTORIES
-working_dir ="/Users/marcogalliani/Desktop/progetto-applied"
-dataset_dir = paste(working_dir,"/data/pisa-woNA_school_final.csv",sep="")
-include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
-#SETTING wd
-knitr::opts_knit$set(root.dir = working_dir)
-##this commmand set the working directory for all the chunks. If you type getwd() and run the ##code chunk it will use this wd.
-##However if you type getwd() directly in the console you have a different wd
-
+root_proj_dir = "../../"
+dataset_dir = paste(root_proj_dir,"/data/pisa-woNA_school_final.csv",sep="")
+include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_dir)
-
 #IMPORTING THE DATASET
 pisa_data <- read.csv(file=dataset_dir)
+```
+
+```{r}
+#some adjustments on the data
+pisa_data$X <- NULL
+pisa_data$schID <- as.factor(pisa_data$schID)
 ```
 
 # CHECKING GAUSSIANITY
@@ -43,30 +43,29 @@ Reference: `Lab_4.R`
 
 From `Lab_4.R` we have many options to test normality of data:
 
--   **Henze-Zikler's test**: initially it gives some weird errors about singularity, then after removing the variable RATCMP2 which had null estimated variance it begins to work
+-   **Henze-Zikler's test:** giving subset = CNT as an option since we want to check normality in the groups
 
--   **Shapiro-Wilk test family**: It is not possible to perform these kind of test on our data, since they are limited to 5000 observations
+-   **Shapiro-Wilk test family**: limited to 5000 observations
 
--   We can reject Gaussianity also with univariate tests like the ANDERSON-DARLING test. However, we can only reject gaussianity and not accept it, since gaussianity of the conditions is a necessary condition for the multivariate gaussianity.
+-   We can reject Gaussianity also with univariate tests like the ANDERSON-DARLING test. However, we can only reject gaussianity and not accept it, since gaussianity of the components is a necessary (but not sufficient) condition for the multivariate gaussianity.
 
-## Problems
+# TESTING NORMALITY
 
--   Singular estimated covariance matrix S: according to chatGPT one of the causes of singular covariance matrices could be the presence of highly correlated variables. As shown in \`exploratory-analysis/exploring-data-by-schools.Rmd\` it is also our case. The problem maybe solve by PCA by groups, since we're transforming our data to obtain uncorrelated variables (i.e. Principal Components)
+In `result` we can see also the results of the univariate tests on gaussianity
 
 ```{r}
-#plotting the correlation matrix between variables top have an insight on the
-library(GGally)
-library(ggplot2)
+library(MVN)
 library(dplyr)
-ggcorr(select_if(pisa_data,is.numeric))
+#Heinze-Zikler to test multivariate normality
+result <- mvn(data = subset(pisa_data,select = -schID), subset = "CNT", mvnTest = "hz",univariateTest = "SW")
+#With the dataset grouped by schools we can perform also the multivariate version of shapiro test
+library(mvnormtest)
+for(){
+  
+}
 
-#removing/modifying variables
-pisa_data$X <- NULL
-pisa_data$schID <- as.factor(pisa_data$schID)
-
-#computing the determinant of the covariance matrix
-det(cov(select_if(subset(pisa_data,select = -c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI)),is.numeric)))
-image(cov(select_if(subset(pisa_data,select = -c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI)),is.numeric)))
+#non capisco cosa sia questo
+#ks.test(select_if(pisa_data,is.numeric),"pnorm")
 ```
 
 # QQPLOT
@@ -90,36 +89,33 @@ for(i in 4:dim(pisa_data)[2]){
 }
 ```
 
-# TESTING NORMALITY
+# REMOVING OUTLIERS
 
-In `result` we can see also the results of the univariate tests on gaussianity
+## Problems
+
+-   Singular estimated covariance matrix S: according to chatGPT one of the causes of singular covariance matrices could be the presence of highly correlated variables. As shown in \`exploratory-analysis/exploring-data-by-schools.Rmd\` it is also our case. The problem maybe solve by PCA by groups, since we're transforming our data to obtain uncorrelated variables (i.e. Principal Components)
 
 ```{r}
-library(MVN)
-#multivariate Shapiro-Wilk test: not possible to perform
-#sample size is too big -> maybe perform the test sampling data from the datset=
-pisa_data$schID<-as.factor(pisa_data$schID)
-result <- mvn(data = select_if(pisa_data,is.numeric), mvnTest = "hz",univariateTest = "SW")
+#plotting the correlation matrix between variables top have an insight on the
+library(GGally)
+library(ggplot2)
+library(dplyr)
+ggcorr(select_if(pisa_data,is.numeric))
 
-library(mvnormtest)
-mshapiro.test(t(pisa_data[-c(1,2,3)]))  
-#to explore the options of mvn
-#help(mvn)
-ks.test(select_if(pisa_data,is.numeric),"pnorm")
+#removing/modifying variables
+pisa_data$X <- NULL
+pisa_data$schID <- as.factor(pisa_data$schID)
+
+#computing the determinant of the covariance matrix
+det(cov(select_if(subset(pisa_data,select = -c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI)),is.numeric)))
+image(cov(select_if(subset(pisa_data,select = -c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI)),is.numeric)))
 ```
-
-# REMOVING OUTLIERS
 
 ```{r}
 pisa_data$schID<-as.factor(pisa_data$schID)
 M <- colMeans(select_if(pisa_data,is.numeric))
 S <- cov(select_if(pisa_data,is.numeric))
-heatmap(S)
-image(S,col=heat.colors(1000))
-library(plot.matrix)
-plot(as.cor(pisa_data))
-x11()
-plot(S,breaks = c(-1,1),las=2)
+
 #computing mahlanobis distance
 d2 <- matrix(mahalanobis(select_if(pisa_data,is.numeric), M, S))
 #removing over a certain distance from the mean
