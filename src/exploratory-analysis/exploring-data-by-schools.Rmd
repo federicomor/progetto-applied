@@ -11,17 +11,11 @@ In this notebook I collect some useful plots made to across the other notebooks 
 
 ```{r, setup}
 #DIRECTORIES
-working_dir ="/Users/marcogalliani/Desktop/progetto-applied"
-dataset_dir = paste(working_dir,"/data/pisa-woNA_school_final.csv",sep="")
-include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
-#SETTING wd
-knitr::opts_knit$set(root.dir = working_dir)
-##this commmand set the working directory for all the chunks. If you type getwd() and run the ##code chunk it will use this wd.
-##However if you type getwd() directly in the console you have a different wd
-
+root_proj_dir = "../../"
+dataset_dir = paste(root_proj_dir,"/data/pisa-woNA_school_final.csv",sep="")
+include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_dir)
-
 #IMPORTING THE DATASET
 pisa_data <- read.csv(file=dataset_dir)
 ```
