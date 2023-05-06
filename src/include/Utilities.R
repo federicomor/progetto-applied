@@ -3,6 +3,37 @@
 ## (1) dictionary to get the variables description ----
 what_is <- new.env(hash = TRUE, parent = emptyenv(), size = NA)
 
+## for the scores dataset
+## 
+## better usage: cat(what_is[["scPC1_tec"]])
+## così mostra anche gli "a capo"
+## 
+## o con la nuova funzione
+spiegami = function(colonna){
+	cat(what_is[[colonna]])
+}
+
+what_is[["scPC1_tec"]] = "quanta tecnologia gli studenti hanno a disposizione
+	alta -> maggiore disponibilità"
+what_is[["scPC2_tec"]] = "contrasto tra uso della tecnologia ed interesse/dedizione dello studente
+	alta -> gli studenti avrebbero anche molta tecnologia a disposizione ma non sembrano interessati/bravi
+	bassa -> gli studenti sono molto interessati alla tecnologia malgrado la poca disponibilità"
+what_is[["scPC3_tec"]] = "intepretazione ancora da dare"
+what_is[["scPC4_tec"]] = "intepretazione ancora da dare"
+what_is[["scPC5_tec"]] = "intepretazione ancora da dare"
+what_is[["scPC1_psi"]] = "intepretazione ancora da dare"
+what_is[["scPC2_psi"]] = "intepretazione ancora da dare"
+what_is[["scPC3_psi"]] = "intepretazione ancora da dare"
+what_is[["scPC4_psi"]] = "intepretazione ancora da dare"
+what_is[["scPC5_psi"]] = "intepretazione ancora da dare"
+what_is[["scPC1_clt"]] = "intepretazione ancora da dare"
+what_is[["scPC2_clt"]] = "intepretazione ancora da dare"
+what_is[["scPC3_clt"]] = "intepretazione ancora da dare"
+what_is[["scPC1_fam"]] = "intepretazione ancora da dare"
+what_is[["scPC1_tch"]] = "intepretazione ancora da dare"
+what_is[["scPC1_sch"]] = "intepretazione ancora da dare"
+what_is[["scPC2_sch"]] = "intepretazione ancora da dare"
+
 ## insert into hash table
 what_is[["MMINS"]] = "Learning time (minutes per week) - <Mathematics>" 
 what_is[["LMINS"]] = "Learning time (minutes per week) - <test language>" 
