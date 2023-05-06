@@ -3,6 +3,41 @@
 ## (1) dictionary to get the variables description ----
 what_is <- new.env(hash = TRUE, parent = emptyenv(), size = NA)
 
+## for the scores dataset
+## 
+## better usage: cat(what_is[["scPC1_tec"]])
+## così mostra anche gli "a capo"
+## 
+## o con la nuova funzione
+spiegami = function(colonna){
+	cat(what_is[[colonna]])
+}
+## esempio spiegami("scPC1_tec")
+## aggiungere pure altri nomi nel caso uno dimenticasse "spiegami"
+dimmi = racconta = raccontami = cose = cos_e = interpreta = interpretami = spiega = spiegami
+## quindi ora dimmi(ecc) e le altre funzionano allo stesso modo
+
+what_is[["scPC1_tec"]] = "quanta tecnologia gli studenti hanno a disposizione
+	alta -> maggiore disponibilità"
+what_is[["scPC2_tec"]] = "contrasto tra uso della tecnologia ed interesse/dedizione dello studente
+	alta -> gli studenti avrebbero anche molta tecnologia a disposizione ma non sembrano interessati/bravi
+	bassa -> gli studenti sono molto interessati alla tecnologia malgrado la poca disponibilità"
+what_is[["scPC3_tec"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC4_tec"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC5_tec"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC1_psi"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC2_psi"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC3_psi"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC4_psi"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC5_psi"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC1_clt"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC2_clt"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC3_clt"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC1_fam"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC1_tch"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC1_sch"]] = "intepretazione ancora da dare/scrivere"
+what_is[["scPC2_sch"]] = "intepretazione ancora da dare/scrivere"
+
 ## insert into hash table
 what_is[["MMINS"]] = "Learning time (minutes per week) - <Mathematics>" 
 what_is[["LMINS"]] = "Learning time (minutes per week) - <test language>" 
@@ -109,3 +144,23 @@ stu_WB = c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE",
 stu_PROF = c("TEACHINT","TEACHSUP","STIMREAD")
 #School
 stu_SCH = c("PERCOMP","PERCOOP","ICTSCH")
+############################################################################
+
+## SCORE dataset
+tec = c("scPC1_tec","scPC2_tec","scPC3_tec","scPC4_tec","scPC5_tec")
+
+psi = c( "scPC1_psi", "scPC2_psi", "scPC3_psi", "scPC4_psi", "scPC5_psi")
+
+clt = c("scPC1_clt", "scPC2_clt", "scPC3_clt")
+
+fam = "scPC1_fam"
+
+tch = "scPC1_tch"
+
+sch = c("scPC1_sch","scPC2_sch")
+
+
+
+
+
+
