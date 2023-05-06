@@ -16,26 +16,25 @@ editor_options:
 
 # REFERENCES
 
--   <https://stats.stackexchange.com/questions/2492/is-normality-testing-essentially-useless>
+-   stats.stackechange post that tells that it is highly improbable to have gaussianity with a large number of observations: <https://stats.stackexchange.com/questions/2492/is-normality-testing-essentially-useless> (confirmed by one of Masci mails)
 
 # PRELIMINARY STUFF
 
-```{r setup}
-#directories
-#working_dir = "/Users/marcogalliani/Desktop/PISA-dev-local"
-working_dir ="C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/progetto-applied"
-dataset_dir = "../data"
+```{r, setup}
+#DIRECTORIES
+working_dir ="/Users/marcogalliani/Desktop/progetto-applied"
+dataset_dir = paste(working_dir,"/data/pisa-woNA_school_final.csv",sep="")
 include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
-#including utilities
-source(include_dir)
-#importing the dataset
-pisa_data <- read.csv(file=paste(working_dir,"/data/pisa-woNA_school_final.csv",sep=""))
-dim(pisa_data)
-colnames(pisa_data)
-#select only ICT moments fot the moment
-library(dplyr)
-#pisa_data <- pisa_data %>% dplyr::select(all_of(c("CNT",stu_ICT,"RATCMP1")))
+#SETTING wd
+knitr::opts_knit$set(root.dir = working_dir)
+##this commmand set the working directory for all the chunks. If you type getwd() and run the ##code chunk it will use this wd.
+##However if you type getwd() directly in the console you have a different wd
 
+#INCLUDING UTILITIES
+source(include_dir)
+
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_dir)
 ```
 
 # CHECKING GAUSSIANITY
@@ -52,15 +51,26 @@ From `Lab_4.R` we have many options to test normality of data:
 
 ## Problems
 
--\> Null estimated variance of RATCMP2
+-   Singular estimated covariance matrix S
 
 ```{r}
-image(cov(select_if(pisa_data,is.numeric)))
-pisa_data$RATCMP1 <- NULL #RATCMP2 seems has null estimated variance and gives problems
-#image(cov(select_if(pisa_data,is.numeric)))
+#plotting the correlation matrix between variables top have an insight on the
+library(GGally)
+library(ggplot2)
+library(dplyr)
+ggcorr(select_if(pisa_data,is.numeric))
+
+#removing/modifying variables
+pisa_data$X <- NULL
+pisa_data$schID <- as.factor(pisa_data$schID)
+
+#computing the determinant of the covariance matrix
+det(cov(select_if(subset(pisa_data,select = -c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI)),is.numeric)))
+image(cov(select_if(subset(pisa_data,select = -c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI)),is.numeric)))
 ```
 
 # QQPLOT
+
 ```{r}
 qq_plot_gaussianity <- function(data){
   # Compute the quantiles of the data
@@ -74,32 +84,23 @@ qq_plot_gaussianity <- function(data){
   abline(0, 1, col = "red")  # add a reference line
 }
 
-
 # Call the QQ-plot function with the dataset
 for(i in 4:dim(pisa_data)[2]){
   qq_plot_gaussianity(pisa_data[,i])
 }
-
 ```
 
--\> Unbalanced number of observations for Spain (too many)
-
-```{r}
-#number of observations b y group
-pisa_data %>% count(CNT,sort=TRUE)
-#here we can see that we have many observations about Spain. Maybe we can try excluding it to have a more balanced data
-pisa_data <- pisa_data %>% filter(CNT!="ESP")
-```
-
-## Testing
+# TESTING NORMALITY
 
 In `result` we can see also the results of the univariate tests on gaussianity
 
 ```{r}
 library(MVN)
 #multivariate Shapiro-Wilk test: not possible to perform
-#sample size is too big -> maybe perform the test sampling data from the datset
-result <- mvn(data = pisa_data, subset = "CNT", mvnTest = "hz",univariateTest = "SW")
+#sample size is too big -> maybe perform the test sampling data from the datset=
+pisa_data$schID<-as.factor(pisa_data$schID)
+result <- mvn(data = select_if(pisa_data,is.numeric), mvnTest = "hz",univariateTest = "SW")
+
 library(mvnormtest)
 mshapiro.test(t(pisa_data[-c(1,2,3)]))  
 #to explore the options of mvn
@@ -110,8 +111,15 @@ ks.test(select_if(pisa_data,is.numeric),"pnorm")
 # REMOVING OUTLIERS
 
 ```{r}
+pisa_data$schID<-as.factor(pisa_data$schID)
 M <- colMeans(select_if(pisa_data,is.numeric))
 S <- cov(select_if(pisa_data,is.numeric))
+heatmap(S)
+image(S,col=heat.colors(1000))
+library(plot.matrix)
+plot(as.cor(pisa_data))
+x11()
+plot(S,breaks = c(-1,1),las=2)
 #computing mahlanobis distance
 d2 <- matrix(mahalanobis(select_if(pisa_data,is.numeric), M, S))
 #removing over a certain distance from the mean

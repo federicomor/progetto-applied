@@ -1,0 +1,60 @@
+---
+title: "R Notebook"
+output: 
+---
+
+# EXPLORATORY ANALYSIS: SCHOOL DATASET
+
+In this notebook I collect some useful plots made to across the other notebooks that help better understanding the dataset
+
+## PRELIMINARY STUFF
+
+```{r, setup}
+#DIRECTORIES
+working_dir ="/Users/marcogalliani/Desktop/progetto-applied"
+dataset_dir = paste(working_dir,"/data/pisa-woNA_school_final.csv",sep="")
+include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
+#SETTING wd
+knitr::opts_knit$set(root.dir = working_dir)
+##this commmand set the working directory for all the chunks. If you type getwd() and run the ##code chunk it will use this wd.
+##However if you type getwd() directly in the console you have a different wd
+
+#INCLUDING UTILITIES
+source(include_dir)
+
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_dir)
+```
+
+```{r}
+#some adjustments on the data
+pisa_data$X <- NULL
+pisa_data$schID <- as.factor(pisa_data$schID)
+```
+
+## CORRELATION
+
+```{r}
+library(GGally)
+library(ggplot2)
+ggcorr(select_if(pisa_data,is.numeric),label=TRUE,label_size = 2)
+```
+
+## BOXPLOTS
+
+Boxplots for the full dataset
+
+```{r}
+#Here we see that the variability in LMINS and MMINS is very high
+boxplot(select_if(pisa_data,is.numeric),las=2,cex.axis=0.8)
+#removing the variables with the highest variance
+boxplot(select_if(subset(pisa_data,select=-c(LMINS,MMINS)),is.numeric),las=2,cex.axis=0.8)
+boxplot(select_if(subset(pisa_data,select=-c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI)),is.numeric),las=2,cex.axis=0.8)
+boxplot(select_if(subset(pisa_data,select=-c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI,ICTHOME,HISCED,ICTSCH,RATCMP1)),is.numeric),las=2,cex.axis=0.8)
+```
+
+Boxplots by country
+
+```{r}
+
+```

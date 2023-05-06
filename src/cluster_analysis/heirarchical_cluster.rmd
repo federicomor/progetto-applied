@@ -1,0 +1,149 @@
+---
+title: 'Unsupervised learning: Hierarchical, K-means clustering'
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+## **0.** Settings
+```{r setup}
+rm( list = ls() )
+
+list.files()
+graphics.off() # chiude tutti i device grafici
+cat("\014") #pulisci console
+library(mvtnorm)
+library(MVN)
+library(rgl)
+library(car)
+library(dbscan)
+library(cluster)
+library(fields)
+```
+
+## **1.** Hierarchical Clustering (generic p,g, in this case: p=4, g=3)
+```{r, warning=FALSE, message=FALSE}
+#directories
+working_dir ="C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/progetto-applied"
+dataset_dir = "../data"
+include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
+#including utilities
+#including utilities
+source(include_dir)
+#importing the dataset
+pisa_data <- read.csv(file=paste(working_dir,"/data/pisa-woNA_school_final.csv",sep=""))
+head(pisa_data)
+
+data_grezzi = pisa_data
+# Dimensions
+n = dim(data_grezzi)[1]
+p = dim(data_grezzi)[2]
+
+# Data without labels
+meas_labels<-c(4:p)
+measures = data_grezzi[,meas_labels]
+## note: rescale the variables if ther's a high order of magnitude
+# Data'slabels
+
+have_labels = 0
+labels<-2
+if(have_labels == 1){
+  factors = as.factor(data_grezzi[,labels])
+  livelli <- levels(factors)
+  g = length(livelli)
+}
+
+# Simple EDA
+#pairs(measures, pch = 19)
+
+## If there is no label:
+## n = dim(data)[1]
+## p = dim(data)[2]
+```
+
+### **1.1.** Compute dissimilarities
+```{r, warning=FALSE, message=FALSE}
+# methods: "euclidean", "manhattan", "canberra"
+name_dist_chosen <- "manhattan"
+# linkages: "single", "average", "complete", "ward", "ward.D2"
+name_linkage_chosen <- 'ward.D2'
+
+data.dist = dist(measures, method=name_dist_chosen)
+
+
+#image(1:n,1:n,as.matrix(data.dist), main=paste('metrics:, name_dist_chosen'), asp=1, xlab='i', ylab='j' )
+
+# Comment
+#   light colors = small values
+#   dark colors  = large values
+```
+
+### **1.2.** Hierarchical clustering
+```{r message=FALSE, warning=FALSE}
+data.hclust = hclust(data.dist, method=name_linkage_chosen)
+
+# Order of aggregation
+#data.hclust$merge
+# Comment
+
+# [128,] -119 80 (e.g.)
+# It means that at the step 128 the unity 119 has been aggregated to the cluster
+# produced at step 80. If both values are positive, e.g. [140,] 90 95, then we are
+# aggregating the clusters produced at the step 90 and 95. If both are negative then
+# we are creating a new cluster.
+
+# Distance at which we have aggregations
+#data.hclust$height
+
+# Ordering that allows to avoid intersection in the dendrogram
+#data.hclust$order
+```
+
+### **1.3.** Plot of the dendrograms
+```{r, warning=FALSE, message=FALSE}
+plot(data.hclust, main=paste(name_dist_chosen,name_linkage_chosen), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+```
+
+### **1.4.** Cutting the dendrogram 
+```{r, warning=FALSE, message=FALSE}
+k_chosen = 3
+plot(data.hclust, main=paste(name_dist_chosen,name_linkage_chosen), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+rect.hclust(data.hclust, k=k_chosen)
+
+
+# How to cut a dendrogram? 
+# We generate vectors of labels through the command cutree()
+
+cluster.cutree = cutree(data.hclust, k=k_chosen)
+table(cluster.cutree)
+```
+
+### **1.5.** How good is the clustering?
+```{r, warning=FALSE, message=FALSE}
+# Did it aggregate coherently with the dissimilarity matrix or not?
+
+# Cophenetic Matrices
+coph.mat <- cophenetic(data.hclust)
+
+#image(as.matrix(coph.mat), main=name_dist_chosen, asp=1 )
+# Cophenetic Coefficients
+coph.coeff = cor(data.dist, coph.mat)
+coph.coeff
+
+
+# Interpret the clusters (ONLY if we have the true labels)
+if(have_labels == 1){
+  table(label.true = factors, label.cluster = cluster.cutree)
+}
+# Plot
+#plot(measures, col=ifelse(cluster.cutree==1,'red','blue'), pch=19)
+
+```
+
+## **2.** Save data to test the mean
+```{r}
+data1 = measures[cluster.cutree==1,]
+data2 = measures[cluster.cutree==2,]
+data3 = measures[cluster.cutree==3,]
+data4 = measures[cluster.cutree==4,]
+```
