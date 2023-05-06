@@ -1030,7 +1030,7 @@ for (i in 1:length(states)) {
 
 
 
-# write the score dataset
+# Write the score dataset
 ```{r}
 dim(df)
 dim(df_sc)
@@ -1045,14 +1045,6 @@ df_sc_with_cnt
 # and the oscar to the longest name goes to...
 write.csv(df_sc_with_cnt,"../../data/pisa-woNA_school_final_wo_Outl_ClassicData_PCA_SCORES.csv")
 ```
-
-
-
-
-
-
-
-
 
 
 
