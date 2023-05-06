@@ -6,6 +6,7 @@ editor_options:
 ---
 
 # Radar plot?
+https://www.datanovia.com/en/blog/beautiful-radar-chart-in-r-using-fmsb-and-ggplot-packages/
 ```{r}
 library(fmsb)
 # The data should be organized as follow:
@@ -68,7 +69,7 @@ for(j in 1:6){
 	avg_vals[2,j] = min(avg_vals[3:dim(avg_vals)[1],j])
 }
 
-
+avg_vals
 avg_vals_df=as.data.frame(avg_vals)
 avg_vals_df
 ```
