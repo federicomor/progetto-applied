@@ -9,15 +9,15 @@ editor_options:
 
 ```{r}
 #directories
-working_dir ="C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/progetto-applied"
-dataset_dir = "../data"
-include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
+dataset_dir = "../../data/"
+include_dir = "../include/Utilities.R"
 #including utilities
 #including utilities
 source(include_dir)
 #importing the dataset
-pisa_data <- read.csv(file=paste(working_dir,"/data/pisa-woNA_school_final.csv",sep=""))
+pisa_data <- read.csv(file=paste(dataset_dir,"pisa-woNA_school_final_wo_Outl_ClassicData_PCA_SCORES.csv",sep=""))
 data<-pisa_data
+head(data)
 dim(data)
 colnames(data)
 library(MVN)
@@ -29,7 +29,7 @@ library(mvnormtest)
 ```{r}
 #select only ICT moments fot the moment
 library(dplyr)
-data <- data %>% dplyr::select(all_of(c("CNT",stu_PROF)))
+data <- data %>% dplyr::select(all_of(c("CNT",tec)))
 ```
 
 # **1.** Data
