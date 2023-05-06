@@ -34,6 +34,13 @@ library(ggplot2)
 ggcorr(select_if(pisa_data,is.numeric),label=TRUE,label_size = 2)
 ```
 
+## NUMEROSITY BY COUNTRY
+
+```{r}
+ggplot(pisa_data, aes(x = CNT)) +
+  geom_bar()
+```
+
 ## BOXPLOTS
 
 Boxplots for the full dataset
