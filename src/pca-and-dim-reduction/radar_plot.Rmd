@@ -1,0 +1,104 @@
+---
+title: "PISA dataset na exploration"
+output: 
+editor_options: 
+  chunk_output_type: inline
+---
+
+# Radar plot?
+```{r}
+library(fmsb)
+# The data should be organized as follow:
+#	The row 1 must contain the maximum values for each variable
+#	The row 2 must contain the minimum values for each variable
+#	Data for cases or individuals should be given starting from row 3
+#	The number of columns or variables must be more than 2.
+
+avg_vals = matrix(data=NA, length(states)+2,6)
+rownames(avg_vals) = c("max","min",states)
+colnames(avg_vals) = c("tec","psi","clt","fam","tch","sch")
+avg_vals
+
+# we need to save for each state a certain combination of those cols
+# inside the different categories
+# tec
+# psi
+# clt
+# fam
+# tch
+# sch
+
+# forse usando gli score delle PCs?
+df_scores = read.csv("../../data/pisa-woNA_school_final_wo_Outl_ClassicData_PCA_SCORES.csv")
+dim(df_scores)
+
+colnames(df_scores)
+# PCs selected
+17 == 5   +5   +3   +1   +1   +2
+#     tec +psi +clt +fam +tch +sch
+col_tec=c(1:5)
+col_psi=c(6:10)
+col_clt=c(11:13)
+col_fam=c(14:14)
+col_tch=c(15:15)
+col_sch=c(16:17)
+
+```
+
+
+```{r}
+for(i in 1:length(states)){
+	df_state = df_scores[which(df_scores$CNT==states[i]),]
+
+	avg_vals[i+2,1] = mean(colMeans(df_state[,2+col_tec]))
+	avg_vals[i+2,2] = mean(colMeans(df_state[,2+col_psi]))
+	avg_vals[i+2,3] = mean(colMeans(df_state[,2+col_clt]))
+	avg_vals[i+2,4] = mean(df_state[,2+col_fam])
+	avg_vals[i+2,5] = mean(df_state[,2+col_tch])
+	avg_vals[i+2,6] = mean(colMeans(df_state[,2+col_sch]))
+
+}
+
+for(j in 1:6){
+	avg_vals[1,j] = max(avg_vals[3:dim(avg_vals)[1],j])
+	avg_vals[2,j] = min(avg_vals[3:dim(avg_vals)[1],j])
+}
+
+avg_vals
+avg_vals_df=as.data.frame(avg_vals)
+avg_vals_df
+```
+
+
+```{r}
+avg_vals
+for(i in 1:length(states)){
+	# avg_vals_df[c(1,2,i),]
+	radarchart(avg_vals_df[c(1,2,i),],title=states[i])
+}
+```
+
+
+```{r}
+create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+                                        vlabels = colnames(data), vlcex = 0.7,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype =1,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "grey", 
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+
+for(i in 1:length(states)){
+	# avg_vals_df[c(1,2,i),]
+	create_beautiful_radarchart(avg_vals_df[c(1,2,i),],title=states[i])
+}
+```
