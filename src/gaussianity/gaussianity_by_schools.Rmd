@@ -51,7 +51,7 @@ From `Lab_4.R` we have many options to test normality of data:
 
 ## Problems
 
--   Singular estimated covariance matrix S
+-   Singular estimated covariance matrix S: according to chatGPT one of the causes of singular covariance matrices could be the presence of highly correlated variables. As shown in \`exploratory-analysis/exploring-data-by-schools.Rmd\` it is also our case. The problem maybe solve by PCA by groups, since we're transforming our data to obtain uncorrelated variables (i.e. Principal Components)
 
 ```{r}
 #plotting the correlation matrix between variables top have an insight on the
