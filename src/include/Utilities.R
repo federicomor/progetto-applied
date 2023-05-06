@@ -13,6 +13,9 @@ spiegami = function(colonna){
 	cat(what_is[[colonna]])
 }
 ## esempio spiegami("scPC1_tec")
+## aggiungere pure altri nomi nel caso uno dimenticasse "spiegami"
+dimmi = racconta = raccontami = cose = cos_e = interpreta = interpretami = spiega = spiegami
+## quindi ora dimmi(ecc) e le altre funzionano allo stesso modo
 
 what_is[["scPC1_tec"]] = "quanta tecnologia gli studenti hanno a disposizione
 	alta -> maggiore disponibilità"
