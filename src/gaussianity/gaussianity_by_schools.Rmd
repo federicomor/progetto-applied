@@ -163,12 +163,12 @@ for(i in length(lambda$lambda)){
 
 #add the CNT and schID columns
 transformed_data["CNT"] <- pisa_wo_outliers$CNT
-trasformed_data["schID"] <- pisa_wo_outliers$schID
+transformed_data["schID"] <- pisa_wo_outliers$schID
 ```
 
 ```{r}
 #testing again on transformed data
-result_wo_ouliers <- mvn(data = transformed_data, subset = "CNT", mvnTest = "hz",univariateTest = "SW")
+result_trans_wo_ouliers <- mvn(data = subset(transformed_data,select = -schID), subset = "CNT", mvnTest = "hz",univariateTest = "SW")
 ```
 
 # ISSUES LOGBOOK
