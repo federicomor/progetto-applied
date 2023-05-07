@@ -13,11 +13,14 @@ In this notebook I collect some useful plots made to across the other notebooks 
 #DIRECTORIES
 root_proj_dir = "../../"
 dataset_dir = paste(root_proj_dir,"/data/pisa-woNA_school_final.csv",sep="")
+dataset_dir = paste(root_proj_dir,"/data/pisa-woNA_school_final_wo_Outl_ClassicData_PCA_SCORES.csv",sep="")
 include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_dir)
 #IMPORTING THE DATASET
 pisa_data <- read.csv(file=dataset_dir)
+
+
 ```
 
 ```{r}
@@ -31,6 +34,7 @@ pisa_data$schID <- as.factor(pisa_data$schID)
 ```{r}
 library(GGally)
 library(ggplot2)
+library(dplyr)
 ggcorr(select_if(pisa_data,is.numeric),label=TRUE,label_size = 2)
 ```
 
@@ -55,7 +59,25 @@ boxplot(select_if(subset(pisa_data,select=-c(LMINS,MMINS,BFMJ2,BMMJ1,HISEI,ICTHO
 ```
 
 Boxplots by country
+```{r}
+
+```
+
+
 
 ```{r}
+countrys = unique(pisa_data$CNT)
+shap <-c()
+
+for(c in countrys){
+  for(i in 2:dim(pisa_data)[2]){
+  #hist(pisa_data[which(pisa_data$CNT==c),i],main = paste(colnames(pisa_data)[i],c))
+  shap <- c(shap,shapiro.test(pisa_data[which(pisa_data$CNT==c),i])$p.value)
+}
+}
+plot(seq(1,(dim(pisa_data)[2]-1)*length(countrys)),shap)
+hist(shap)
+
+mì
 
 ```
