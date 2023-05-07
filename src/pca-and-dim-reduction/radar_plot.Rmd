@@ -95,7 +95,7 @@ create_beautiful_radarchart <- function(data, color = "#00AFBB",
     # Customize the grid
     cglcol = "#BBBBBB", cglty = 1, cglwd = 0.8,
     # Customize the axis
-    axislabcol = "#66AFBB", 
+    axislabcol = "#889999", 
     # Variable labels
     vlcex = vlcex, vlabels = vlabels,
     caxislabels = caxislabels, title = title, ...

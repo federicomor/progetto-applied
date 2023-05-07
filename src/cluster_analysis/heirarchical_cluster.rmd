@@ -1,7 +1,7 @@
 ---
 title: 'Unsupervised learning: Hierarchical, K-means clustering'
 output: html_document
-editor_options: 
+editor_options:
   chunk_output_type: inline
 ---
 
@@ -159,14 +159,14 @@ data.hclust = hclust(data.dist, method=name_linkage_chosen)
 plot(data.hclust, main=paste(name_dist_chosen,name_linkage_chosen), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
 ```
 
-### **1.4.** Cutting the dendrogram 
+### **1.4.** Cutting the dendrogram
 ```{r, warning=FALSE, message=FALSE}
 k_chosen = 3
 plot(data.hclust, main=paste(name_dist_chosen,name_linkage_chosen), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
 rect.hclust(data.hclust, k=k_chosen)
 
 
-# How to cut a dendrogram? 
+# How to cut a dendrogram?
 # We generate vectors of labels through the command cutree()
 
 cluster.cutree = cutree(data.hclust, k=k_chosen)
@@ -203,14 +203,14 @@ data4 = measures[cluster.cutree==4,]
 ```
 
 ## **3.** DBSCAN
-### **3.1** choice of hyperparameters 
+### **3.1** choice of hyperparameters
 ```{r}
 data_to_cluster = measures[,c(clt)]
 # Rule of thumb, minPts = dimensionality + 1 = 3 here
 # How to choose eps from minPts?
 # Plot of the distances to the minPts nearest neighbor
 k_chosen_2=dim(data_to_cluster)[2]+1
-kNNdistplot(as.matrix(data_to_cluster), k = k_chosen_2) 
+kNNdistplot(as.matrix(data_to_cluster), k = k_chosen_2)
 eps_chosen = 0.5
 abline(h = eps_chosen, col = "red", lty = 2)
 
