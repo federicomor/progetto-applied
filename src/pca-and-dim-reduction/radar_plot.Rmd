@@ -86,21 +86,22 @@ for(i in 1:length(states)){
 
 ```{r}
 create_beautiful_radarchart <- function(data, color = "#00AFBB", 
-                                        vlabels = colnames(data), vlcex = 0.7,
+                                        vlabels = colnames(data), vlcex = 0.8,
                                         caxislabels = NULL, title = NULL, ...){
   radarchart(
-    data, axistype =1,
+    data, axistype =1, calcex=0.7,
     # Customize the polygon
-    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    pcol = color, pfcol = scales::alpha(color, 0.3), plwd = 2, plty = 1,
     # Customize the grid
-    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    cglcol = "#BBBBBB", cglty = 1, cglwd = 0.8,
     # Customize the axis
-    axislabcol = "grey", 
+    axislabcol = "#66AFBB", 
     # Variable labels
     vlcex = vlcex, vlabels = vlabels,
     caxislabels = caxislabels, title = title, ...
   )
 }
+# colors()
 
 for(i in 1:length(states)){
 	# avg_vals_df[c(1,2,i),]
