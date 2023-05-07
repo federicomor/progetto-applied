@@ -30,7 +30,7 @@ pisa_data$X <- NULL
 pisa_data$schID <- as.factor(pisa_data$schID)
 ```
 
-# CHECKING GAUSSIANITY
+# TESTING NORMALITY
 
 Reference: `Lab_4.R`
 
@@ -41,8 +41,6 @@ From `Lab_4.R` we have many options to test normality of data:
 -   **Shapiro-Wilk test family**: limited to 5000 observations
 
 -   We can reject Gaussianity also with univariate tests like the ANDERSON-DARLING or SHAPIRO-WILK test. However, we can only reject gaussianity and not accept it, since gaussianity of the components is a necessary (but not sufficient) condition for the multivariate gaussianity.
-
-# TESTING NORMALITY
 
 Normality in the full dataset highly improbable (almost 5000 obs, -\>see the stats.stackexchange post in the references)
 
@@ -101,6 +99,8 @@ for(i in 4:dim(pisa_data)[2]){
 
 Plotting normality by groups for each variables
 
+-   the plots are quite. I suspect the presence of some bug in my code
+
 ```{r}
 palette <- colorRampPalette(rainbow(length(unique(pisa_data$CNT))))
 palette <- palette(length(unique(pisa_data$CNT)))
@@ -152,15 +152,23 @@ result_wo_ouliers <- mvn(data = subset(pisa_wo_outliers,select = -schID), subset
 
 ```{r}
 library(car)
-bcn_param <- powerTransform(select_if(pisa_data,is.numeric), family = "bcnPower") #take long
-trasformed_data <- bcnPower(U=select_if(pisa_wo_outliers,is.numeric),lambda=bcn_param$lambda, gamma=bcn_param$gamma)
-#add the CNT column
+#must be strictly positive 
+transformed_data <- select_if(pisa_wo_outliers,is.numeric)
+transformed_data <- transformed_data+abs(min(transformed_data)) + 1e-5 #1e-5 epsilon per ottenere disuguaglianza stretta
+lambda <- powerTransform(transformed_data)  
+
+for(i in length(lambda$lambda)){
+   transformed_data[,i]<- bcPower(U=transformed_data[,i],lambda=lambda$lambda[i])
+}
+
+#add the CNT and schID columns
 transformed_data["CNT"] <- pisa_wo_outliers$CNT
+trasformed_data["schID"] <- pisa_wo_outliers$schID
 ```
 
 ```{r}
 #testing again on transformed data
-result_wo_ouliers <- mvn(data = transformed_data, subset = "CNT", mvnTest = "hz",univariateTest = "AD")
+result_wo_ouliers <- mvn(data = transformed_data, subset = "CNT", mvnTest = "hz",univariateTest = "SW")
 ```
 
 # ISSUES LOGBOOK
