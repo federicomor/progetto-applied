@@ -96,7 +96,7 @@ da = cor(data.e, coph.da)
 dw = cor(data.e, coph.dw)
 dw2 = cor(data.e, coph.dw2)
 
-print(categories_variables_names[i],c(dc,da,dw,dw2))
+print(paste(categories_variables_names[i],c(dc,da,dw,dw2)))
 }
 }
 # euclidian average : 0.6, but ward seems so much better from the dendogram

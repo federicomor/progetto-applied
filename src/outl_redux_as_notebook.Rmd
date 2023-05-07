@@ -4,6 +4,7 @@ output:
 editor_options: 
   chunk_output_type: inline
 ---
+# Initial stuff
 ```{r}
 # setwd("/")
 # dovrebbe non servire usando alla riga dopo del read.csv la "posizione relativa"
@@ -23,7 +24,7 @@ colnames(stu)
 summary(stu)
 ```
 
-
+# Plot original data
 ```{r}
 for(i in c(4:44))
 {
@@ -41,17 +42,16 @@ for(i in c(4:44))
 #ictoutside, icthome, ictclass, genderprop sembrano i peggiori
 ```
 
-
+# Soglia selection with IQR coeff
 ```{r}
-a=2.2
-b=2.6
-delta=0.005
+a=1
+b=8
+delta=0.2
 svec = seq(a,b,by=delta)
 pvec = NULL
 
 soglia=2.41
-# for(soglia in seq(1.5,6,by=0.05)){
-# for(soglia in seq(a,b,by=delta)){
+for(soglia in seq(a,b,by=delta)){
   # boxplot(stu[,4:44])
   #rimuovere outliers evidenziati dal boxplot
   data=stu
@@ -67,24 +67,166 @@ soglia=2.41
   # print(sapply(data,function(x) sum(is.na(x))))
   #no colonne con troppi otliers rispetto alle altre
   x = 100*dim(na.omit(data))[1]/dim(data)[1]
-  print(paste("soglia=", soglia,"-> ",x))
+  print(paste("soglia =", soglia,"-> %obs =",x))
   pvec = c(pvec,x)
-  # print(paste("soglia=", soglia,"produce", round(na.omit(data)[1]/4876*100, digits=2)))
-# }
-dim(data)
-data=na.omit(data)
-dim(na.omit(data))
+  # print(paste("soglia=", soglia,"produced", round(na.omit(data)[1]/4876*100, digits=2)))
+}
+plot(svec,pvec,type="b")
+
+# troviamo dove sono le maggiori differenze
+# pvec
+cfr = mean(abs(pvec[2:length(pvec)]-pvec[1:length(pvec)-1]))
+plot(svec,pvec,type="l")
+for (i in 2:length(svec) ){
+  if( abs(pvec[i]-pvec[i-1])>3*cfr ){
+    print(paste("soglia interessante",svec[i], "salto di", pvec[i]-pvec[i-1]))
+    abline(v=svec[i],col="gray")
+  }
+}
+```
+
+## Zoom on region [2,4]
+```{r}
+a=2
+b=3.5
+delta=0.02
+svec = seq(a,b,by=delta)
+pvec = NULL
+
+soglia=2.41
+for(soglia in seq(a,b,by=delta)){
+  # boxplot(stu[,4:44])
+  #rimuovere outliers evidenziati dal boxplot
+  data=stu
+  for(col in colnames(stu)[4:44]){
+    q1=quantile(stu[[col]],probs=0.25)
+    q3=quantile(stu[[col]],probs=0.75)
+    IQR=(q3-q1)  #range interquartile
+    x = stu[[col]] > q3+IQR*soglia | stu[[col]] < q1-IQR*soglia
+    data[[col]][x]=NA
+  }
+  
+  # sum(is.na(data))  
+  # print(sapply(data,function(x) sum(is.na(x))))
+  #no colonne con troppi otliers rispetto alle altre
+  x = 100*dim(na.omit(data))[1]/dim(data)[1]
+  print(paste("soglia =", soglia,"-> %obs =",x))
+  pvec = c(pvec,x)
+  # print(paste("soglia=", soglia,"produced", round(na.omit(data)[1]/4876*100, digits=2)))
+}
+plot(svec,pvec,type="b")
+
+# troviamo dove sono le maggiori differenze
+# pvec
+cfr = mean(abs(pvec[2:length(pvec)]-pvec[1:length(pvec)-1]))
+plot(svec,pvec,type="l")
+for (i in 2:length(svec) ){
+  if( abs(pvec[i]-pvec[i-1])>3*cfr ){
+    print(paste("soglia interessante",svec[i], "salto di", pvec[i]-pvec[i-1]))
+    abline(v=svec[i],col="gray")
+  }
+}
 ```
 
 
+
+# Soglia selection with cov matrix
 ```{r}
-plot(svec,pvec,type="b")
-# abline(h=svec[19])
-min(pvec[1:length(pvec)-1]-pvec[2:length(pvec)])
-pvec[1:length(pvec)-1]-pvec[2:length(pvec)]
-pvec[19]-pvec[20]
-svec[19]
-#restano 2814 osservazioni, circa il 58%
+a=100
+b=400
+delta=1
+svec = seq(a,b,by=delta)
+pvec = NULL
+
+colnames(stu)
+df = stu[,5:44]
+# removed non numerical cols
+
+M = colMeans(df)
+S = cov(df)
+d2 = matrix(mahalanobis(df, M, S))
+hist(d2)
+
+soglia=2.41
+for(soglia in seq(a,b,by=delta)){
+  # boxplot(stu[,4:44])
+  #rimuovere outliers evidenziati dal boxplot
+  data=df
+  df_wo_outliers = df[which(d2 <= soglia), ]
+  
+  # sum(is.na(data))  
+  # print(sapply(data,function(x) sum(is.na(x))))
+  #no colonne con troppi otliers rispetto alle altre
+  x = 100*dim(df_wo_outliers)[1]/dim(df)[1]
+  print(paste("soglia =", soglia,"-> %obs =",x))
+  pvec = c(pvec,x)
+  # print(paste("soglia=", soglia,"produced", round(na.omit(data)[1]/4876*100, digits=2)))
+}
+
+plot(svec,pvec,type="l")
+
+# troviamo dove sono le maggiori differenze
+# pvec
+cfr = mean(abs(pvec[2:length(pvec)]-pvec[1:length(pvec)-1]))
+plot(svec,pvec,type="l")
+for (i in 2:length(svec) ){
+  if( abs(pvec[i]-pvec[i-1])>3*cfr ){
+    print(paste("soglia interessante",svec[i], "salto di", pvec[i]-pvec[i-1]))
+    abline(v=svec[i],col="gray")
+  }
+}
+```
+
+## Zoom on region [150,250]
+```{r}
+a=150
+b=250
+delta=0.5
+svec = seq(a,b,by=delta)
+pvec = NULL
+
+colnames(stu)
+df = stu[,5:44]
+# removed non numerical cols
+
+M = colMeans(df)
+S = cov(df)
+d2 = matrix(mahalanobis(df, M, S))
+hist(d2)
+
+soglia=2.41
+for(soglia in seq(a,b,by=delta)){
+  # boxplot(stu[,4:44])
+  #rimuovere outliers evidenziati dal boxplot
+  data=df
+  df_wo_outliers = df[which(d2 <= soglia), ]
+  
+  # sum(is.na(data))  
+  # print(sapply(data,function(x) sum(is.na(x))))
+  #no colonne con troppi otliers rispetto alle altre
+  x = 100*dim(df_wo_outliers)[1]/dim(df)[1]
+  print(paste("soglia =", soglia,"-> %obs =",x))
+  pvec = c(pvec,x)
+  # print(paste("soglia=", soglia,"produced", round(na.omit(data)[1]/4876*100, digits=2)))
+}
+
+# troviamo dove sono le maggiori differenze
+# pvec
+cfr = mean(abs(pvec[2:length(pvec)]-pvec[1:length(pvec)-1]))
+plot(svec,pvec,type="l")
+for (i in 2:length(svec) ){
+  if( abs(pvec[i]-pvec[i-1])>3*cfr ){
+    print(paste("soglia interessante",svec[i], "salto di", pvec[i]-pvec[i-1]))
+    abline(v=svec[i],col="gray")
+  }
+}
+```
+
+
+
+# Select definitive data
+```{r}
+# todo scegliendo la soglia
 ```
 
 
@@ -92,7 +234,7 @@ svec[19]
 boxplot(data[,4:44])
 ```
 
-
+# Plot data with outliers removed
 ```{r}
 for(i in c(4:44))
 {
@@ -107,7 +249,7 @@ for(i in c(4:44))
 #ordine di grandezza ancora tra e-1 ed e-27
 ```
 
-
+# Boxcox :/
 ```{r}
 #Tentativo di normalizzare con boxcox
 
@@ -116,10 +258,7 @@ dati=data[,4:44]
 dati=dati+abs(min(dati))+1e-5 #1e-5 epsilon per ottenere disuguaglianza stretta
 lambda = powerTransform(dati)    
 lambda
-```
 
-
-```{r}
 BC=data  
 for(i in c(1:41)){
   BC[i+3]=bcPower(dati[,i], lambda$lambda[i]) #dataset trasformato
@@ -127,12 +266,13 @@ for(i in c(1:41)){
 ```
 
 
+# Csv writing
 ```{r}
 write.csv(BC,"pisa-woNA_school_final_wo_Outl_BoxCox.csv")
 write.csv(data,"pisa-woNA_school_final_wo_Outl_ClassicData.csv")
 ```
 
-
+# Plot data with outliers removed and boxcox transf
 ```{r}
 for(i in c(4:44))
 {
