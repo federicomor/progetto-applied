@@ -9,10 +9,6 @@ editor_options:
 # REFERENCES AND NOTES
 
 -   for MANOVA we need multivariate gaussianity for each group, for ANOVA we need univariate gaussianity for each group
-
-```{=html}
-<!-- -->
-```
 -   stats.stackechange post that tells that it is highly improbable to have gaussianity with a large number of observations: <https://stats.stackexchange.com/questions/2492/is-normality-testing-essentially-useless> (confirmed by one of Masci mails)
 
 # PRELIMINARY STUFF
@@ -34,7 +30,7 @@ pisa_data$X <- NULL
 pisa_data$schID <- as.factor(pisa_data$schID)
 ```
 
-# CHECKING GAUSSIANITY
+# TESTING NORMALITY
 
 Reference: `Lab_4.R`
 
@@ -45,8 +41,6 @@ From `Lab_4.R` we have many options to test normality of data:
 -   **Shapiro-Wilk test family**: limited to 5000 observations
 
 -   We can reject Gaussianity also with univariate tests like the ANDERSON-DARLING or SHAPIRO-WILK test. However, we can only reject gaussianity and not accept it, since gaussianity of the components is a necessary (but not sufficient) condition for the multivariate gaussianity.
-
-# TESTING NORMALITY
 
 Normality in the full dataset highly improbable (almost 5000 obs, -\>see the stats.stackexchange post in the references)
 
@@ -72,8 +66,9 @@ result_shapiro_cntry <- list()
 for(cntry in unique(pisa_data$CNT)){
   result_shapiro_cntry[[cntry]] <- mshapiro.test(t(select_if(pisa_data[pisa_data$CNT==cntry,],is.numeric)))
 }
+```
 
-#non ho capito cos'è questo 
+```{r}
 #ks.test(select_if(pisa_data,is.numeric),"pnorm")
 # https://it.wikipedia.org/wiki/Test_di_Kolmogorov-Smirnov#Descrizione_del_test_a_due_code_-_un_campione
 # sembra un test per studiare se un insieme di dati hanno una certa distribuzione
@@ -102,26 +97,33 @@ for(i in 4:dim(pisa_data)[2]){
 }
 ```
 
-Normality by groups for each variable
+Plotting normality by groups for each variables
 
-TODO: finish the implementation
+-   the plots are quite. I suspect the presence of some bug in my code
 
 ```{r}
-qq_plot_gaussianity <- function(data,variable_name){
-  #plot call
-  plot(1, type = "n", xlab = "Theoretical quantiles", ylab = "Sample quantiles", main = variable_name)
-  #looping over countries
-  for(cntry in unique(pisa_data$CNT)){
-    # Compute the quantiles of the data
-    quantiles[cntry] <- quantile(data[data$CNT==cntry,], probs = seq(0, 1, by = 0.01))
-    # Compute the theoretical quantiles of a normal distribution
-    norm_quantiles[cntry] <- qnorm(seq(0, 1, by = 0.01), mean = mean(data[data$CNT==cntry,]), sd = sd(data[data$CNT==cntry,]))
-    #plotting
-    points(norm_quantiles[cntry], quantiles[cntry], col = )
+palette <- colorRampPalette(rainbow(length(unique(pisa_data$CNT))))
+palette <- palette(length(unique(pisa_data$CNT)))
+for(variable in colnames(pisa_data)){
+  if(variable != "schID" && variable != "CNT"){
+    #calling the plot
+    plot(1, type = "n", xlab = "Theoretical quantiles", ylab = "Sample quantiles", main = variable)
+    #looping over countries
+    idx <- 1
+    quantiles <- list()
+    norm_quantiles <- list()
+    for(cntry in unique(pisa_data$CNT)){
+      # Compute the quantiles of the data
+      quantiles[[cntry]]<- quantile(pisa_data[pisa_data$CNT==cntry, variable], probs = seq(0, 1, by = 0.01))
+      # Compute the theoretical quantiles of a normal distribution
+      norm_quantiles[[cntry]] <- qnorm(seq(0, 1, by = 0.01), mean = mean(pisa_data[pisa_data$CNT==cntry, variable]), sd = sd(pisa_data[pisa_data$CNT==cntry,variable]))
+      #plotting
+      points(norm_quantiles[[cntry]], quantiles[[cntry]], col = palette[idx])
+      idx <- idx + 1
+    }
+    abline(0, 1, col = "black")
+    legend("bottomright", legend = unique(pisa_data$CNT), col = palette, pch = 1, cex = 0.75)
   }
-  #final touches
-  legend()
-  abline(0, 1, col = "red")  # add a reference line
 }
 ```
 
@@ -150,15 +152,23 @@ result_wo_ouliers <- mvn(data = subset(pisa_wo_outliers,select = -schID), subset
 
 ```{r}
 library(car)
-bcn_param <- powerTransform(select_if(pisa_data,is.numeric), family = "bcnPower") #take long
-trasformed_data <- bcnPower(U=select_if(pisa_wo_outliers,is.numeric),lambda=bcn_param$lambda, gamma=bcn_param$gamma)
-#add the CNT column
+#must be strictly positive 
+transformed_data <- select_if(pisa_wo_outliers,is.numeric)
+transformed_data <- transformed_data+abs(min(transformed_data)) + 1e-5 #1e-5 epsilon per ottenere disuguaglianza stretta
+lambda <- powerTransform(transformed_data)  
+
+for(i in length(lambda$lambda)){
+   transformed_data[,i]<- bcPower(U=transformed_data[,i],lambda=lambda$lambda[i])
+}
+
+#add the CNT and schID columns
 transformed_data["CNT"] <- pisa_wo_outliers$CNT
+trasformed_data["schID"] <- pisa_wo_outliers$schID
 ```
 
 ```{r}
 #testing again on transformed data
-result_wo_ouliers <- mvn(data = transformed_data, subset = "CNT", mvnTest = "hz",univariateTest = "AD")
+result_wo_ouliers <- mvn(data = transformed_data, subset = "CNT", mvnTest = "hz",univariateTest = "SW")
 ```
 
 # ISSUES LOGBOOK
