@@ -1,0 +1,176 @@
+---
+title: 'One-way MANOVA, dataset grouped by school'
+output: 
+editor_options: 
+  chunk_output_type: inline
+---
+
+# PRELIMINARY STUFF
+
+```{r}
+library(dplyr)
+library(MVN)
+library(car)
+library(heplots)
+library(mvnormtest)
+library(gplots) #to plot text in graphics plot
+```
+
+```{r, setup}
+#DIRECTORIES
+root_proj_dir = "../../"
+dataset_dir = paste(root_proj_dir,"/data/pisa-woNA_school_final.csv",sep="")
+include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_dir)
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_dir)
+```
+
+```{r}
+#some adjustments on the data
+pisa_data$X <- NULL
+pisa_data$schID <- NULL
+pisa_data$CNT <- as.factor(pisa_data$CNT)
+```
+
+# ONE-WAY MANOVA
+
+```{r}
+included_variables <-list()
+#list of grouped variables
+included_variables[["tec"]] <- c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
+included_variables[["psi"]] <- c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+included_variables[["clt"]] <- c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
+included_variables[["fam"]] <- c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
+included_variables[["tch"]] <- c("TEACHINT","TEACHSUP","STIMREAD")
+included_variables[["sch"]] <- c("PERCOMP","PERCOOP","ICTSCH","RATCMP1")
+```
+
+Fitting the MANOVA model
+
+```{r}
+fit <- list()
+fit_summaries <- list()
+for(group in names(included_variables)){
+  #recall that included_variables is a list of group of variables
+  #here I'm accessing to one group at a time
+  formula_str <- paste(included_variables[[group]], collapse=",")
+  formula_str <- paste("cbind(",formula_str,")",sep = "")
+  formula_str <- paste(formula_str,"CNT",sep = "~")
+  #fitting the manova model
+  fit[[group]] = manova(formula = as.formula(formula_str), data = pisa_data)
+}
+```
+
+All the fits are stored in the \`fit\` object, they can be accessed with the following code (I'm looking for options to visualize them all together). However all variables seems to be influential
+
+```{r}
+#pick up one group from "tec" "psi" "clt" "fam" "tch" "sch"
+group = "sch"
+#result of the MANOVA test
+print("result of the MANOVA test")
+summary(fit[[group]])
+#checking what country influenced the most the result of the test
+print("checking what country influenced the most the result of the test")
+summary.aov(fit[[group]])
+```
+
+## Checking the assumptions
+
+(1) multivariate gaussianity in the groups: discussed extensively in \`src/gaussianity/gaussianity_by_schools.Rmd\`, here I just report a test
+
+```{r}
+normality_by_cntry <- list()
+for(group in names(included_variables)){
+  normality_by_cntry[[group]] <- mvn(data = subset(pisa_data,select = c(included_variables[[group]],"CNT")), subset = "CNT", mvnTest = "hz",univariateTest = "SW")
+}
+```
+
+2.  same covariance structure (homoschedasticity)
+
+```{r}
+#TODO: not so important
+```
+
+# BONFERRONI CI
+
+We want to know the level (of the labels) that introduces the difference. We have to create g\*(g-1)/2 intervals.
+
+```{r}
+group <- "tec"
+subset_data <- subset(pisa_data,select = c(included_variables[[group]],"CNT"))
+countries <- unique(pisa_data$CNT)
+
+#datasets dimension
+n <- dim(pisa_data)[1]
+p <- length(included_variables[[group]]) 
+g <- length(unique(pisa_data$CNT))
+
+num_groups <- count(subset_data,CNT)
+
+#parameters to compute CI
+alpha <- 0.05
+k <- p*g*(g-1)/2
+qT <- qt(1-alpha/(2*k), n-g)
+#computing the pooled estimate of the covariance matrix
+W <- summary.manova(fit[[group]])$SS$Residuals
+
+#means
+mean_vector <- sapply(select_if(subset_data,is.numeric), mean)
+mean_vector <- as.array(mean_vector)
+
+#means by groups
+group_means <- aggregate(select_if(subset_data,is.numeric), by=list(subset_data$CNT), FUN=mean)
+group_means$Group.1 <- NULL
+
+#computing confidence intervals
+inf <- array(0,dim=c(g-1,g,p))
+sup <- array(0,dim=c(g-1,g,p))
+mean_diff <- array(0,dim=c(g-1,g,p))
+
+#filling the confidence intervals
+#i,j: iterates over the countries to compare them
+#k: iterates over the variable
+for(i in 1:(g-1)){
+  for(j in (i+1):g){
+    for(k in 1:p){
+      #difference of means
+      mean_diff[i,j,k] <- group_means[i,k]-group_means[j,k]
+      #lower bound
+      inf[i,j,k] <- (group_means[i,k]-group_means[j,k])-
+                  qT * sqrt(diag(W)[k]/(n-g) * (1/num_groups[i,2]+1/num_groups[j,2]))
+      #upper bound
+      sup[i,j,k] <- (group_means[i,k]-group_means[j,k])+
+                  qT * sqrt(diag(W)[k]/(n-g) * (1/num_groups[i,2]+1/num_groups[j,2]))
+    }
+  }
+}
+```
+
+## Visualization
+
+```{r}
+ylim <- 1.5
+cnt_comb <- combn(unique(countries),2)
+diff_index <- paste(cnt_comb[1,],"vs",cnt_comb[2,]) 
+
+for(k in 1:p){
+  plot(c(1,g*(g-1)/2),ylim=c(-ylim,ylim), xlim=c(c(1,g*(g-1)/2)), pch='',
+        xlab='', ylab=paste('CI',k), 
+        main=paste('CI',colnames(subset_data)[k]),xaxt='n')
+  for(i in 1:(g-1)){
+    for(j in (i+1):g){
+      ind <- (i-1)*g-i*(i-1)/2+(j-i)
+      #plotting the mean
+      points(ind, mean_diff[i,j,k], pch=16); 
+      #plotting inf and sup
+      lines (c(ind,ind), c(inf[i,j,k],sup[i,j,k])); 
+      points(ind, inf[i,j,k], col=rainbow(g)[j], pch=16); 
+      points(ind, sup[i,j,k], col=rainbow(g)[i], pch=16); 
+    }
+  }
+  abline(h=0)
+  axis(1, at=1:(g*(g-1)/2), labels=diff_index[1:(g*(g-1)/2)],las=2,lwd=0.)
+}
+```
