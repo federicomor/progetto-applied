@@ -132,7 +132,12 @@ ggplot(data = var_df, aes(x = variable, y = variance)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #removing the variables with the highest variance to see the variability of the others
-ggplot(data = var_df[!(var_df$variable %in% c("LMINS","MMINS","BFMJ2","BMMJ1","HISEI","ICTHOME","HISCED","ICTSCH","RATCMP1")),], aes(x = variable, y = variance)) + 
+#high_variance_vars = c("LMINS","MMINS","BFMJ2","BMMJ1","HISEI","ICTHOME","HISCED","ICTSCH","RATCMP1")
+soglia_varianza = 1
+
+high_variance_vars = var_df[which(var_df$variance>soglia_varianza),]$variable
+high_variance_vars
+ggplot(data = var_df[!(var_df$variable %in% high_variance_vars),], aes(x = variable, y = variance)) + 
   geom_bar(stat = "identity", fill = "steelblue") + 
   labs(title = "Variances of Dataframe") +
   xlab("Variable") +
