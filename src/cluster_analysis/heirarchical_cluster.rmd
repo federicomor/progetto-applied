@@ -29,10 +29,14 @@ source(include_dir)
 #importing the dataset
 pisa_data <- read.csv(file=paste(dataset_dir,"pisa-woNA_school_final_wo_Outl_ClassicData_PCA_SCORES.csv",sep=""))
 head(pisa_data)
+p = dim(pisa_data)[2]
+
 
 categories_variables = list(tec,psi,clt,fam,tch,sch)
-categories_variables_names = c("tec","psi","clt","fam","tch","sch")
-data_grezzi = pisa_data[,c("CNT",tec)]
+cat_var_names = c("tec","psi","clt","fam","tch","sch")
+
+
+data_grezzi = pisa_data
 head(data_grezzi)
 # Dimensions
 n = dim(data_grezzi)[1]
@@ -41,14 +45,15 @@ p = dim(data_grezzi)[2]
 
 meas_labels<-c(2:p)
 measures = data_grezzi[,meas_labels]
+head(measures)
 ## note: rescale the variables if there's a high order of magnitude
 
 ```
 # **0.** Exploration: choice of measure and linkage
 ```{r}
-
+k=0
 for(var in categories_variables){
-  
+  k=k+1
   data_grezzi = pisa_data[,c("CNT",var)]
   meas_labels<-c(2: dim(data_grezzi)[2])
   measures = data_grezzi[,meas_labels]
@@ -76,10 +81,10 @@ data.dw = hclust(dist_chosen, method="ward")
 data.dw2 = hclust(dist_chosen, method="ward.D2")
 
 par(mfrow=c(2,2))
-plot(data.dc, main=paste(name_dist_chosen,'complete'), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
-plot(data.da, main=paste(name_dist_chosen,'average'), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
-plot(data.dw, main=paste(name_dist_chosen,'ward'), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
-plot(data.dw2, main=paste(name_dist_chosen,'wardD2'), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+plot(data.dc, main=paste(name_dist_chosen,'complete',cat_var_names[k]), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+plot(data.da, main=paste(name_dist_chosen,'average',cat_var_names[k]), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+plot(data.dw, main=paste(name_dist_chosen,'ward',cat_var_names[k]), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+plot(data.dw2, main=paste(name_dist_chosen,'wardD2',cat_var_names[k]), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
 
 
 # Cophenetic Matrices
@@ -96,7 +101,7 @@ da = cor(data.e, coph.da)
 dw = cor(data.e, coph.dw)
 dw2 = cor(data.e, coph.dw2)
 
-print(categories_variables_names[i],c(dc,da,dw,dw2))
+#print(cat_var_names[k],c(dc,da,dw,dw2))
 }
 }
 # euclidian average : 0.6, but ward seems so much better from the dendogram
@@ -110,6 +115,9 @@ print(categories_variables_names[i],c(dc,da,dw,dw2))
 
 ### **1.1.** Compute dissimilarities
 ```{r, warning=FALSE, message=FALSE}
+measures = measures[,sch]
+head(measures)
+
 # methods: "euclidean", "manhattan", "canberra"
 name_dist_chosen <- "manhattan"
 # linkages: "single", "average", "complete", "ward", "ward.D2"
@@ -163,6 +171,9 @@ rect.hclust(data.hclust, k=k_chosen)
 
 cluster.cutree = cutree(data.hclust, k=k_chosen)
 table(cluster.cutree)
+measures = cbind(measures,cluster.cutree)
+measures$cluster.cutree = as.factor(measures$cluster.cutree)
+
 ```
 
 ### **1.5.** How good is the clustering?
@@ -178,6 +189,9 @@ coph.coeff = cor(data.dist, coph.mat)
 coph.coeff
 
 
+plot(measures[,1],measures[,2],col=cluster.cutree+1)
+plot3d(measures, size=3, col=cluster.cutree+1, aspect = F)
+
 ```
 
 ## **2.** Save data to test the mean
@@ -186,4 +200,43 @@ data1 = measures[cluster.cutree==1,]
 data2 = measures[cluster.cutree==2,]
 data3 = measures[cluster.cutree==3,]
 data4 = measures[cluster.cutree==4,]
+```
+
+## **3.** DBSCAN
+### **3.1** choice of hyperparameters 
+```{r}
+data_to_cluster = measures[,c(clt)]
+# Rule of thumb, minPts = dimensionality + 1 = 3 here
+# How to choose eps from minPts?
+# Plot of the distances to the minPts nearest neighbor
+k_chosen_2=dim(data_to_cluster)[2]+1
+kNNdistplot(as.matrix(data_to_cluster), k = k_chosen_2) 
+eps_chosen = 0.5
+abline(h = eps_chosen, col = "red", lty = 2)
+
+# Run the dbscan
+dbs <- dbscan(data_to_cluster, eps = eps_chosen, minPts = p+1)
+dbs
+plot(data_to_cluster, col = dbs$cluster + 1L, pch=19)
+```
+### **3.2** Silhouette
+```{r}
+# Let's compute the silhouette score on the clustering performed before
+# WARNING (specific to DBSCAN): We need to remove the noise points as they do
+# not belong to a cluster, before computing the silhouette score
+clustered_index <- which(dbs$cluster != 0) # Index of non noise points
+clustered_points <- measures[clustered_index,] # only clustered points
+clustered_labels <- dbs$cluster[clustered_index] # corresponding labels
+
+sil <- silhouette(clustered_labels, dist(clustered_points))
+summary(sil)
+
+sil_score <- function(labels, dist) {
+  # Compute the average of the silhouette widths
+  sil <- silhouette(labels, dist)
+  sil_widths <- sil[,"sil_width"]
+  mean(sil_widths)
+}
+
+sil_score(clustered_labels, dist(clustered_points))
 ```
