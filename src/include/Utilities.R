@@ -147,11 +147,11 @@ stu_SCH = c("PERCOMP","PERCOOP","ICTSCH")
 ############################################################################
 
 ## SCORE dataset
-tec = c("scPC1_tec","scPC2_tec","scPC3_tec","scPC4_tec","scPC5_tec")
+tec = c("scPC1_tec","scPC2_tec","scPC3_tec","scPC4_tec","scPC5_tec") #5
 
-psi = c( "scPC1_psi", "scPC2_psi", "scPC3_psi", "scPC4_psi", "scPC5_psi")
+psi = c( "scPC1_psi", "scPC2_psi", "scPC3_psi", "scPC4_psi", "scPC5_psi") #5
 
-clt = c("scPC1_clt", "scPC2_clt", "scPC3_clt")
+clt = c("scPC1_clt", "scPC2_clt", "scPC3_clt") #3
 
 fam = "scPC1_fam"
 
