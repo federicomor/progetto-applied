@@ -28,8 +28,9 @@ library(mvnormtest)
 
 ```{r}
 #select only ICT moments fot the moment
+categories_variables = list(tec,psi,clt,fam,tch,sch)
 library(dplyr)
-data <- data %>% dplyr::select(all_of(c("CNT",tec)))
+data <- data %>% dplyr::select(all_of(c("CNT",psi)))
 ```
 
 # **1.** Data
@@ -160,7 +161,7 @@ summary.aov(fit,test="Wilks")
 We want to know the level (of the labels) that introduces the difference. We have to create g\*(g-1)/2 intervals.
 
 ```{r, warning=FALSE, message=FALSE}
-alpha = 0.0001
+alpha = 0.01
 k     = p*g*(g-1)/2
 qT    = qt(1-alpha/(2*k), n-g)
 
