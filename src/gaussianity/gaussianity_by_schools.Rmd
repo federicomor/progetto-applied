@@ -28,6 +28,7 @@ pisa_data <- read.csv(file=dataset_dir)
 #some adjustments on the data
 pisa_data$X <- NULL
 pisa_data$schID <- as.factor(pisa_data$schID)
+pisa_data$CNT <- as.factor(pisa_data$CNT)
 ```
 
 # TESTING NORMALITY
