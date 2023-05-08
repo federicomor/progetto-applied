@@ -18,24 +18,20 @@ date: "2023-04-16"
 
 ```{r}
 #directories
-working_dir = "/Users/marcogalliani/Desktop/progetto-applied"
-complete_data_dir = "/Users/marcogalliani/Desktop/PISA-dataset/PISA_file_sav"
-clean_data_dir = "/Users/marcogalliani/Desktop/PISA-dataset"
-include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
-
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"/data/pisa-woNA_school_final.csv",sep="")
+include_path = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 #including utilities
-source(include_dir)
+source(include_path)
 #importing the dataset
-pisa_data <- read.csv(file=paste(clean_data_dir,"/pisa-woNA.csv",sep=""))
+pisa_data <- read.csv(file=dataset_path)
 ```
 
 ```{r}
-#select only ICT moments fot the moment
-library(dplyr)
-pisa_data <- pisa_data %>% dplyr::select(all_of(c("CNT",stu_ICT,sch_ICT)))
-
-#dropping spain since it is quite an unbalanced group
-pisa_data <- pisa_data %>% filter(CNT!="ESP")
+#some adjustments on the data
+pisa_data$X <- NULL
+pisa_data$schID <- NULL
+pisa_data$CNT <- as.factor(pisa_data$CNT)
 ```
 
 # NON-PARAMETRIC MANOVA
@@ -87,12 +83,20 @@ help("kruskal.test")
 pisa_data$CNT <- as.factor(pisa_data$CNT)
 
 #constructing the matrix to be fed to kruskal test
-kruskal.test(ICTHOME ~ CNT, data = pisa_data)
-
+kruskal_test(ICTHOME ~ CNT, data = pisa_data)
 ```
 
+Still doesn't work
+
 ```{r}
-library(pgirmess)
+clt <- c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
+#building the formula object
+formula_str <- paste(clt, collapse=",")
+formula_str <- paste("cbind(",formula_str,")",sep = "")
+formula_str <- paste(formula_str,"CNT",sep = "~")
+
+#performing the test
+kruskal_test(formula = as.formula(formula_str),data = pisa_data)
 ```
 
 Still need to be fixed
