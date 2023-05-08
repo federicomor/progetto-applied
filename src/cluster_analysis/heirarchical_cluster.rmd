@@ -221,6 +221,7 @@ for(k in cat_var_names){ # categories
 ```{r}
 
 #for(kk in 1:6){
+kk=1
 # Create sample data
 group_percentages <- percent_list[[kk]]
 
@@ -236,7 +237,7 @@ df <- data.frame(
 
 for(i in country_names){
   for(j in groups_names){
-    df[which((df$group==j) & (df$country==i)),3] = group_percentages[[which(groups_names==j)]][which(countrys==i)]*100
+    df[which((df$group==j) & (df$country==i)),3] = group_percentages[[which(groups_names==j)]][which(country_names==i)]*100
   }
 }
   
