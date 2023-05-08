@@ -2,7 +2,7 @@
 title: 'Unsupervised learning: Hierarchical, K-means clustering'
 output: html_document
 editor_options:
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 ## **0.** Settings
@@ -19,6 +19,7 @@ library(car)
 library(dbscan)
 library(cluster)
 library(fields)
+library(ggplot2)
 
 #directories
 dataset_dir = "../../data/"
@@ -27,7 +28,7 @@ include_dir = "../include/Utilities.R"
 #including utilities
 source(include_dir)
 #importing the dataset
-pisa_data <- read.csv(file=paste(dataset_dir,"pisa-woNA_school_final_wo_Outl_ClassicData_PCA_SCORES.csv",sep=""))
+pisa_data <- read.csv(file=paste(dataset_dir,"pisa_school_final_wo_Outl_PCA_SCORES.csv",sep=""))
 head(pisa_data)
 p = dim(pisa_data)[2]
 
@@ -37,6 +38,8 @@ cat_var_names = c("tec","psi","clt","fam","tch","sch")
 
 
 data_grezzi = pisa_data
+data_clustered<-pisa_data
+
 head(data_grezzi)
 # Dimensions
 n = dim(data_grezzi)[1]
@@ -44,13 +47,13 @@ p = dim(data_grezzi)[2]
 
 
 meas_labels<-c(2:p)
-measures = data_grezzi[,meas_labels]
-head(measures)
+data_grezzi = data_grezzi[,meas_labels]
+head(data_grezzi)
 ## note: rescale the variables if there's a high order of magnitude
 
 ```
 # **0.** Exploration: choice of measure and linkage
-```{r}
+
 k=0
 for(var in categories_variables){
   k=k+1
@@ -107,7 +110,7 @@ dw2 = cor(data.e, coph.dw2)
 # euclidian average : 0.6, but ward seems so much better from the dendogram
 # manhatta average 0.55 but ward seems so much better from the dendogram
 # terrible canberra
-```
+
 
 
 
@@ -115,7 +118,9 @@ dw2 = cor(data.e, coph.dw2)
 
 ### **1.1.** Compute dissimilarities
 ```{r, warning=FALSE, message=FALSE}
-measures = measures[,tec]
+counter_names = 1
+for (k in categories_variables){
+measures = data_grezzi[,k]
 head(measures)
 
 # methods: "euclidean", "manhattan", "canberra"
@@ -125,10 +130,6 @@ name_linkage_chosen <- 'ward.D2'
 
 data.dist = dist(measures, method=name_dist_chosen)
 
-```
-
-### **1.2.** Hierarchical clustering
-```{r message=FALSE, warning=FALSE}
 data.hclust = hclust(data.dist, method=name_linkage_chosen)
 
 # Order of aggregation
@@ -137,15 +138,12 @@ data.hclust = hclust(data.dist, method=name_linkage_chosen)
 #data.hclust$height
 # Ordering that allows to avoid intersection in the dendrogram
 #data.hclust$order
-```
 
-### **1.3.** Plot of the dendrograms
-```{r, warning=FALSE, message=FALSE}
 plot(data.hclust, main=paste(name_dist_chosen,name_linkage_chosen), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
-```
 
-### **1.4.** Cutting the dendrogram
-```{r, warning=FALSE, message=FALSE}
+
+
+### **1.2.** Cutting the dendrogram
 k_chosen = 3
 plot(data.hclust, main=paste(name_dist_chosen,name_linkage_chosen), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
 rect.hclust(data.hclust, k=k_chosen)
@@ -156,37 +154,108 @@ rect.hclust(data.hclust, k=k_chosen)
 
 cluster.cutree = cutree(data.hclust, k=k_chosen)
 table(cluster.cutree)
-measures = cbind(measures,cluster.cutree)
-measures$cluster = as.factor(measures$cluster.cutree)
-head(measures)
 
-```
 
-### **1.5.** How good is the clustering?
-```{r, warning=FALSE, message=FALSE}
-# Did it aggregate coherently with the dissimilarity matrix or not?
 
+
+## How good is the clustering?
 # Cophenetic Matrices
 coph.mat <- cophenetic(data.hclust)
-
-#image(as.matrix(coph.mat), main=name_dist_chosen, asp=1 )
 # Cophenetic Coefficients
 coph.coeff = cor(data.dist, coph.mat)
 coph.coeff
 
 
-plot(measures[,1],measures[,3],col=cluster.cutree+1)
-plot3d(measures, size=3, col=cluster.cutree+1, aspect = F)
+#plot(measures[,1],measures[,3],col=cluster.cutree+1)
+#plot3d(measures, size=3, col=cluster.cutree+1, aspect = F)
 
-```
+## **2.** Saving the clustering as factors
 
-## **2.** Save data to test the mean
-```{r}
-data_clustered<-pisa_data
-data_clustered$cluster = as.factor(cluster.cutree)
+data_clustered[,cat_var_names[counter_names]] = as.factor(cluster.cutree)
+counter_names = counter_names+ 1
 
+
+}
 head(data_clustered)
 ```
+## **2.1** Exploring the dataset
+```{r}
+country_names <- unique(data_clustered$CNT)
+g=16
+indeces = list()
+for (jj in 1:g){
+    indeces[jj] <- list(which(data_clustered$CNT == country_names[jj]))
+}
+n_list = list()
+for(j in 1:g) {
+  n_list[j] = list(length(indeces[[j]]))
+}
+
+####
+# per ogni cluster voglio vedere quale percentuale di scuole della stessa nazione ricadono nello stesso
+percent_list = list()
+counter = 0
+
+
+for(k in cat_var_names){ # categories
+  counter = counter +1  
+  percent_list_mid = list()
+  counter2=0
+  for(i in 1:k_chosen){ # clusters
+    counter2 = counter2 +1
+  percent = c()
+    for(j in 1:g){ # countrys 
+      temp = length(data_clustered[which(data_clustered[,k]==i & data_clustered$CNT==country_names[j]),1])
+      temp = temp/n_list[[j]]
+      percent = c(percent,temp)
+    }
+    percent_list_mid[counter2]=list(percent)
+
+  }
+  percent_list[counter] = list(percent_list_mid)
+}
+
+
+```
+
+```{r}
+
+#for(kk in 1:6){
+# Create sample data
+group_percentages <- percent_list[[kk]]
+
+
+# Convert percentages to data frame
+groups_names = c("A", "B", "C")
+df <- data.frame(
+  country = rep(country_names, each = 3),
+  group = rep(groups_names, times = length(country_names)),
+  percentage = rep(c(0,0,0),times = length(country_names))
+)
+
+
+for(i in country_names){
+  for(j in groups_names){
+    df[which((df$group==j) & (df$country==i)),3] = group_percentages[[which(groups_names==j)]][which(countrys==i)]*100
+  }
+}
+  
+x11()
+# Create stacked bar chart
+ggplot(df, aes(x = country, y = percentage, fill = group)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Proportion of Schools in Each Group by Country",
+       x = "Country",
+       y = "Proportion") +
+  scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73"),
+                    labels = c("Group A", "Group B", "Group C")) +
+  geom_text(aes(label = paste0(round(percentage,2), "%")), 
+            position = position_stack(vjust = 0.5))
+
+#}
+
+```
+
 
 ## **3.** DBSCAN
 ### **3.1** choice of hyperparameters
