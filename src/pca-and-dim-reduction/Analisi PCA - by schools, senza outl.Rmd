@@ -233,8 +233,8 @@ for(i in 3:5){
 
 ### Scores dataset
 ```{r}
-df_sc = pca$scores[,1:5]
-colnames(df_sc) = c("scPC1_tec","scPC2_tec","scPC3_tec","scPC4_tec","scPC5_tec")
+df_sc = pca$scores[,1:4]
+colnames(df_sc) = c("scPC1_tec","scPC2_tec","scPC3_tec","scPC4_tec")
 ```
 
 ### Interpretation
@@ -274,7 +274,9 @@ colp=c("lightblue","purple")
 
 for (i in 1:length(states)) {
 	for (j in i:length(states)) {
-					 
+		if(i==j){
+			next
+		}
 		plot(pca$scores[which(df$CNT==states[i]),1:2],main = paste0(toupper(cat_curr_name),": ",states[i], " vs ", states[j]),
 			 col=colp[1],pch=19, 
 			 xlim=c(min(pca$scores[which(df$CNT==states[i]),1],
@@ -429,7 +431,9 @@ colp=c("lightblue","purple")
 
 for (i in 1:length(states)) {
 	for (j in i:length(states)) {
-					 
+		if(i==j){
+			next
+		}	 
 		plot(pca$scores[which(df$CNT==states[i]),1:2],main = paste0(toupper(cat_curr_name),": ",states[i], " vs ", states[j]),
 			 col=colp[1],pch=19, 
 			 xlim=c(min(pca$scores[which(df$CNT==states[i]),1],
@@ -574,7 +578,9 @@ colp=c("lightblue","purple")
 
 for (i in 1:length(states)) {
 	for (j in i:length(states)) {
-					 
+		if(i==j){
+			next
+		}	
 		plot(pca$scores[which(df$CNT==states[i]),1:2],main = paste0(toupper(cat_curr_name),": ",states[i], " vs ", states[j]),
 			 col=colp[1],pch=19, 
 			 xlim=c(min(pca$scores[which(df$CNT==states[i]),1],
@@ -718,7 +724,9 @@ colp=c("lightblue","purple")
 
 for (i in 1:length(states)) {
 	for (j in i:length(states)) {
-					 
+		if(i==j){
+			next
+		}
 		plot(pca$scores[which(df$CNT==states[i]),1:2],main = paste0(toupper(cat_curr_name),": ",states[i], " vs ", states[j]),
 			 col=colp[1],pch=19, 
 			 xlim=c(min(pca$scores[which(df$CNT==states[i]),1],
@@ -824,7 +832,7 @@ colnames(df_sc) = names
 
 ```
 
-### Interpretation tch
+### Interpretation
 ```{r}
 for (col in cat_curr_vec){
   print(paste(col,what_is[[col]]))
@@ -859,7 +867,9 @@ colp=c("lightblue","purple")
 
 for (i in 1:length(states)) {
 	for (j in i:length(states)) {
-					 
+		if(i==j){
+			next
+		}				 
 		plot(pca$scores[which(df$CNT==states[i]),1:2],main = paste0(toupper(cat_curr_name),": ",states[i], " vs ", states[j]),
 			 col=colp[1],pch=19, 
 			 xlim=c(min(pca$scores[which(df$CNT==states[i]),1],
@@ -1000,7 +1010,9 @@ colp=c("lightblue","purple")
 
 for (i in 1:length(states)) {
 	for (j in i:length(states)) {
-					 
+		if(i==j){
+			next
+		}			 
 		plot(pca$scores[which(df$CNT==states[i]),1:2],main = paste0(toupper(cat_curr_name),": ",states[i], " vs ", states[j]),
 			 col=colp[1],pch=19, 
 			 xlim=c(min(pca$scores[which(df$CNT==states[i]),1],
@@ -1042,7 +1054,7 @@ for (i in 1:length(states)) {
 dim(df)
 dim(df_sc)
 # PCs selected
-17 == 5+5+3+1+1+2
+16 == 4+5+3+1+1+2
 
 df_sc_with_cnt=cbind(df$CNT,df_sc)
 names=colnames(df_sc)

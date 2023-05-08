@@ -226,8 +226,9 @@ for (i in 2:length(svec) ){
 # Select definitive data
 ```{r}
 # todo scegliendo la soglia
-df_wo_outliers = df[which(d2 <= 52), ]
+df_wo_outliers = stu[which(d2 <= 52), ]
 write.csv(df_wo_outliers,"../data/pisa_school_wo_Outl.csv")
+head(df_wo_outliers)
 ```
 
 

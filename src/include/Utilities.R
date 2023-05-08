@@ -24,7 +24,6 @@ what_is[["scPC2_tec"]] = "contrasto tra uso della tecnologia ed interesse/dedizi
 	bassa -> gli studenti sono molto interessati alla tecnologia malgrado la poca disponibilità"
 what_is[["scPC3_tec"]] = "intepretazione ancora da dare/scrivere"
 what_is[["scPC4_tec"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC5_tec"]] = "intepretazione ancora da dare/scrivere"
 what_is[["scPC1_psi"]] = "intepretazione ancora da dare/scrivere"
 what_is[["scPC2_psi"]] = "intepretazione ancora da dare/scrivere"
 what_is[["scPC3_psi"]] = "intepretazione ancora da dare/scrivere"
