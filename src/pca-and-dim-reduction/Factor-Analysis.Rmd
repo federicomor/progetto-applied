@@ -5,45 +5,72 @@ editor_options:
   chunk_output_type: console
 ---
 
-source: <https://www.geo.fu-berlin.de/en/v/soga/Geodata-analysis/factor-analysis/A-simple-example-of-FA/index.htmlZ>
+# NOTES AND REFERENCES
+
+-   Exploratory Factor Analysis (EFA) tutorial: <https://rpubs.com/pjmurphy/758265>
+
+-   source: <https://www.geo.fu-berlin.de/en/v/soga/Geodata-analysis/factor-analysis/A-simple-example-of-FA/index.htmlZ>
+
+# PRELIMINARY STUFF
+
 ```{r}
-# working_dir ="C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/progetto-applied"
-# dataset_dir = "../data"
-## dovrebbe funzionare anche senza dare il percorso completo ma usando solo questo:
-dataset_dir = "../../data/"
-## cioè usaando la posizione relativa dal file
-## perché vuol dire vai due cartelle indietro da qui, e poi in data
+library(dplyr)
+library(psych) #for KMO test
+```
 
-## e quindi anche qui
-# include_dir = paste(working_dir,"/src/include/Utilities.R",sep="")
-include_dir = "../include/Utilities.R"
-
-#including utilities
+```{r, setup}
+#DIRECTORIES
+root_proj_dir = "../../"
+dataset_dir = paste(root_proj_dir,"/data/pisa-woNA_school_final.csv",sep="")
+include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
 source(include_dir)
-#importing the dataset
-#including utilities
-pisa_data <- read.csv(file=paste0(dataset_dir,"/pisa-woNA_school_final.csv",sep=""))
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_dir)
+```
+
+```{r}
+#some adjustments on the data
+pisa_data$X <- NULL
+pisa_data$schID <- NULL
+pisa_data$CNT <- as.factor(pisa_data$CNT)
 ```
 
 ```{r}
 #variabili finite nel dataset
-tec=c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
-psi=c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
-clt=c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
-fam=c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
-tch=c("TEACHINT","TEACHSUP","STIMREAD")
-sch=c("PERCOMP","PERCOOP","ICTSCH","RATCMP1") #,"RATCMP2")
-
-variabole_groups = list(tec,psi,clt,fam,sch)
-G = length(variabole_groups)
+included_variables <-list()
+#list of grouped variables
+included_variables[["tec"]] <- c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
+included_variables[["psi"]] <- c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+included_variables[["clt"]] <- c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
+included_variables[["fam"]] <- c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
+included_variables[["tch"]] <- c("TEACHINT","TEACHSUP","STIMREAD")
+included_variables[["sch"]] <- c("PERCOMP","PERCOOP","ICTSCH","RATCMP1")
 ```
 
+# LOOKING FOR HIGH CORRELATION
+
+```{r}
+KMO(select_if(pisa_data,is.numeric))
+#values are good
+cortest.bartlett(select_if(pisa_data,is.numeric))
+```
+
+# PERFORMING EFA
+
+```{r}
+ev <- eigen(cor(select_if(pisa_data,is.numeric))) # get eigenvalues
+ev$values
+#plotting eigenvalues
+scree(select_if(pisa_data,is.numeric), pc=FALSE)
+fa.parallel(select_if(pisa_data,is.numeric), fa="fa")
+```
 
 ```{r}
 n = dim(pisa_data)[1]
 p = dim(pisa_data)[2]
-# all toghether
-pisa.fa <- factanal(pisa_data[,c(4:p)], factors = 5, rotation = "varimax")
+#all toghether
+pisa.fa <- factanal(select_if(pisa_data,is.numeric), factors = 10, rotation = "varimax")
 pisa.fa
 pisa.pca <-princomp(pisa_data[,4:p])
 pisa.fa$loadings
@@ -58,6 +85,7 @@ for(i in 3:4:5) barplot(pisa.load[,i] ,las=2,ylim = c(-1, 1), main=paste("PC Loa
 ```
 
 # analisi sospetti
+
 ```{r}
 # i factor più importanti sembrano mmins e lmins, perché?
 colnames(pisa_data)
@@ -67,7 +95,6 @@ boxplot(pisa_data[,5:44], las=2, main="pisa cols")
 
 
 ```
-
 
 ```{r}
 #fam,2
