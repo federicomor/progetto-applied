@@ -13,16 +13,23 @@ source("../include/Utilities.R")
 
 # Setup
 ```{r}
-#variabili finite nel dataset
-tec=c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
-psi=c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
-clt=c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
-fam=c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
-tch=c("TEACHINT","TEACHSUP","STIMREAD")
-sch=c("PERCOMP","PERCOOP","ICTSCH","RATCMP1") #,"RATCMP2")
+#Technology
+tec = c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
+#Family
+fam = c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
+#Culture
+clt = c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
+#Well-being
+psi = c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+#Professori
+tch = c("TEACHINT","TEACHSUP","STIMREAD")
+#School
+sch = c("PERCOMP","PERCOOP","ICTSCH","RATCMP1")
+#importing the dataset
 
 old_df=read.csv("../../data/pisa-woNA_school_final.csv")
-df=read.csv("../../data/pisa-woNA_school_final_wo_Outl_ClassicData.csv")
+df=read.csv("../../data/pisa_school_wo_Outl.csv")
+head(df)
 
 vec=df$SWB[which(df$CNT=="DNK")]
 print(paste("DNK",length(vec)))
@@ -1043,7 +1050,8 @@ colnames(df_sc_with_cnt) = c("CNT",names)
 df_sc_with_cnt
 
 # and the oscar to the longest name goes to...
-write.csv(df_sc_with_cnt,"../../data/pisa-woNA_school_final_wo_Outl_ClassicData_PCA_SCORES.csv")
+write.csv(data.frame(df_sc_with_cnt),"../../data/pisa_school_final_wo_Outl_PCA_SCORES.csv")
+head(data.frame(df_sc_with_cnt))
 ```
 
 
