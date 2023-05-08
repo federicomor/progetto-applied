@@ -1,27 +1,31 @@
 ---
 title: "Factor Analysis"
-output: html_notebook
+output: 
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 # NOTES AND REFERENCES
 
 -   Exploratory Factor Analysis (EFA) tutorial: <https://rpubs.com/pjmurphy/758265>
 
+-   notes from the textbook "Applied Multivariate Statistical Analysis" in the same directory of this folder
+
 -   source: <https://www.geo.fu-berlin.de/en/v/soga/Geodata-analysis/factor-analysis/A-simple-example-of-FA/index.htmlZ>
 
 # PRELIMINARY STUFF
 
 ```{r}
+#loaded librarires
 library(dplyr)
-library(psych) #for KMO test
+library(psych) #for KMO test and principal()
+library(car) #to apply transformations
 ```
 
 ```{r, setup}
 #DIRECTORIES
 root_proj_dir = "../../"
-dataset_dir = paste(root_proj_dir,"/data/pisa-woNA_school_final.csv",sep="")
+dataset_dir = paste(root_proj_dir,"/data/pisa_school_wo_Outl.csv",sep="")
 include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_dir)
@@ -48,7 +52,38 @@ included_variables[["tch"]] <- c("TEACHINT","TEACHSUP","STIMREAD")
 included_variables[["sch"]] <- c("PERCOMP","PERCOOP","ICTSCH","RATCMP1")
 ```
 
-# LOOKING FOR HIGH CORRELATION
+# PREPROCESSING OF DATA
+
+```{r}
+#transforming the data: Box-Cox transformation
+#must be strictly positive 
+transformed_data <- select_if(pisa_data,is.numeric)
+transformed_data <- transformed_data+abs(min(transformed_data)) + 1e-5 #1e-5 epsilon per ottenere disuguaglianza stretta
+
+#Box-Cox transformations
+#computing lambda
+lambda <- powerTransform(transformed_data)  
+#transforming data
+for(i in length(lambda$lambda)){
+   transformed_data[,i]<- bcPower(U=transformed_data[,i],lambda=lambda$lambda[i])
+}
+#standardizing the data
+transformed_data <- as.data.frame(scale(transformed_data))
+
+#add the CNT column
+transformed_data["CNT"] <- pisa_data$CNT
+transformed_data$X.1 <- NULL
+
+pisa_data <- transformed_data
+```
+
+# PERFORMING EFA
+
+Preliminary tests:
+
+-   cortest.bartlett(): test to see if the variables in the dataframe are uncorrellated. H0: correlation matrix sigma = Identity matrix (i.e. uncorrellated variables)
+
+-   KMO: another check on uncorrelation
 
 ```{r}
 KMO(select_if(pisa_data,is.numeric))
@@ -56,21 +91,51 @@ KMO(select_if(pisa_data,is.numeric))
 cortest.bartlett(select_if(pisa_data,is.numeric))
 ```
 
-# PERFORMING EFA
+Selecting the number of factor to select:
 
 ```{r}
 ev <- eigen(cor(select_if(pisa_data,is.numeric))) # get eigenvalues
 ev$values
-#plotting eigenvalues
+#eigenvalues method
+quartz()
 scree(select_if(pisa_data,is.numeric), pc=FALSE)
+#parallel analysis
+quartz()
 fa.parallel(select_if(pisa_data,is.numeric), fa="fa")
+
+#number of factors range: 6-12
+
+#also let's try this method
+nfactors(cor(select_if(pisa_data,is.numeric)))
 ```
+
+Actually performing factor analysis, we have two options to estimate the matrix L of loadings:
+
+-   Maximum Likelihood Estimation: requires multivariate normality on X (factanal function)
+
+-   Principal component method (principal funtion)
+
+**note** loading matrix is unique up to rotation made through orthogonal matrices. Thus, we have can provide as an option to this functions a rotation method to ease the interpretability of the loadings
+
+```{r}
+#computing it even if we don't have normality
+fit_ML <- factanal(x = select_if(pisa_data,is.numeric), 
+                factors = 10, 
+                rotation = "varimax",
+                lower = 0.0057)
+#non parametric
+fit_PC <- principal(r = cor(select_if(pisa_data,is.numeric)), 
+                factors = 10, 
+                rotation = "promax")
+```
+
+# PREVIOUS VERSION
 
 ```{r}
 n = dim(pisa_data)[1]
 p = dim(pisa_data)[2]
 #all toghether
-pisa.fa <- factanal(select_if(pisa_data,is.numeric), factors = 10, rotation = "varimax")
+pisa.fa <- factanal(select_if(pisa_data,is.numeric), factors = 10, rotation = "promax")
 pisa.fa
 pisa.pca <-princomp(pisa_data[,4:p])
 pisa.fa$loadings
