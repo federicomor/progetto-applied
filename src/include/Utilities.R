@@ -133,7 +133,7 @@ selected_countries = c("HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","IRL","LT
 stu_GENDER = c("ST004D01T")
 #Technology
 stu_ICT = c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
-sch_ICT = c("RATCMP1", "RATCMP2")
+sch_ICT = "RATCMP1"
 #Family
 stu_FAM = c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
 #Culture
