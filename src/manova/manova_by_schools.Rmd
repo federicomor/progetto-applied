@@ -155,6 +155,8 @@ ylim <- 1.5
 cnt_comb <- combn(unique(countries),2)
 diff_index <- paste(cnt_comb[1,],"vs",cnt_comb[2,]) 
 
+legend_colors <- colorRampPalette(rainbow(length(countries)))(length(countries))
+
 for(k in 1:p){
   plot(c(1,g*(g-1)/2),ylim=c(-ylim,ylim), xlim=c(c(1,g*(g-1)/2)), pch='',
         xlab='', ylab=paste('CI',k), 
@@ -166,11 +168,12 @@ for(k in 1:p){
       points(ind, mean_diff[i,j,k], pch=16); 
       #plotting inf and sup
       lines (c(ind,ind), c(inf[i,j,k],sup[i,j,k])); 
-      points(ind, inf[i,j,k], col=rainbow(g)[j], pch=16); 
-      points(ind, sup[i,j,k], col=rainbow(g)[i], pch=16); 
+      points(ind, inf[i,j,k], col=rainbow(g)[i], pch=16); 
+      points(ind, sup[i,j,k], col=rainbow(g)[j], pch=16); 
     }
   }
   abline(h=0)
-  axis(1, at=1:(g*(g-1)/2), labels=diff_index[1:(g*(g-1)/2)],las=2,lwd=0.)
+  axis(1, at=1:(g*(g-1)/2), labels=diff_index[1:(g*(g-1)/2)],las=2,lwd=0.001,cex.axis = 0.7)
+  legend("bottomright",legend = countries, col = legend_colors,cex = 0.5, pch = rep(1,length(countries)))
 }
 ```
