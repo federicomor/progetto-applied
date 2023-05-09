@@ -94,11 +94,9 @@ cortest.bartlett(select_if(pisa_data,is.numeric))
 Selecting the number of factor to select:
 
 ```{r}
-ev <- eigen(cor(select_if(pisa_data,is.numeric))) # get eigenvalues
-ev$values
 #eigenvalues method
 quartz()
-scree(select_if(pisa_data,is.numeric), pc=FALSE)
+scree(select_if(pisa_data,is.numeric), pc=TRUE)
 #parallel analysis
 quartz()
 fa.parallel(select_if(pisa_data,is.numeric), fa="fa")
@@ -109,13 +107,13 @@ fa.parallel(select_if(pisa_data,is.numeric), fa="fa")
 nfactors(cor(select_if(pisa_data,is.numeric)))
 ```
 
-Actually performing factor analysis, we have two options to estimate the matrix L of loadings:
+Here we're actually performing factor analysis. We have two options to estimate the matrix L of loadings:
 
 -   Maximum Likelihood Estimation: requires multivariate normality on X (factanal function)
 
 -   Principal component method (principal funtion)
 
-**note** loading matrix is unique up to rotation made through orthogonal matrices. Thus, we have can provide as an option to this functions a rotation method to ease the interpretability of the loadings
+**note:** loading matrix is unique up to rotation made through orthogonal matrices. Thus, we have can provide as an option to this functions a rotation method to ease the interpretability of the loadings
 
 ```{r}
 #computing it even if we don't have normality
@@ -125,8 +123,8 @@ fit_ML <- factanal(x = select_if(pisa_data,is.numeric),
                 lower = 0.0057)
 #non parametric
 fit_PC <- principal(r = cor(select_if(pisa_data,is.numeric)), 
-                factors = 10, 
-                rotation = "promax")
+                nfactors = 10, 
+                rotate = "varimax")
 ```
 
 # PREVIOUS VERSION
