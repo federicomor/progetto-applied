@@ -29,6 +29,7 @@ include_dir = "../include/Utilities.R"
 source(include_dir)
 #importing the dataset
 pisa_data <- read.csv(file=paste(dataset_dir,"pisa_school_final_wo_Outl_PCA_SCORES.csv",sep=""))
+pisa_data <- data.frame(pisa_data)
 head(pisa_data)
 p = dim(pisa_data)[2]
 
@@ -37,10 +38,9 @@ categories_variables = list(tec,psi,clt,fam,tch,sch)
 cat_var_names = c("tec","psi","clt","fam","tch","sch")
 
 
-data_grezzi = pisa_data
-data_clustered<-pisa_data
+data_grezzi <- pisa_data
+data_clustered <- pisa_data
 
-head(data_grezzi)
 # Dimensions
 n = dim(data_grezzi)[1]
 p = dim(data_grezzi)[2]
@@ -139,7 +139,7 @@ data.hclust = hclust(data.dist, method=name_linkage_chosen)
 # Ordering that allows to avoid intersection in the dendrogram
 #data.hclust$order
 
-plot(data.hclust, main=paste(name_dist_chosen,name_linkage_chosen), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+#plot(data.hclust, main=paste(name_dist_chosen,name_linkage_chosen), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
 
 
 
@@ -219,19 +219,29 @@ for(k in cat_var_names){ # categories
 ```
 
 ```{r}
+for(i in 1:3){
+  x11()
+  plot(measures[,1],measures[,2],col=cluster.cutree+1)
+}
+```
 
-#for(kk in 1:6){
-kk=1
+```{r}
+#pdf("cluster_country_proportions.pdf")
+
+for(kk in 1:6){
 # Create sample data
 group_percentages <- percent_list[[kk]]
 
-
+groups_names = c()
+for (i in 1:k_chosen){
+  groups_names = c(groups_names,paste("Group",i))
+}
 # Convert percentages to data frame
-groups_names = c("A", "B", "C")
+
 df <- data.frame(
-  country = rep(country_names, each = 3),
+  country = rep(country_names, each = k_chosen),
   group = rep(groups_names, times = length(country_names)),
-  percentage = rep(c(0,0,0),times = length(country_names))
+  percentage = NA
 )
 
 
@@ -249,19 +259,19 @@ ggplot(df, aes(x = country, y = percentage, fill = group)) +
        x = "Country",
        y = "Proportion") +
   scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73"),
-                    labels = c("Group A", "Group B", "Group C")) +
+                    labels = groups_names) +
   geom_text(aes(label = paste0(round(percentage,2), "%")), 
             position = position_stack(vjust = 0.5))
 
-#}
-
+}
+#dev.off()
 ```
 
 
 ## **3.** DBSCAN
 ### **3.1** choice of hyperparameters
 ```{r}
-data_to_cluster = measures[,c(clt)]
+data_to_cluster = data_grezzi[,tec]
 # Rule of thumb, minPts = dimensionality + 1 = 3 here
 # How to choose eps from minPts?
 # Plot of the distances to the minPts nearest neighbor
@@ -281,7 +291,7 @@ plot(data_to_cluster, col = dbs$cluster + 1L, pch=19)
 # WARNING (specific to DBSCAN): We need to remove the noise points as they do
 # not belong to a cluster, before computing the silhouette score
 clustered_index <- which(dbs$cluster != 0) # Index of non noise points
-clustered_points <- measures[clustered_index,] # only clustered points
+clustered_points <- data_grezzi[clustered_index,] # only clustered points
 clustered_labels <- dbs$cluster[clustered_index] # corresponding labels
 
 sil <- silhouette(clustered_labels, dist(clustered_points))
