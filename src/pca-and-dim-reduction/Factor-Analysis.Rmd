@@ -1,8 +1,6 @@
 ---
 title: "Factor Analysis"
 output: 
-editor_options: 
-  chunk_output_type: inline
 ---
 
 # NOTES AND REFERENCES
@@ -10,6 +8,8 @@ editor_options:
 -   Exploratory Factor Analysis (EFA) tutorial: <https://rpubs.com/pjmurphy/758265>
 
 -   notes from the textbook "Applied Multivariate Statistical Analysis" in the same directory of this folder
+
+-   reference paper of past year project on Well-Being
 
 -   source: <https://www.geo.fu-berlin.de/en/v/soga/Geodata-analysis/factor-analysis/A-simple-example-of-FA/index.htmlZ>
 
@@ -20,6 +20,7 @@ editor_options:
 library(dplyr)
 library(psych) #for KMO test and principal()
 library(car) #to apply transformations
+library(MVN) #to perform multivariate gaussianity check
 ```
 
 ```{r, setup}
@@ -62,7 +63,12 @@ transformed_data <- transformed_data+abs(min(transformed_data)) + 1e-5 #1e-5 eps
 
 #Box-Cox transformations
 #computing lambda
-lambda <- powerTransform(transformed_data)  
+#lambda <- powerTransform(transformed_data) #take long
+#I have saved it in since the computation take quite long
+#save(lambda,file = "lambda.Rdata")
+load("lambda.Rdata") 
+#If there are some changes in data I need to compute it again
+
 #transforming data
 for(i in length(lambda$lambda)){
    transformed_data[,i]<- bcPower(U=transformed_data[,i],lambda=lambda$lambda[i])
@@ -85,10 +91,14 @@ Preliminary tests:
 
 -   KMO: another check on uncorrelation
 
+-   multivariate normality to perform factor analysis with the maximum likelihood estimation method
+
 ```{r}
+#(1) CORRELATION
 KMO(select_if(pisa_data,is.numeric))
-#values are good
 cortest.bartlett(select_if(pisa_data,is.numeric))
+#(2) MULTIVARIATE NORMALITY
+mvn(data = select_if(pisa_data,is.numeric), mvnTest = "hz",univariateTest = "SW")
 ```
 
 Selecting the number of factor to select:
@@ -113,72 +123,43 @@ Here we're actually performing factor analysis. We have two options to estimate 
 
 -   Principal component method (principal funtion)
 
-**note:** loading matrix is unique up to rotation made through orthogonal matrices. Thus, we have can provide as an option to this functions a rotation method to ease the interpretability of the loadings
-
 ```{r}
-#computing it even if we don't have normality
+#maximum likelihoood method: assuming normality
 fit_ML <- factanal(x = select_if(pisa_data,is.numeric), 
-                factors = 10, 
-                rotation = "varimax",
+                factors = 12, 
+                rotation = "promax",
                 lower = 0.0057)
-#non parametric
+#principal component method
 fit_PC <- principal(r = cor(select_if(pisa_data,is.numeric)), 
-                nfactors = 10, 
-                rotate = "varimax")
+                nfactors = 12, 
+                rotate = "promax")
 ```
 
-# PREVIOUS VERSION
+**A note on rotation:** loading matrix (L) is unique up to rotation made through orthogonal matrices. Thus, we have can provide as an option to this functions a rotation method to ease the interpretability of the loadings. There a two kind of rotations:
+
+-   orthogonal rotation methods: if we assume that the extracted factors are independent
+
+    -   "varimax": optimized to reduce cross loadings and to minimize smaller loading values, making factor models clearer
+
+    -   "quartimax": works to reduce the number of variables needed to explain a factor, making interpretation easier
+
+    -   "equamax": compromise between varimax and quartimax
+
+-   oblique rotation methods: if we assume that the extracted factors are not independent
+
+    -   "promax": Promax rotation is popular for its ability to handle large datasets efficiently. The approach also tends to result in greater correlation values between factors.
+
+    -   The direct oblimin rotation approach is somewhat less efficient with large datasets, but can produce a simpler factor structure.
+
+[reference: <https://rpubs.com/pjmurphy/758265> for]
+
+Visualizing the loadings:
 
 ```{r}
-n = dim(pisa_data)[1]
-p = dim(pisa_data)[2]
-#all toghether
-pisa.fa <- factanal(select_if(pisa_data,is.numeric), factors = 10, rotation = "promax")
-pisa.fa
-pisa.pca <-princomp(pisa_data[,4:p])
-pisa.fa$loadings
-pisa.load = pisa.pca$loadings
+#Maximum-Likelihood method
 
-x11()
-par(mfcol=c(3,1))
-for(i in 1:2) barplot(pisa.load[,i] ,las=2,ylim = c(-1, 1), main=paste("PC Loadings",i))
-x11()
-par(mfcol=c(3,1))
-for(i in 3:4:5) barplot(pisa.load[,i] ,las=2,ylim = c(-1, 1), main=paste("PC Loadings",i))
-```
-
-# analisi sospetti
-
-```{r}
-# i factor più importanti sembrano mmins e lmins, perché?
-colnames(pisa_data)
-x11()
-boxplot(pisa_data[,5:44], las=2, main="pisa cols")
-# forse le prende perché hanno alta varianza?
-
-
-```
-
-```{r}
-#fam,2
-#tec,5
-#tch,1
-var = tch
-factors= 2
-pisa.fa <- factanal(pisa_data[,var], factors = factors,rotation = "varimax")
-pisa.fa
-
-pisa.load = pisa.pca$loadings
-
-x11()
-par(mfcol=c(5,1))
-for(i in 1:5) barplot(pisa.load[,i] ,las=2,ylim = c(-1, 1), main=paste("PC Loadings",i))
-plot(pisa.fa$loadings[,1], 
-     pisa.fa$loadings[,2],
-     xlab = "Factor 1", 
-     ylab = "Factor 2",
-     ylim = c(-1,1),
-     xlim = c(-1,1),
-     main = "Promax rotation")
-abline(h = 0, v = 0)
+#Principal Component method
+for(i in 1:dim(fit_PC$loadings)[2]){
+  barplot(fit_PC$loadings[,i], main = paste("factor",i),las=2,cex.names=0.7)
+}
 ```
