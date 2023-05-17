@@ -1,11 +1,11 @@
 ---
-title: 'Unsupervised learning: Hierarchical, K-means clustering'
+title: 'Unsupervised learning: Hierarchical, DB-scan, K-means clustering'
 output: html_document
 editor_options:
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
-## **0.** Settings
+# SETTINGS
 
 ```{r setup}
 rm( list = ls() )
@@ -13,7 +13,9 @@ rm( list = ls() )
 list.files()
 graphics.off() # chiude tutti i device grafici
 cat("\014") #pulisci console
+```
 
+```{r setup}
 library(mvtnorm)
 library(MVN)
 library(rgl)
@@ -22,7 +24,10 @@ library(dbscan)
 library(cluster)
 library(fields)
 library(ggplot2)
+library(GGally)
+```
 
+```{r}
 #directories
 dataset_dir = "../../data/"
 include_dir = "../include/Utilities.R"
@@ -30,58 +35,110 @@ include_dir = "../include/Utilities.R"
 source(include_dir)
 #importing the dataset
 pisa_data <- read.csv(file=paste(dataset_dir,"pisa_school_final_wo_Outl_PCA_SCORES.csv",sep=""))
-pisa_data <- data.frame(pisa_data)
-head(pisa_data)
-p = dim(pisa_data)[2]
+```
 
-
+```{r}
 categories_variables = list(tec,psi,clt,fam,tch,sch)
 cat_var_names = c("tec","psi","clt","fam","tch","sch")
 
-
 data_grezzi <- pisa_data
 data_clustered <- pisa_data
-
 # Dimensions
 n = dim(data_grezzi)[1]
 p = dim(data_grezzi)[2]
-
-
+#removing the CNT column
 meas_labels<-c(2:p)
 data_grezzi = data_grezzi[,meas_labels]
 head(data_grezzi)
 ## note: rescale the variables if there's a high order of magnitude
 ```
 
-# **0.** Exploration: choice of measure and linkage
+# 0. MAYBE SOME SCATTERPLOTS TO SEE IF DATA ARE CLUSTERED FOR SOME VARIABLES
 
-k=0 for(var in categories_variables){ k=k+1 data_grezzi = pisa_data[,c("CNT",var)] meas_labels\<-c(2: dim(data_grezzi)[2]) measures = data_grezzi[,meas_labels]
+```{r}
+ggpairs(pisa_data[,categories_variables[[1]]]) #tec
+ggpairs(pisa_data[,categories_variables[[2]]]) #psi
+ggpairs(pisa_data[,categories_variables[[3]]]) #clt
+ggpairs(pisa_data[,categories_variables[[4]]]) #fam
+ggpairs(pisa_data[,categories_variables[[5]]]) #tch
+ggpairs(pisa_data[,categories_variables[[6]]]) #sch
+```
 
-data.e = dist(measures, method="euclidean") data.m = dist(measures, method="manhattan") data.c = dist(measures, method="canberra")
+# **1.** HIERARCHICAL CLUSTERING
 
-distances = list(data.e,data.m,data.c) names = c("euclidean","manhattan","canberra")
+## 1.1 Exploration: DISTANCES AND LINKAGES
 
-i=1 for(dist_chosen in distances ){ data_grezzi = pisa_data[,c("CNT",tec)] name_dist_chosen \<- names[i] i=i+1
+(I put the commented code in a chunk to test it. I set eval=FALSE and include=FALSE not toI run it when I use the "run all" command)
 
-# linkages: "single", "average", "complete", "ward","ward.D2"
+```{r echo=FALSE}
+#looping over the categories of variables
+for(k in 1:length(categories_variables)){ 
+  #selecting the group of variables
+  data_grezzi = pisa_data[,c("CNT",categories_variables[[k]])] 
+  #discarding CNT variable in measures
+  meas_labels <-c(2: dim(data_grezzi)[2]) 
+  measures = data_grezzi[,meas_labels]
+  # EXPERIMENTING DIFFERENT DISTANCES
+  #computing dissimiliraties measures for each group of variables
+  data.e = dist(measures, method="euclidean") 
+  data.m = dist(measures, method="manhattan") 
+  data.c = dist(measures, method="canberra")
+  #storing the dissimilarity matrices in a list
+  distances = list(data.e,data.m,data.c) 
+  names = c("euclidean","manhattan","canberra")
 
-data.ds = hclust(dist_chosen, method='single') data.da = hclust(dist_chosen, method='average') data.dc = hclust(dist_chosen, method='complete') data.dw = hclust(dist_chosen, method="ward") data.dw2 = hclust(dist_chosen, method="ward.D2")
+  #EXPERIMENTING DIFFERENT LINKAGES
+  i <- 1 
+  for(dist_chosen in distances){ 
+    data_grezzi = pisa_data[,c("CNT",categories_variables[[k]])] 
+    name_dist_chosen <- names[i] 
+    i <- i+1
+    #hierarchical clustering for each type of linkage
+    # linkages: "single", "average", "complete", "ward","ward.D2"
+    data.ds = hclust(dist_chosen, method='single') 
+    data.da = hclust(dist_chosen, method='average') 
+    data.dc = hclust(dist_chosen, method='complete') 
+    data.dw = hclust(dist_chosen, method="ward.D") 
+    data.dw2 = hclust(dist_chosen, method="ward.D2")
+    #plotting the resulting dendograms
+    par(mfrow=c(2,2)) 
+    plot(data.dc, main=paste(name_dist_chosen,'complete',cat_var_names[k]),
+         hang =-0.1, xlab='', labels=F, cex=0.6, sub='')
+    plot(data.da, main=paste(name_dist_chosen,'average',cat_var_names[k]), 
+         hang =-0.1, xlab='', labels=F, cex=0.6, sub='') 
+    plot(data.dw, main=paste(name_dist_chosen,'ward.D',cat_var_names[k]), 
+         hang =-0.1, xlab='', labels=F, cex=0.6, sub='') 
+    plot(data.dw2, main=paste(name_dist_chosen,'wardD2',cat_var_names[k]), 
+         hang =-0.1, xlab='', labels=F, cex=0.6, sub='')
+    
+    
+    #Evaluting the results of our clustering with the cophenitic correlation       coeffincient
+    # Cophenetic Matrices
+    coph.dc <- cophenetic(data.dc) 
+    coph.da <- cophenetic(data.da) 
+    coph.dw <- cophenetic(data.dw) 
+    coph.dw2 <- cophenetic(data.dw2)
+  
+    # Cophenetic Coefficients
+    dc = cor(data.e, coph.dc) 
+    da = cor(data.e, coph.da) 
+    dw = cor(data.e, coph.dw) 
+    dw2 = cor(data.e, coph.dw2)
+    
+    print(cat_var_names[k])
+    print(name_dist_chosen)
+    print(c(dc,da,dw,dw2))
+    # euclidian average : 0.6, but ward seems so much better from the dendogram 
+    # manhatta average 0.55 but ward seems so much better from the dendogram 
+    # terrible canberra
+  }
+}
+```
 
-par(mfrow=c(2,2)) plot(data.dc, main=paste(name_dist_chosen,'complete',cat_var_names[k]), hang=-0.1, xlab='', labels=F, cex=0.6, sub='') plot(data.da, main=paste(name_dist_chosen,'average',cat_var_names[k]), hang=-0.1, xlab='', labels=F, cex=0.6, sub='') plot(data.dw, main=paste(name_dist_chosen,'ward',cat_var_names[k]), hang=-0.1, xlab='', labels=F, cex=0.6, sub='') plot(data.dw2, main=paste(name_dist_chosen,'wardD2',cat_var_names[k]), hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
-
-# Cophenetic Matrices
-
-coph.dc \<- cophenetic(data.dc) coph.da \<- cophenetic(data.da) coph.dw \<- cophenetic(data.dw) coph.dw2 \<- cophenetic(data.dw2)
-
-# Cophenetic Coefficients
-
-dc = cor(data.e, coph.dc) da = cor(data.e, coph.da) dw = cor(data.e, coph.dw) dw2 = cor(data.e, coph.dw2)
-
-#print(cat_var_names[k],c(dc,da,dw,dw2)) } } \# euclidian average : 0.6, but ward seems so much better from the dendogram \# manhatta average 0.55 but ward seems so much better from the dendogram \# terrible canberra
-
-# HIERARCHICAL CLUSTERING
+## 1.2 APPLIYING THE SELECTED DISTANCE AND LINKAGE
 
 ```{r, warning=FALSE, message=FALSE}
+data_grezzi <- pisa_data
 counter_names = 1
 for (k in categories_variables){
   measures = data_grezzi[,k]
@@ -131,7 +188,7 @@ for (k in categories_variables){
 head(data_clustered)
 ```
 
-## **2.1** Exploring the dataset
+## **1.3** Exploring the relationship between countries and clusters
 
 ```{r}
 country_names <- unique(data_clustered$CNT)
@@ -221,9 +278,9 @@ ggplot(df, aes(x = country, y = percentage, fill = group)) +
 #dev.off()
 ```
 
-## **3.** DBSCAN
+# **2.** DBSCAN
 
-### **3.1** choice of hyperparameters
+### **2.1** choice of hyperparameters
 
 ```{r}
 data_to_cluster = data_grezzi[,tec]
@@ -241,7 +298,7 @@ dbs
 plot(data_to_cluster, col = dbs$cluster + 1L, pch=19)
 ```
 
-### **3.2** Silhouette
+### **2.2** Silhouette
 
 ```{r}
 # Let's compute the silhouette score on the clustering performed before
@@ -263,3 +320,5 @@ sil_score <- function(labels, dist) {
 
 sil_score(clustered_labels, dist(clustered_points))
 ```
+
+# 3. K-MEANS
