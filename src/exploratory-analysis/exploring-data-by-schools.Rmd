@@ -31,15 +31,22 @@ pisa_data <- read.csv(file=dataset_path)
 ```
 
 ```{r}
-categories_variables = list(tec,psi,clt,fam,tch,sch)
-cat_var_names = c("tec","psi","clt","fam","tch","sch")
-```
-
-```{r}
 #some adjustments on the data
 pisa_data$X <- NULL
 pisa_data$schID <- as.factor(pisa_data$schID)
 pisa_data$CNT <- as.factor(pisa_data$CNT)
+```
+
+```{r}
+group_list <- c("tec","psi","clt","fam","tch","sch")
+included_variables <-list()
+#list of grouped variables
+included_variables[["tec"]] <- c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
+included_variables[["psi"]] <- c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+included_variables[["clt"]] <- c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
+included_variables[["fam"]] <- c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
+included_variables[["tch"]] <- c("TEACHINT","TEACHSUP","STIMREAD")
+included_variables[["sch"]] <- c("PERCOMP","PERCOOP","ICTSCH","RATCMP1")
 ```
 
 # CORRELATION
@@ -47,8 +54,10 @@ pisa_data$CNT <- as.factor(pisa_data$CNT)
 ```{r}
 ggcorr(select_if(pisa_data,is.numeric),label=TRUE,label_size = 2)
 
-#too many vars: unreadable
-#ggpairs(select_if(pisa_data,is.numeric))
+#let's do ggpairs on the groups
+for(group in group_list){
+  ggpairs(select_if(pisa_data[,included_variables[[group]]],is.numeric),title = group)
+}
 ```
 
 # NUMEROSITY BY COUNTRY

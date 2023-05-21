@@ -1,6 +1,8 @@
 
-## Paesi da selezionare
+#Countries
 "HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","IRL","LTU","LUX","POL","SVK","SVN","ESP","SWE"
+
+#Proposed groupings: 
 
 ## Tecnologia
 "ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH"
@@ -13,145 +15,163 @@
 ## Professori
 "TEACHINT","TEACHSUP","STIMREAD"
 ## Scuola
-"PERCOMP","PERCOOP","ICTSCH","RATCMP1","RATCMP2"
+"PERCOMP","PERCOOP","ICTSCH","RATCMP1"
 
 
+#To extract from files:
+
+Student file:
+c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH","ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED","JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS","WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI", "WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI", "TEACHINT","TEACHSUP","STIMREAD", "PERCOMP","PERCOOP","ICTSCH")
+
+School file:
+c("SCHLTYPE","STRATIO","SCHSIZE","RATCMP1","PROATCE","PROAT5AB","PROAT5AM","PROAT6","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT","STUBEHA","TEACHBEHA","SCMCEG")
+
+Teacher file: 
+c("COLT","EXCHT","SATJOB","SATTEACH","SEFFCM","SEFFREL","SEFFINS","TCOTLCOMP","TCSTIMREAD","TCSTRATREAD","TCICTUSE","TCDISCLIMA","TCDIRINS","FEEDBACK","ADAPTINSTR","FEEDBINSTR")
+
+
+Variables meaning:
+
 ------------------------------------
-Variabili selezionate
-! variabile in forse
+STUDENT DATA FILE
 ------------------------------------
-## Tecnologia
-ICTCLASS	Subject-related ICT use during lessons (WLE)
+BMMJ1	ISEI of mother
+BFMJ2	ISEI of father
+HISEI	Index highest parental occupational status
+IMMIG	Index Immigration status
+DURECEC	Duration in early childhood education and care
+REPEAT	Grade Repetition
+BSMJ	Students expected occupational status (SEI)
+MMINS	Learning time (minutes per week) - <Mathematics>
+LMINS	Learning time (minutes per week) - <test language>
+SMINS	Learning time (minutes per week) - <science>
+TMINS	Learning time (minutes per week) - in total
+FCFMLRTY	Familiarity with concepts of finance (Sum)
+SCCHANGE	Number of school changes
+CHANGE	Number of changes in educational biography (Sum)
+STUBMI	Body mass index of student
+ESCS	Index of economic, social and cultural status
+UNDREM	Meta-cognition: understanding and remembering
+METASUM	Meta-cognition: summarising
+METASPAM	Meta-cognition: assess credibility
 ICTHOME	ICT available at home
-ICTOUTSIDE	Subject-related ICT use outside of lessons (WLE)
+ICTSCH	ICT available at school
+HOMEPOS	Home possessions (WLE)
+CULTPOSS	Cultural possessions at home (WLE)
+HEDRES	Home educational resources (WLE)
+WEALTH	Family wealth (WLE)
 ICTRES	ICT resources (WLE)
-AUTICT	Perceived autonomy related to ICT use (WLE)
-COMPICT	Perceived ICT competence (WLE)
-INTICT	Interest in ICT (WLE)
+DISCLIMA	Disciplinary climate in test language lessons (WLE)
+TEACHSUP	Teacher support in test language lessons (WLE)
+DIRINS	Teacher-directed instruction (WLE)
+PERFEED	Perceived feedback (WLE)
+EMOSUPS	Parents' emotional support perceived by student (WLE)
+STIMREAD	Teacher's stimulation of reading engagement perceived by student (WLE)
+ADAPTIVITY	Adaptation of instruction (WLE)
+TEACHINT	Perceived teacher's interest (WLE)
+JOYREAD	Joy/Like reading (WLE)
+SCREADCOMP	Self-concept of reading: Perception of competence (WLE)
+SCREADDIFF	Self-concept of reading: Perception of difficulty (WLE)
+PISADIFF	Perception of difficulty of the PISA test (WLE)
+PERCOMP	Perception of competitiveness at school (WLE)
+PERCOOP	Perception of cooperation at school (WLE)
+ATTLNACT	Attitude towards school: learning activities (WLE)
+COMPETE	Competitiveness (WLE)
+WORKMAST	Work mastery (WLE)
+GFOFAIL	General fear of failure (WLE)
+EUDMO	Eudaemonia: meaning in life (WLE)
+SWBP	Subjective well-being: Positive affect (WLE)
+RESILIENCE	Resilience (WLE)
+MASTGOAL	Mastery goal orientation (WLE)
+GCSELFEFF	Self-efficacy regarding global issues (WLE)
+GCAWARE	Student's awareness of global issues (WLE)
+ATTIMM	Student's attitudes towards immigrants (WLE)
+INTCULT	Student's interest in learning about other cultures (WLE)
+PERSPECT	Perspective-taking (WLE)
+COGFLEX	Cognitive flexibility/adaptability (WLE)
+RESPECT	Respect for people from other cultures (WLE)
+AWACOM	Awareness of intercultural communication (WLE)
+GLOBMIND	Global-mindedness (WLE)
+DISCRIM	Discriminating school climate (WLE)
+BELONG	Subjective well-being: Sense of belonging to school (WLE)
+BEINGBULLIED	Student's experience of being bullied (WLE)
 ENTUSE	ICT use outside of school (leisure) (WLE)
 HOMESCH	Use of ICT outside of school (for school work activities) (WLE)
 USESCH	Use of ICT at school in general (WLE)
-
-## Psicologia
-ATTLNACT	Attitude towards school: learning activities (WLE)
-EMOSUPS	Parents' emotional support perceived by student (WLE)
-COMPETE	Competitiveness (WLE)
-EUDMO	Eudaemonia: meaning in life (WLE)
-GFOFAIL	General fear of failure (WLE)
-SWBP	Subjective well-being: Positive affect (WLE)
-RESILIENCE	Resilience (WLE)
-BELONG	Subjective well-being: Sense of belonging to school (WLE)
-BEINGBULLIED	Student's experience of being bullied (WLE)
-PERFEED	Perceived feedback (WLE)
-
-## Cultura/studio
-JOYREAD	Joy/Like reading (WLE)
-CULTPOSS	Cultural possessions at home (WLE)
-HEDRES	Home educational resources (WLE)
-SCREADCOMP	Self-concept of reading: Perception of competence (WLE)
-LMINS	Learning time (minutes per week) - <test language>
-MMINS	Learning time (minutes per week) - <Mathematics>
-TMINS	Learning time (minutes per week) - in total
-
-## Genitori (famiglia)
-WEALTH	Family wealth (WLE)
-ESCS	Index of economic, social and cultural status
-HOMEPOS	Home possessions (WLE)
-BFMJ2	ISEI of father
-BMMJ1	ISEI of mother
-HISCED	Highest Education of parents (ISCED)
-HISEI	Index highest parental occupational status
-
-## Professori
-TEACHINT	Perceived teacher's interest (WLE)
-!TEACHSUP	Teacher support in test language lessons (WLE)
-!STIMREAD	Teacher's stimulation of reading engagement perceived by student (WLE)
-
-## Scuola
-PERCOMP	Perception of competitiveness at school (WLE)
-PERCOOP	Perception of cooperation at school (WLE)
-ICTSCH	ICT available at school
-RATCMP1	Number of available computers per student at modal grade
-RATCMP2	Proportion of available computers that are connected to the Internet
-
-
-
-------------------------------------
-Scartate
-------------------------------------
-ADAPTIVITY	Adaptation of instruction (WLE)
-AGE	Age
-ATTIMM	Student's attitudes towards immigrants (WLE)
-ATTIMMP	Parents' attitudes towards immigrants (WLE)
-AWACOM	Awareness of intercultural communication (WLE)
-BODYIMA	Body image (WLE)
-BSMJ	Students expected occupational status (SEI)
-CHANGE	Number of changes in educational biography (Sum)
-COBN_F	Country of Birth National Categories- Father
-COBN_M	Country of Birth National Categories- Mother
-COBN_S	Country of Birth National Categories- Self
-COGFLEX	Cognitive flexibility/adaptability (WLE) [troppi NA]
-CURSUPP	Current parental support for learning at home (WLE) [troppi NA]
-DIRINS	Teacher-directed instruction (WLE)
-DISCLIMA	Disciplinary climate in test language lessons (WLE)
-DISCRIM	Discriminating school climate (WLE) [troppi NA]
-DURECEC	Duration in early childhood education and care [troppi NA]
-EFFORT1	How much effort did you put into this test?
-EFFORT2	How much effort would you have invested?
-EMOSUPP	Parents' emotional support (WLE) [troppi NA]
-FCFMLRTY	Familiarity with concepts of finance (Sum)
-FISCED	Fathers Education (ISCED)
-FISCED_D	Fathers Education - alternate definition (ISCED)
-FLCONFIN	Confidence about financial matters (WLE)
-FLCONICT	Confidence about financial matters using digital devices (WLE)
-FLFAMILY	Parental involvement in matters of Financial Literacy (WLE)
-FLSCHOOL	Financial education in school lessons (WLE)
-GCAWARE	Student's awareness of global issues (WLE)
-GCAWAREP	Parents' awareness of global issues (WLE)
-GCSELFEFF	Self-efficacy regarding global issues (WLE)
-- GLOBMIND	Global-mindedness (WLE)
-GRADE	Grade compared to modal grade in country
-HISCED_D	Highest Education of parents - alternate definition (ISCED)
-IMMIG	Index Immigration status
+INTICT	Interest in ICT (WLE)
+COMPICT	Perceived ICT competence (WLE)
+AUTICT	Perceived autonomy related to ICT use (WLE)
+SOIAICT	ICT as a topic in social interaction (WLE)
+ICTCLASS	Subject-related ICT use during lessons (WLE)
+ICTOUTSIDE	Subject-related ICT use outside of lessons (WLE)
 INFOCAR	Information about careers (WLE)
 INFOJOB1	Information about the labour market provided by the school (WLE)
 INFOJOB2	Information about the labour market provided outside of school (WLE)
-INTCULT	Student's interest in learning about other cultures (WLE)
-INTCULTP	Parents' interest in learning about other cultures (WLE)
-ISCEDD	ISCED designation
-ISCEDL	ISCED level
-ISCEDO	ISCED orientation
-- JOYREADP	Parents enjoyment of reading (WLE)
-LANGFATHER	Language spoken with their father for students who do not speak the test language at home
-LANGFRIEND	Language spoken with their best friend for students who do not speak the test language at home
-LANGMOTHER	Language spoken with their mother for students who do not speak the test language at home
-LANGN	Language at home (3-digit code)
-LANGSCHMATES	Language spoken with their school mates for students who do not speak the test language at home
-LANGSIBLINGS	Language spoken with their brother(s) and/or sister(s) for students who do not speak the test language at home
-MASTGOAL	Mastery goal orientation (WLE)
-METASPAM	Meta-cognition: assess credibility
-METASUM	Meta-cognition: summarising
-MISCED	Mothers Education (ISCED)
-MISCED_D	Mothers Education - alternate definition (ISCED)
-OCOD1	ISCO-08 Occupation code - Mother
-OCOD2	ISCO-08 Occupation code - Father
-OCOD3	ISCO-08 Occupation code - Self
-PASCHPOL	School policies for parental involvement (WLE) [troppi NA]
-PARED	Index highest parental education in years of schooling
-PAREDINT	Index highest parental education (international years of schooling scale)
-PERSPECT	Perspective-taking (WLE)
-PISADIFF	Perception of difficulty of the PISA test (WLE)
+FLCONFIN	Confidence about financial matters (WLE)
+FLCONICT	Confidence about financial matters using digital devices (WLE)
+FLSCHOOL	Financial education in school lessons (WLE)
+FLFAMILY	Parental involvement in matters of Financial Literacy (WLE)
+CURSUPP	Current parental support for learning at home (WLE)
+EMOSUPP	Parents' emotional support (WLE)
 PQSCHOOL	Parents' perceived school quality (WLE)
+PASCHPOL	School policies for parental involvement (WLE)
 PRESUPP	Previous parental support for learning at home (WLE)
-PROGN	Unique national study programme code
-REPEAT	Grade Repetition
-RESPECT	Respect for people from other cultures (WLE)
-SCCHANGE	Number of school changes
-SCREADDIFF	Self-concept of reading: Perception of difficulty (WLE)
-SMINS	Learning time (minutes per week) - <science>
+JOYREADP	Parents enjoyment of reading (WLE)
+ATTIMMP	Parents' attitudes towards immigrants (WLE)
+INTCULTP	Parents' interest in learning about other cultures (WLE)
+GCAWAREP	Parents' awareness of global issues (WLE)
+BODYIMA	Body image (WLE)
 SOCONPA	Social Connections: Parents (WLE)
-SOIAICT	ICT as a topic in social interaction (WLE)
-STUBMI	Body mass index of student
-TMINS	Learning time (minutes per week) - in total [troppi NA]
-UNDREM	Meta-cognition: understanding and remembering
-WORKMAST	Work mastery (WLE)
+
+------------------------------------
+SCHOOL DATA FILE
+------------------------------------
+SCHLTYPE	School Ownership
+STRATIO	Student-Teacher ratio
+SCHSIZE	School Size (Sum)
+RATCMP1	Number of available computers per student at modal grade
+RATCMP2	Proportion of available computers that are connected to the Internet
+TOTAT	Total number of all teachers at school
+PROATCE	Index proportion of all teachers fully certified
+PROAT5AB	Index proportion of all teachers ISCED LEVEL 5A Bachelor
+PROAT5AM	Index proportion of all teachers ISCED LEVEL 5A Master
+PROAT6	Index proportion of all teachers ISCED LEVEL 6
+CLSIZE	Class Size
+CREACTIV	Creative extra-curricular activities (Sum)
+EDUSHORT	Shortage of educational material (WLE)
+STAFFSHORT	Shortage of educational staff (WLE)
+STUBEHA	Student behaviour hindering learning (WLE)
+TEACHBEHA	Teacher behaviour hindering learning (WLE)
+SCMCEG	School principal's view on teachers' multicultural and egalitarian beliefs (WLE)
+
+
+------------------------------------
+TEACHER DATA FILE
+------------------------------------
+TCSTAFFSHORT	Teacher's view on staff shortage (WLE)
+TCEDUSHORT	Teacher's view on educational material shortage (WLE)
+COLT	Test language teacher collaboration (WLE)
+EXCHT	Exchange and co-ordination for teaching (WLE)
+SATJOB	Teacher's satisfaction with the current job environment (WLE)
+SATTEACH	Teacher's satisfaction with teaching profession (WLE)
+SEFFCM	Teacher's self-efficacy in classroom management (WLE)
+SEFFREL	Teacher's self-efficacy in maintaining positive relations with students (WLE)
+SEFFINS	Teacher's self-efficacy in instructional settings (WLE)
+TCOTLCOMP	Opportunity to learn (OTL) aspects of reading comprehension (WLE)
+TCSTIMREAD	Teacher's stimulation of reading engagement (WLE)
+TCSTRATREAD	Teacher's initiation of reading strategies (WLE)
+TCICTUSE	Teacher's use of specific ICT applications (WLE)
+TCDISCLIMA	Disciplinary climate in test language lessons (WLE)
+TCDIRINS	Direct teacher's instruction (WLE)
+FEEDBACK	Feedback provided by the teachers (WLE)
+ADAPTINSTR	Student assessment/use (adaption of instruction) (WLE)
+FEEDBINSTR	Feedback provided by the teachers (WLE)
+TCATTIMM	Teacher's attitudes towards immigrants (WLE)
+GCTRAIN	Teacher's training on global competence (WLE)
+TCMCEG	Teachers' multicultural and egalitarian beliefs (WLE)
+GCSELF	Teacher's self-efficacy in multicultural environments (WLE)
+W_SCHGRNRABWT	GRADE NONRESPONSE ADJUSTED SCHOOL BASE WEIGHT
+W_FSTUWT_SCH_SUM	Sum of W_FSTUWT
+VER_DAT	Date of the database creation
+
+
