@@ -192,7 +192,7 @@ vis_miss(pisa_woNA,warn_large_data = FALSE)
 saving_dir <- "../../data"
 
 #writing the dataset woNA
-write.csv(pisa_woNA,file=paste(saving_dir,"pisa_wPV",sep="/"))
+write.csv(pisa_woNA,file=paste(saving_dir,"pisa_wPV.csv",sep="/"))
 
 #GROUPING BY SCHOOLS
 #utility to compute the mode of characters vectors
@@ -208,5 +208,5 @@ pisa_grouped_bysch <- pisa_woNA %>% group_by(CNTSCHID) %>% summarise(across(wher
 pisa_grouped_bysch[,c("CNT",names(pisa_grouped_bysch)[-75])]
 
 #writing the dataset grouped by schools
-write.csv(pisa_grouped_bysch,file=paste(saving_dir,"pisa_wPV_grouped_bysch",sep="/"))
+write.csv(pisa_grouped_bysch,file=paste(saving_dir,"pisa_wPV_grouped_bysch.csv",sep="/"))
 ```
