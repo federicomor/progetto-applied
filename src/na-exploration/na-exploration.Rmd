@@ -7,56 +7,39 @@ editor_options:
 
 # POOLS OF VARIABLES OF INTEREST
 
-Selected variables from `selected_variables.txt`
+```{r}
+#libraries
+library(dplyr)
+```
 
-Some details about the computation of the indexes [docs: <https://www.oecd-ilibrary.org/sites/0a428b07-en/index.html?itemId=/content/component/0a428b07-en>]
+-   Selected variables from `selected_variables.txt`
 
-Complete vectors listing variables from each file (students, schools, teachers)
+-   Some details about the computation of the indexes [docs: <https://www.oecd-ilibrary.org/sites/0a428b07-en/index.html?itemId=/content/component/0a428b07-en>]
+
+Complete vectors listing variables from each file (students, schools, teachers):
 
 ```{r}
 #complete vectors
 stu_vars = c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH","ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED","JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS","WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI", "WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI", "TEACHINT","TEACHSUP","STIMREAD", "PERCOMP","PERCOOP","ICTSCH")
 
-sch_vars = c("SCHLTYPE","STRATIO","SCHSIZE","RATCMP1","PROATCE","PROAT5AB","PROAT5AM","PROAT6","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT","STUBEHA","TEACHBEHA","SCMCEG")
+sch_vars = c("SCHLTYPE","STRATIO","SCHSIZE","RATCMP1","PROAT5AB","PROAT5AM","PROAT6","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT","STUBEHA","TEACHBEHA")
 
 teach_vars = c("COLT","EXCHT","SATJOB","SATTEACH","SEFFCM","SEFFREL","SEFFINS","TCOTLCOMP","TCSTIMREAD","TCSTRATREAD","TCICTUSE","TCDISCLIMA","TCDIRINS","FEEDBACK","ADAPTINSTR","FEEDBINSTR")
-
 ```
 
 Listing selected countries
 
 ```{r}
-selected_countries = c("HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","IRL","LTU","LUX","POL","SVK","SVN","ESP","SWE")
+selected_countries = c("HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","LTU","LUX","POL","SVK","SVN","ESP")
 ```
 
 # DATA LOADING
 
+## Student and school data file
+
 ```{r}
-#paths
+#path of the original data files
 dataset_path = "/Users/marcogalliani/Library/CloudStorage/OneDrive-PolitecnicodiMilano/Corsi/4.2 Applied Statistics/PISA-dataset/PISA_file_sav"
-```
-
-Instructions to merge data:
-
-In order to run specific analysis, such as school level estimations, the PISA data files may need to be merged. (Please note that variable names can slightly differ across PISA cycles. The examples below are from the PISA 2015 database.)
-
--   To merge the *student data file* with the *school* or/and the *teacher data file*(s), use the country code 3-character (variable name: CNT in the PISA 2015 data file) and the international school ID (variable name: CNTSCHID in the PISA 2015 data file) for performing the merging process.
-
-```{=html}
-<!-- -->
-```
--   To merge the *student data file* with the *parent data file*, use the country code 3-character (variable name: CNT in the PISA 2015 data file) and the international student ID (variable name: CNTSTUID in the PISA 2015 data file) for performing the merging process.
-
-```{=html}
-<!-- -->
-```
--   To merge the *student data file* with the *cognitive or financial literacy data file(s)*, use the country code 3-character (variable name: CNT in PISA 2015), the international school ID (variable name: CNTSCHID in the PISA 2015 data file) and the international student ID (variable name: CNTSTUID in the PISA 2015 data file) variables for performing the merging process.
-
-```{r}
-library(foreign)
-teacher_file <- read.spss(file = paste(dataset_path,"CY07_MSU_TCH_QQQ.sav",sep = "/"), 
-                          use.value.labels = FALSE,
-                          to.data.frame = TRUE)
 ```
 
 Automatic loading by INTSVY package (doesn't work with teacher file)
@@ -65,7 +48,7 @@ Automatic loading by INTSVY package (doesn't work with teacher file)
 library(intsvy) # package to analyze PISA dataset
 
 #selecting and merging
-pisa_europe <- pisa.select.merge(folder= dataset_path,
+pisa_data <- pisa.select.merge(folder= dataset_path,
                                school.file="CY07_MSU_SCH_QQQ.sav", 
                                student.file="CY07_MSU_STU_QQQ.sav",
                                student= stu_vars,
@@ -73,24 +56,80 @@ pisa_europe <- pisa.select.merge(folder= dataset_path,
                                countries = selected_countries)    
 ```
 
+```{r}
+#decode the variable SCHLTYPE
+pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
+pisa_data <- pisa_data %>%
+  mutate(SCHLTYPE = case_when(
+    SCHLTYPE == "1" ~ "Private Independent",
+    SCHLTYPE == "2" ~ "Private Government-dependent",
+    SCHLTYPE == "3" ~ "Public",
+    TRUE ~ NA_character_
+  ))
+pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
+```
+
+## Teacher data file (DISCARDED)
+
+Trying to load the teacher file separately and then merging:
+
+```{r eval=FALSE, include=FALSE}
+library(foreign)
+#loading the data
+teacher_data <- read.spss(file = paste(dataset_path,"CY07_MSU_TCH_QQQ.sav",sep = "/"), 
+                          use.value.labels = FALSE,
+                          to.data.frame = TRUE)
+#select the variables
+teacher_data <- subset(teacher_data, select = c("CNT","CNTSCHID",teach_vars))
+
+#select the countries
+teacher_data <- teacher_data[teacher_data$CNT %in% selected_countries, ]
+```
+
+Instructions to merge data:
+
+In order to run specific analysis, such as school level estimations, the PISA data files may need to be merged. (Please note that variable names can slightly differ across PISA cycles. The examples below are from the PISA 2015 database.)
+
+-   To merge the *student data file* with the *school* or/and the *teacher data file*(s), use the country code 3-character (variable name: CNT in the PISA 2015 data file) and the international school ID (variable name: CNTSCHID in the PISA 2015 data file) for performing the merging process.
+
+Reference: <https://github.com/cran/intsvy/blob/master/R/pisa.select.merge.R>
+
+```{r eval=FALSE, include=FALSE}
+#similar to the source code in the intsvy package 
+pisa_data_test <- merge(pisa_data, teacher_data, 
+                        all.x = TRUE,
+                        by= intersect(names(pisa_data), names(teacher_data)))
+pisa_data_test <- pisa_data_test[grep("*.y", names(pisa_data_test), invert=TRUE)]
+names(pisa_data_test) <- gsub("*.x", "", names(pisa_data_test))
+```
+
+## Cleaning useless variables
+
 Cleaning some variables generated by intsvy package that we will not use in this analysis
 
 -   Removing replicate weights
 
--   Averaging PV for some specific field
+-   Select PVs of interest
 
 -   Removing IDs (except for school ID that we may use to group the variables), W_FSTUWT and W_FSTUWT_SC_SUM
 
 ```{r}
-library(dplyr)
 #remove replicate weights
-pisa_europe <- pisa_europe %>% select(-starts_with("W_FSTU")) 
+pisa_data <- pisa_data %>% select(-starts_with("W_FSTU")) 
 #removing IDs
-pisa_europe <- pisa_europe %>% select(-c("CNTRYID","CNTSCHID","CNTSTUID","BOOKID")) 
+pisa_data <- pisa_data %>% select(-c("CNTRYID","BOOKID")) 
 ```
 
+Averaging PVs by group
+
 ```{r}
-pisa_europe <- pisa_europe %>% select(-starts_with("PV"))
+considered_scores <- c("MATH", "READ")
+discarded_scores <- c("SCIE","GLCM","RCLI","RCUN","RCER","RTSN","RTML")
+
+#selected scores of interest
+for(score in discarded_scores){
+  pisa_data <- pisa_data %>% select(-(starts_with("PV") & ends_with(score)))
+}
 ```
 
 # GENERAL INSPECTION
@@ -105,53 +144,69 @@ library(ggplot2)
 library(UpSetR)
 
 inspect_df_NA <- function(df){
-  plot1 <- vis_miss(df,warn_large_data = FALSE)    
-  plot2 <- gg_miss_upset(df,nsets = 10)
-  plot3 <- gg_miss_fct(x = df,fct = CNT)
-  return(list(plot1,plot2,plot3))
+  plot_list <- list() 
+  plot_list$miss_table <- vis_miss(df,warn_large_data = FALSE)    
+  plot_list$interceptions <- gg_miss_upset(df,nsets = 10)
+  plot_list$country_heatmap <- gg_miss_fct(x = df,fct = CNT)
+  plot_list$percentage <- gg_miss_var(df, show_pct = TRUE) 
+  
+  return(plot_list)
 }
 ```
 
 ```{r}
-plots <- inspect_df_NA(pisa_europe)
-plots
-```
+plots <- inspect_df_NA(pisa_data)
 
-Analytically
-
-```{r}
-# help(gg_miss_case)
-#visually
-#gg_miss_case(inspect_world,facet = CNT)
-
-#analytically
-#na_count_by_group <- aggregate(. ~ inspect_world$CNT,inspect_world,function(x) { sum(is.na(x)) },na.action = NULL) 
-
-##add nations count to the dataframe
-#nation_count <- inspect_world %>% group_by(CNT) %>% summarise(total_count = n())
-#na_count_by_group["nation count"] <- nation_count$total_count
+plots$miss_table
+plots$country_heatmap
+plots$interceptions
+plots$percentage
 ```
 
 # TREATMENT OF NAs
 
 ```{r}
 # 1) first option removing NAs with na.omit()
-# europe_woNA <- na.omit(europe_sel)
+# pisa_woNA <- na.omit(europe_sel)
 # 2) filling with mean or median
 library(tidyr)
-europe_woNA <- pisa_europe %>% group_by(CNT) %>% mutate_if(is.numeric, ~replace_na(.,mean(., na.rm = TRUE)))
+
+# To impute only under a certain percentage of NA uncomment here
+# n <- dim(pisa_data)[1] 
+# pisa_woNA <- pisa_data
+
+# pisa_woNA[,colSums(is.na(pisa_data))/n < 0.22] <- pisa_data[,colSums(is.na(pisa_data))/n < 0.1] %>% group_by(CNT) %>% mutate_if(is.numeric, ~replace_na(.,mean(., na.rm = TRUE)))
+
+#imputation of the mean
+pisa_woNA <- pisa_data %>% group_by(CNT) %>% mutate_if(is.numeric, ~replace_na(.,mean(., na.rm = TRUE)))
+#to remove some NAs in SCHLTYPE
+pisa_woNA <- na.omit(pisa_woNA)
+
 #check if we have removed NAs
-vis_miss(europe_woNA,warn_large_data = FALSE)
+vis_miss(pisa_woNA,warn_large_data = FALSE)
 ```
 
-# SAVING DATA
+# GENERATING DATASETS
 
-```{r,}
-# saving_dir = paste(working_dir,"/data/pisa-woNA.csv",sep="")
-# write.csv(europe_woNA,file=saving_dir)
+```{r, eval=FALSE, include=FALSE}
+saving_dir <- "../../data"
+
+#writing the dataset woNA
+write.csv(pisa_woNA,file=paste(saving_dir,"pisa_wPV",sep="/"))
+
+#GROUPING BY SCHOOLS
+#utility to compute the mode of characters vectors
+get_mode <- function(x) {
+  tbl <- table(x)
+  mode <- names(tbl)[tbl == max(tbl)]
+  return(mode)
+}
+#summarise numerical variables by mean and categorical by mode
+pisa_grouped_bysch <- pisa_woNA %>% group_by(CNTSCHID) %>% summarise(across(where(is.numeric),mean),across(where(is.character), get_mode))
+
+#reordering
+pisa_grouped_bysch[,c("CNT",names(pisa_grouped_bysch)[-75])]
+
+#writing the dataset grouped by schools
+write.csv(pisa_grouped_bysch,file=paste(saving_dir,"pisa_wPV_grouped_bysch",sep="/"))
 ```
-
-# OBSERVATIONS AND TODO
-
--   analysis for plausible values
--   try filling with different methods
