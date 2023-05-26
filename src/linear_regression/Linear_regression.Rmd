@@ -1,0 +1,462 @@
+---
+title: "Linear regression 1.0"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+# Load directory
+```{r, setup}
+#DIRECTORIES
+root_proj_dir = "../../"
+dataset_dir = paste(root_proj_dir,"/data/pisa_wPV_grouped_bysch.csv",sep="")
+include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_dir)
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_dir)
+
+library(mvtnorm)
+library(MASS)
+library(car)
+library(rgl)
+library(leaps)
+library(ISLR)
+library(glmnet)
+
+#some adjustments on the data
+pisa_data$X <- NULL
+pisa_data$schID <- NULL
+pisa_data$CNT <- as.factor(pisa_data$CNT)
+pisa_data$CNTSCHID <- as.factor(pisa_data$CNTSCHID)
+pisa_data$CNTSTUID <- as.factor(pisa_data$CNTSTUID)
+pisa_data <- pisa_data %>% select(-starts_with("PV")) #excluding target variables
+```
+
+# Transforming the dataset
+```{r}
+
+```
+
+# Introduction of groups
+```{r}
+
+```
+
+# Models
+## **1.** classic linear model
+```{r}
+# Y = beta_0 + beta_1 * X1 + beta_2 * X2 + Eps
+
+## Assumptions:
+# 1) Parameter estimation: E(Eps) = 0 and Var(Eps) = sigma^2
+# 2) Inference : Eps ~ N(0, sigma^2)
+
+# Estimate the parameters
+fm = lm(Y ~ X1 + X2)
+summary(fm)
+vif(fm)
+
+# Comment
+# * Residual standard error = estimate of sigma
+# * Degrees of freedom = n-(r+1)
+# * F-statistic - p.value = H0: beta_1 = .. = beta_r = 0
+#   (low p-value -> it makes sense to go on)
+# * Check for R^2 and R.adj^2
+# * Residuals have to be symmetric 
+# * Pr(>|t|) = p-value of the one-at-time beta test
+#   !ATTENTION! Delete one-at-the-time
+show = 0
+if(show==1){
+  # Y hat
+  fitted(fm)
+  
+  # Eps hat
+  residuals(fm)
+  plot(residuals(fm))
+  
+  # Beta hat
+  coefficients(fm)
+  
+  # Cov(beta hat) = sigma^2 * (Z^T * Z)^(-1)
+  vcov(fm)
+  
+  # Order of the model (r+1)
+  fm$rank
+  
+  # Degrees of freedom for the residuals
+  fm$df
+
+  # Leverages h_ii
+  hatvalues(fm)
+  
+  # Standardized residuals
+  rstandard(fm)
+  plot(rstandard(fm))
+  
+  # Estimate of sigma^2
+  sum(residuals(fm)^2)/fm$df
+}
+```
+## **2.** Ridge Regression
+```{r, warning=FALSE, message=FALSE}
+lambda = 0.5
+fm.ridge = lm.ridge(Y ~ X1 + X2, lambda = lambda)
+
+# Cofficients
+coef(fm.ridge)
+
+# Y.hat
+y.hat.ridge = cbind(rep(1,n), X1, X2) %*% coef(fm.ridge)
+
+###############################################################################
+# Repeat for a grid of lambda's
+lambda.c <- seq(0,10,0.01)
+fit.ridge <- lm.ridge(Y ~ X1 + X2, lambda = lambda.c)
+
+ 
+par(mfrow=c(1,3))
+plot(lambda.c,coef(fit.ridge)[,1], type='l', xlab=expression(lambda),
+     ylab=expression(beta[0]))
+abline(h=coef(fm)[1], lty=2)
+plot(lambda.c,coef(fit.ridge)[,2], type='l', xlab=expression(lambda),
+     ylab=expression(beta[1]))
+abline(h=coef(fm)[2], lty=2)
+plot(lambda.c,coef(fit.ridge)[,3], type='l', xlab=expression(lambda),
+     ylab=expression(beta[2]))
+abline(h=coef(fm)[3], lty=2)
+##
+yhat.lm <- cbind(rep(1,n), X1, X2)%*%coef(fm)
+
+plot(X1, yhat.lm, type='l', lty=1, lwd=2, ylab='Y',
+     xlab='X')
+points(X1, Y, pch=1, cex=.8)
+yhat.r <- NULL
+for(i in 1:length(lambda.c))
+  yhat.r=cbind(yhat.r, cbind(rep(1,n), X1, X2)%*%coef(fit.ridge)[i,])
+
+matlines(X1, yhat.r, type='l', lty=1,
+       col=grey.colors(length(lambda.c)))
+lines(X1, yhat.lm, type='l', lty=4, lwd=2, ylab='Y',
+    xlab='X')
+###############################################################################
+
+# Optimal lambda
+fm.ridge = lm.ridge(Y ~ X1 + X2, lambda = lambda.c)
+select(fm.ridge)
+
+# Alternatives (optimal lambda)
+fm.ridge = lm.ridge(Y ~ X1 + X2, lambda = lambda.c)
+lambda.opt = lambda.c[which.min(fm.ridge$GCV)]
+
+# Cofficients for optimal lambda
+coef.ridge = coef(fm.ridge)[which.min(fm.ridge$GCV),]
+coef.ridge
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+x = model.matrix(Y ~ X1 + X2)[,-1] # matrix of predictors
+y = Y # vector of response
+lambda.grid = 10^seq(5,-3,length=50)
+
+# Ridge regression
+fit.ridge = glmnet(x,y, lambda = lambda.grid, alpha=0) # alpha=0 -> ridge
+plot(fit.ridge,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
+legend('topright', dimnames(x)[[2]], col = rainbow(dim(x)[2]), lty=1, cex=1)
+
+# Set lambda via CV
+cv.ridge = cv.glmnet(x,y,alpha=0,nfolds=3,lambda=lambda.grid)
+bestlam.ridge = cv.ridge$lambda.min
+bestlam.ridge
+
+plot(cv.ridge)
+abline(v=log(bestlam.ridge), lty=1)
+coef.ridge <- predict(fit.ridge, s=bestlam.ridge, type = 'coefficients')[1:(p+1),]
+coef.ridge
+plot(fit.ridge,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
+abline(v=log(bestlam.ridge))
+```
+
+### Regression plot
+```{r, warning=FALSE, message=FALSE}
+# (specific case of a regression of the form: Y = b_0 + b_1 * X + b_2 * X^2)
+
+x = seq(0,max(X1)+5,by=0.01)
+b = coef(fm)
+plot(X1, Y, xlab='X1', ylab='Y')
+
+fitted_y = b[1]+b[2]*x+b[3]*x^2
+
+lines(x, fitted_y)
+```
+
+## **3.** Lasso Regression
+```{r, warning=FALSE, message=FALSE}
+x = model.matrix(Y ~ X1 + X2)[,-1] # matrix of predictors
+y = Y # vector of response
+lambda.grid = 10^seq(5,-3,length=50)
+
+# Lasso regression
+fit.lasso = glmnet(x,y, lambda = lambda.grid, alpha=1) # alpha=1 -> lasso
+plot(fit.lasso,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
+legend('topright', dimnames(x)[[2]], col = rainbow(dim(x)[2]), lty=1, cex=1)
+
+# Set lambda via CV
+cv.lasso = cv.glmnet(x,y,alpha=1,nfolds=3,lambda=lambda.grid)
+bestlam.lasso = cv.lasso$lambda.min
+bestlam.lasso
+
+plot(cv.lasso)
+abline(v=log(bestlam.lasso), lty=1)
+
+# Get the coefficients for the optimal lambda
+coef.lasso = predict(fit.lasso, s=bestlam.lasso, type = 'coefficients')[1:(p+1),]
+coef.lasso
+
+plot(fit.lasso,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
+abline(v=log(bestlam.lasso))
+```
+
+## Model- Compare coefficients estimates for LS, Ridge and Lasso
+```{r message=FALSE, warning=FALSE}
+plot(rep(0, dim(x)[2]), coef(fm)[-1], col=rainbow(dim(x)[2]), pch=20,
+     xlim=c(-1,3), ylim=c(-1,2), xlab='', ylab=expression(beta),
+     axes=F)
+points(rep(1, dim(x)[2]), coef.ridge[-1], col=rainbow(dim(x)[2]), pch=20)
+points(rep(2, dim(x)[2]), coef.lasso[-1], col=rainbow(dim(x)[2]), pch=20)
+abline(h=0, col='grey41', lty=1)
+box()
+axis(2)
+axis(1, at=c(0,1,2), labels = c('LS', 'Ridge', 'Lasso'))
+legend('topright', dimnames(x)[[2]], col = rainbow(dim(x)[2]), pch=20, cex=1)
+```
+
+
+
+# Inference on Betas
+```{r, warning=FALSE, message=FALSE}
+## Assuption: Eps ~ N(0, sigma^2)
+## Test (Fisher):
+##    H0: (beta1, beta2) == (0, 0)
+##    H1: (beta1, beta2) != (0, 0)
+r = fm$rank - 1  # number of regressors
+kk=2
+linearHypothesis(fm, cbind(rep(0,kk),diag(kk)), rep(0,kk))
+
+# Comment
+#   Pr(>F) = final p-value in summary(fm)
+```
+
+
+#  Bonferroni Intervals - generalize
+```{r, warning=FALSE, message=FALSE}
+alpha = 0.05
+qT = qt(1-alpha/(2*p), n-(r+1))
+
+vals = c(2,3)
+C = diag(3)
+Bf = c()
+for(j in vals){
+  Bf = rbind(Bf,
+         c( (C %*%coefficients(fm))[j]-sqrt((C %*%vcov(fm) %*% t(C))[j,j])*qT,
+            (C %*%coefficients(fm))[j]+sqrt((C %*%vcov(fm) %*% t(C))[j,j])*qT))
+}
+rownames(Bf) = c("beta1","beta2")
+Bf
+
+# Generic beta_j (p, r, n, alpha generici)
+# beta_j = c(coefficients(fm)[j]-sqrt(vcov(fm)[j,j])*qt(1-alpha/(2*p), n-(r+1)),
+#            coefficients(fm)[j]+sqrt(vcov(fm)[j,j])*qt(1-alpha/(2*p), n-(r+1)))
+
+# Alternatively: Bonferroni's correction
+confint(fm, level= 1-alpha/p)[vals,]
+```
+
+#  Inference on the mean (CI(E[Y|X]), PI(Y))
+```{r, warning=FALSE, message=FALSE}
+# New sample
+Z0.new = data.frame(X1=10, X2=10^2)
+
+# CI(E[Y|X])
+Conf = predict(fm, Z0.new, interval='confidence', level=1-alpha)
+Conf
+
+# PI(Y)
+Pred = predict(fm, Z0.new, interval='prediction', level=1-alpha)
+Pred
+```
+
+
+#  Plot IC vs IP: grid of sample
+```{r, warning=FALSE, message=FALSE}
+min = 0
+max = 30
+  
+Z0   <- data.frame(cbind(X1=seq(min, max, length=100), 
+                         X2=seq(min, max, length=100)^2))
+
+
+Conf = predict(fm, Z0, interval='confidence')
+Pred = predict(fm, Z0, interval='prediction')
+plot(X1, Y, xlab='X1', ylab='Y', las=1)
+lines(Z0[,1], Conf[,'fit'])
+lines(Z0[,1], Conf[,'lwr'], lty=2, col='red', lwd=2)
+lines(Z0[,1], Conf[,'upr'], lty=2, col='red', lwd=2)
+
+lines(Z0[,1], Pred[,'lwr'], lty=3, col='gold', lwd=2)
+lines(Z0[,1], Pred[,'upr'], lty=3, col='gold', lwd=2)
+legend('topleft', legend=c('regression line','confidence intervals','prediction intervals'),
+       col=c('black','red','gold'), lwd=2, cex=0.85)
+
+# Comment
+#   These are NOT confidence/prediction BANDS, they're done one-at-the-time.
+```
+
+
+
+#  Verify assumptions (used for inference and estimate of parameters)
+```{r, warning=FALSE, message=FALSE}
+# * Gaussianity
+# * Homoschedasticity
+
+par(mfrow=c(2,2))
+plot(fm)
+
+# Comment
+#   1. We want to see no pattern: a cloud around the zero
+#   2. We want to see a good fit on the line
+#   3. Again, we want to see no pattern
+#   4. We have the iso-lines of the Cook distance: we can identify the outliers
+
+shapiro.test(residuals(fm))
+
+```
+
+# Variable selection
+
+## **1.** Best Subset Selection (exhaustive search) 
+```{r, warning=FALSE, message=FALSE}
+# Best Subset Selection
+regfit.full = regsubsets(Y~., data=data)
+summary(regfit.full)
+
+# Best Subset Selection: we say when we stop
+nv_max = 19
+regfit.full = regsubsets(Y~., data=data, nvmax=nv_max)
+summary(regfit.full)
+
+reg.summary = summary(regfit.full)
+
+# Which one we choose:
+reg.summary$which
+
+# R-squared
+reg.summary$rsq
+
+# R.adj^2
+reg.summary$adjr2
+
+# SSres (residual sum of squares)
+reg.summary$rss
+
+# Plots
+par(mfrow=c(1,3))
+plot(reg.summary$rsq, xlab="Number of Variables", ylab="R-squared", type="b")
+plot(reg.summary$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
+plot(reg.summary$rss, xlab="Number of Variables", ylab="RSS", type="b")
+
+# We want the model with max r.adj^2 so we extract the coefficients of that model
+# Note: ind = how many coefficients has the model
+ind = which.max(reg.summary$adjr2)
+coef(regfit.full, ind)
+
+# Graphical table of best results
+par(mfrow=c(1,2))
+plot(regfit.full, scale="r2", main="Exhaustive search")
+plot(regfit.full, scale="adjr2", main="Exhaustive search")
+
+```
+
+## **2.** Forward and Backward Stepwise Selection
+```{r, warning=FALSE, message=FALSE}
+# Forward
+regfit.fwd = regsubsets(Y~.,data=data,nvmax=nv_max,method="forward")
+summary(regfit.fwd)
+
+# Plot
+par(mfrow=c(1,3))
+plot(summary(regfit.fwd)$rsq, xlab="Number of Variables", ylab="R-squared", type="b")
+plot(summary(regfit.fwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
+plot(summary(regfit.fwd)$rss, xlab="Number of Variables", ylab="RSS", type="b")
+
+par(mfrow=c(1,2))
+plot(regfit.fwd,scale="r2",main="Forward Stepwise Selection")
+plot(regfit.fwd,scale="adjr2",main="Forward Stepwise Selection")
+
+# Backward
+regfit.bwd = regsubsets(Y~.,data=data,nvmax=nv_max,method="backward")
+summary(regfit.bwd)
+
+# Plot
+par(mfrow=c(1,3))
+plot(summary(regfit.bwd)$rsq, xlab="Number of Variables", ylab="R-squared", type="b")
+plot(summary(regfit.bwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
+plot(summary(regfit.bwd)$rss, xlab="Number of Variables", ylab="RSS", type="b")
+
+par(mfrow=c(1,2))
+plot(regfit.bwd,scale="r2",main="Backward Stepwise Selection")
+plot(regfit.bwd,scale="adjr2",main="Backward Stepwise Selection")
+
+```
+
+## **3.** Comparison
+```{r, warning=FALSE, message=FALSE}
+coef(regfit.full,7) # Exhaustive search
+coef(regfit.fwd,7) # Forward Stepwise Selection
+coef(regfit.bwd,7) # Backward Stepwise Selection
+```
+
+## **4.** K-fold-cross-validation (exhaustive search)
+```{r, warning=FALSE, message=FALSE}
+k = 10
+folds = sample(1:k,nrow(data),replace=TRUE)
+table(folds)
+
+# Function that performs the prediction for regsubsets
+predict.regsubsets = function(object,newdata,id){
+  form  = as.formula(object$call[[2]])
+  mat   = model.matrix(form,newdata)
+  coefi = coef(object,id=id)
+  xvars = names(coefi)
+  mat[,xvars]%*%coefi
+}
+
+cv.errors = matrix(NA,k,p, dimnames=list(NULL, paste(1:19)))
+
+for(j in 1:k){
+  best.fit = regsubsets(Y~.,data=data[folds!=j,],nvmax=19)
+  for(i in 1:p){
+    pred = predict(best.fit,data[folds==j,],id=i)
+    cv.errors[j,i] = mean( (data$Y[folds==j]-pred)^2 )
+  }
+}
+
+cv.errors
+
+root.mean.cv.errors = sqrt(apply(cv.errors,2,mean)) # average over the columns
+root.mean.cv.errors
+
+# Plot
+plot(root.mean.cv.errors,type='b')
+points(which.min(root.mean.cv.errors),
+       root.mean.cv.errors[which.min(root.mean.cv.errors)], col='red',pch=19)
+which.min(root.mean.cv.errors)
+
+# Estimation on the full dataset
+reg.best = regsubsets(Y~.,data=data, nvmax=19)
+coef(reg.best,10)
+
+```
+
+
+

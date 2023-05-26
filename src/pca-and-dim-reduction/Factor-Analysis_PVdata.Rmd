@@ -278,6 +278,7 @@ Here we're actually performing factor analysis. We have two options to estimate 
 
 ```{r}
 #storing the number of factors (decision based on the previous plots)
+
 nfactors <- list()
 nfactors[["tec"]] <- 6
 nfactors[["psi"]] <- 5 
