@@ -17,6 +17,7 @@ spiegami = function(colonna){
 dimmi = racconta = raccontami = cose = cos_e = interpreta = interpretami = spiega = spiegami
 ## quindi ora dimmi(ecc) e le altre funzionano allo stesso modo
 
+
 what_is[["scPC1_tec"]] = "quanta tecnologia gli studenti hanno a disposizione
 	alta -> maggiore disponibilità"
 what_is[["scPC2_tec"]] = "contrasto tra uso della tecnologia ed interesse/dedizione dello studente
@@ -123,40 +124,27 @@ what_is[["BMMJ1"]] = "ISEI of mother"
 what_is[["HISCED"]] = "Highest Education of parents"
 what_is[["HISEI"]] = "Index highest parental occupational status"
 what_is[["RATCMP1"]] = "Number of available computers per student at modal grade"
+what_is[["TEACHINT"]] = "Perceived teacher's interest (WLE)"
+what_is[["TEACHSUP"]] = "Teacher support in test language lessons (WLE)"
+what_is[["STIMREAD"]] = "Teacher's stimulation of reading engagement perceived by student"WLE)  
+what_is[["PROAT5AB"]] = "ndex proportion of all teachers ISCED LEVEL 5A Bachelor"
+what_is[["PROAT5AM"]] = "ndex proportion of all teachers ISCED LEVEL 5A Master"
+what_is[["PROAT6"]] = "ndex proportion of all teachers ISCED LEVEL 6"
+what_is[["TOTAT"]] = "otal number of all teachers at school"
+what_is[["TEACHBEHA"]] = "eacher behaviour hindering learning (WLE)"
+what_is[["PERCOMP"]] = "Perception of competitiveness at school (WLE)"
+what_is[["PERCOOP"]] = "Perception of cooperation at school (WLE)"
+what_is[["ICTSCH"]] = "ICT available at school\> also in tech group"
+what_is[["RATCMP1"]] = "Number of available computers per student at modal grade also in tech group"
+what_is[["SCHLTYPE"]] = "School Ownership"
+what_is[["STRATIO"]] = "StudenTeacher ratio"
+what_is[["SCHSIZE"]] = "School Size (Sum)"
+what_is[["CLSIZE"]] = "CLass Size"
+what_is[["CREACTIV"]] = "Creative extracurricular activities (Sum)"
+what_is[["EDUSHORT"]] = "Shortage of educational material (WLE)"
+what_is[["STAFFSHORT"]] = "Shortage of educational staff (WL)"
+what_is[["STUBEHA"]] = "Student behaviour hindering learning (WL)"
 
-
-## (2) variable groups----
-#countries
-selected_countries = c("HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","IRL","LTU","LUX","POL","SVK","SVN","ESP","SWE")
-#Gender
-stu_GENDER = c("ST004D01T")
-#Technology
-stu_ICT = c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
-sch_ICT = "RATCMP1"
-#Family
-stu_FAM = c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
-#Culture
-stu_CULT = c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
-#Well-being
-stu_WB = c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
-#Professori
-stu_PROF = c("TEACHINT","TEACHSUP","STIMREAD")
-#School
-stu_SCH = c("PERCOMP","PERCOOP","ICTSCH")
-############################################################################
-
-## SCORE dataset
-tec = c("scPC1_tec","scPC2_tec","scPC3_tec","scPC4_tec") #5
-
-psi = c( "scPC1_psi", "scPC2_psi", "scPC3_psi", "scPC4_psi", "scPC5_psi") #5
-
-clt = c("scPC1_clt", "scPC2_clt", "scPC3_clt") #3
-
-fam = "scPC1_fam"
-
-tch = "scPC1_tch"
-
-sch = c("scPC1_sch","scPC2_sch")
 
 
 

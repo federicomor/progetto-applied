@@ -18,7 +18,7 @@ library(car)
 # rm(list=ls())
 
 # vuol dire "da dove siamo ora vai indietro di una cartella (..), e da lì vai in data
-stu=read.csv("../data/pisa-woNA_school_final.csv")
+stu=read.csv("../../data/pisa-woNA_school_final.csv")
 
 colnames(stu)
 summary(stu)
@@ -227,6 +227,9 @@ for (i in 2:length(svec) ){
 ```{r}
 # todo scegliendo la soglia
 df_wo_outliers = stu[which(d2 <= 52), ]
+esito=mvn(select_if(df_wo_outliers[,3:dim(df)[2]],is.numeric))
+esito$univariateNormality
+
 write.csv(df_wo_outliers,"../data/pisa_school_wo_Outl.csv")
 head(df_wo_outliers)
 ```

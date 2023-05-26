@@ -16,17 +16,19 @@ source("../include/Utilities.R")
 #variabili finite nel dataset
 tec=c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
 psi=c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
-clt=c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
+clt=c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS","STUBEHA")
 fam=c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
-tch=c("TEACHINT","TEACHSUP","STIMREAD")
-sch=c("PERCOMP","PERCOOP","ICTSCH","RATCMP1","RATCMP2")
+tch=c("TEACHINT","TEACHSUP","STIMREAD","PROAT5AB","PROAT5AM","PROAT6","TEACHBEHA")
+sch=c("PERCOMP","PERCOOP","ICTSCH","RATCMP1","STRATIO","SCHSIZE","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT")
 
-df=read.csv("../../data/pisa-woNA.csv")
+df=read.csv("../../data/pisa_wPV_grouped_bysch.csv")
 colnames(df)
-unique(df$ST004D01T) #gender, non penso ci interessa per la pca
-df=df[,-c(1,3)] #remove gender and X (index) column
+library(dplyr)
+df=df[,-c(1,2,3)] #remove X (index) column
+df <- df %>% select(-starts_with("PV")) #excluding target variables 
+colnames(df)
 
-sort(colnames(df[,-c(1)]))==sort(c(tec,psi,clt,fam,tch,sch))
+sort(colnames(df[,-c(52)]))==sort(c(tec,psi,clt,fam,tch,sch))
 #c'è tutto ora
 
 df_tec = df[,colnames(df) %in% tec]
@@ -86,7 +88,7 @@ abline(h=1, col='blue')
 abline(h=0.8, lty=2, col='blue')
 box()
 axis(2,at=0:10/10,labels=0:10/10)
-axis(1,at=1:ncol(df_std),labels=1:ncol(df_std),las=2)
+axis(1,at=1:ncol(df_pca),labels=1:ncol(df_pca),las=2)
 
 print("loadings plot")
 sort(pca$loadings[,1]) #test soglia
@@ -178,7 +180,7 @@ abline(h=1, col='blue')
 abline(h=0.8, lty=2, col='blue')
 box()
 axis(2,at=0:10/10,labels=0:10/10)
-axis(1,at=1:ncol(df_std),labels=1:ncol(df_std),las=2)
+axis(1,at=1:ncol(df_pca),labels=1:ncol(df_pca),las=2)
 
 print("loadings plot")
 sort(pca$loadings[,1]) #test soglia
@@ -275,7 +277,7 @@ abline(h=1, col='blue')
 abline(h=0.8, lty=2, col='blue')
 box()
 axis(2,at=0:10/10,labels=0:10/10)
-axis(1,at=1:ncol(df_std),labels=1:ncol(df_std),las=2)
+axis(1,at=1:ncol(df_pca),labels=1:ncol(df_pca),las=2)
 
 print("loadings plot")
 sort(pca$loadings[,1]) #test soglia
@@ -367,7 +369,7 @@ abline(h=1, col='blue')
 abline(h=0.8, lty=2, col='blue')
 box()
 axis(2,at=0:10/10,labels=0:10/10)
-axis(1,at=1:ncol(df_std),labels=1:ncol(df_std),las=2)
+axis(1,at=1:ncol(df_pca),labels=1:ncol(df_pca),las=2)
 
 print("loadings plot")
 sort(pca$loadings[,1]) #test soglia
@@ -459,7 +461,7 @@ abline(h=1, col='blue')
 abline(h=0.8, lty=2, col='blue')
 box()
 axis(2,at=0:10/10,labels=0:10/10)
-axis(1,at=1:ncol(df_std),labels=1:ncol(df_std),las=2)
+axis(1,at=1:ncol(df_pca),labels=1:ncol(df_pca),las=2)
 
 print("loadings plot")
 sort(pca$loadings[,1]) #test soglia
@@ -550,7 +552,7 @@ abline(h=1, col='blue')
 abline(h=0.8, lty=2, col='blue')
 box()
 axis(2,at=0:10/10,labels=0:10/10)
-axis(1,at=1:ncol(df_std),labels=1:ncol(df_std),las=2)
+axis(1,at=1:ncol(df_pca),labels=1:ncol(df_pca),las=2)
 
 print("loadings plot")
 sort(pca$loadings[,1]) #test soglia
