@@ -223,22 +223,16 @@ ggcorr(select_if(pisa_data,is.numeric),label=TRUE,label_size = 2)
 
 #WITHIN GROUPS
 #tec
-ggpairs(select_if(pisa_data[,grouped_variables[["tec"]]],is.numeric),progress = FALSE)
 ggcorr(select_if(pisa_data[,grouped_variables[["tec"]]],is.numeric),label=TRUE,label_size = 2)
 #psi
-ggpairs(select_if(pisa_data[,grouped_variables[["psi"]]],is.numeric), progress = FALSE)
 ggcorr(select_if(pisa_data[,grouped_variables[["psi"]]],is.numeric),label=TRUE,label_size = 2)
 #clt
-ggpairs(select_if(pisa_data[,grouped_variables[["clt"]]],is.numeric), progress = FALSE)
 ggcorr(select_if(pisa_data[,grouped_variables[["clt"]]],is.numeric),label=TRUE,label_size = 2)
 #fam
-ggpairs(select_if(pisa_data[,grouped_variables[["fam"]]],is.numeric), progress = FALSE)
 ggcorr(select_if(pisa_data[,grouped_variables[["fam"]]],is.numeric),label=TRUE,label_size = 2)
 #tch
-ggpairs(select_if(pisa_data[,grouped_variables[["tch"]]],is.numeric), progress = FALSE)
 ggcorr(select_if(pisa_data[,grouped_variables[["tch"]]],is.numeric),label=TRUE,label_size = 2)
 #sch
-ggpairs(select_if(pisa_data[,grouped_variables[["sch"]]],is.numeric), progress = FALSE)
 ggcorr(select_if(pisa_data[,grouped_variables[["sch"]]],is.numeric),label=TRUE,label_size = 2)
 ```
 
@@ -284,51 +278,73 @@ for(group in group_list){
 }
 ```
 
-Here we're actually performing factor analysis. We have two options to estimate the matrix L of loadings:
-
--   Maximum Likelihood Estimation: requires multivariate normality on X (factanal function)
-
--   Principal component method (principal funtion)
-
 ```{r}
 #storing the number of factors (decision based on the previous plots)
-
 nfactors <- list()
-nfactors[["tec"]] <- 6
-nfactors[["psi"]] <- 5 
-nfactors[["clt"]] <- 4 
-nfactors[["fam"]] <- 3 
-nfactors[["tch"]] <- 4 
-nfactors[["sch"]] <- 6 
+#tec
+nfactors[["tec"]]$PC <- 6
+nfactors[["tec"]]$FA <- 3
+#psi
+nfactors[["psi"]]$PC <- 5
+nfactors[["psi"]]$FA <- 2
+#clt
+nfactors[["clt"]]$PC <- 4 
+nfactors[["clt"]]$FA <- 3
+#fam
+nfactors[["fam"]]$PC <- 3 
+nfactors[["fam"]]$FA <- 2 
+#tch
+nfactors[["tch"]]$PC <- 4 
+nfactors[["tch"]]$FA <- 3
+#sch
+nfactors[["sch"]]$PC <- 6 
+nfactors[["sch"]]$FA <- 3
 ```
+
+Options:
+
+-   factanal(): performs a EFA by maximum likelihood estimation [package stats]
+
+-   princomp(): perform PCA in the stadard way, as seen in lecture [package stats]
+
+-   fa(): performs various types of EFA, we can decided the most suited one [package psych]
+
+-   principal(): performs PCA in a more sophisticated way, see the doxumentation in this folder [package psych]
 
 ```{r}
 #TRIED methods:
-#maximum likelihoood method (actually requires normality)(works badly)
-# fit_ML <- list() #factanal() from library(psych)
-#principal component method ()
-fit_classic_PC <- list() #princomp()
-fit_FA_PC <- list() #principal() from library(psych)
-#trying out also sparse PC (to be studied)
-#fit_sparsePC <- list()
+# FA with ML
+fit_FA_ML <- list() #factanal() 
 
+# classical PCA 
+fit_PCA_classic <- list() #princomp()
 
+# FA with OLS method
+fit_FA_OLS <- list() #fa() 
+
+# advanced PCA
+fit_PCA_advanced <- list()
+
+#fitting the models
 for(group in group_list){
-  #FA through ML
-  #fit_ML[[group]] <- factanal(x = select_if(pisa_data[,grouped_variables[[group]]],is.numeric),factors = nfactors[[group]], rotation = "promax", lower = 0.0057)
-  
-  #FA through PC
-  fit_FA_PC[[group]] <- principal(r = cor(select_if(pisa_data[,grouped_variables[[group]]],is.numeric)),
-                               nfactors = nfactors[[group]], 
+  #FA with ML
+  fit_FA_ML[[group]] <- factanal(x = select_if(pisa_data[,grouped_variables[[group]]],is.numeric),
+                                 factors = nfactors[[group]]$FA, 
+                                 rotation = "promax", 
+                                 lower = 0.0057)
+  #classic PCA
+  fit_PCA_classic[[group]] <- princomp(select_if(pisa_data[,grouped_variables[[group]]],is.numeric))
+  #FA with OLS
+  fit_FA_OLS[[group]] <- fa(r = cor(select_if(pisa_data[,grouped_variables[[group]]],is.numeric)),
+                            nfactors = nfactors[[group]]$FA,
+                            rotate = "oblimin")
+  #advanced PCA
+  fit_PCA_advanced[[group]] <- principal(r = cor(select_if(pisa_data[,grouped_variables[[group]]],is.numeric)),
+                               nfactors = nfactors[[group]]$PC, 
                                rotate = "promax", 
                                scores = TRUE)
   
-  #classic PCA
-  print("Applying PCA")
-  print(grouped_variables[[group]])
-  fit_classic_PC[[group]] <- princomp(select_if(pisa_data[,grouped_variables[[group]]],is.numeric))
 }
-#possible improvements: try spca() for sparse pca 
 ```
 
 **A note on rotation:** loading matrix (L) is unique up to rotation made through orthogonal matrices. Thus, we have can provide as an option to this functions a rotation method to ease the interpretability of the loadings. There a two kind of rotations:
@@ -351,12 +367,17 @@ for(group in group_list){
 
 # LOADINGS AND VARIANCE EXPLAINED
 
-## Factor Analysis with PC method
+Variance explained:
 
 ```{r}
-for(group in group_list){
-  print(fit_FA_PC[[group]]$loadings)
-}
+plot(cumsum(pca$sde^2)/sum(pca$sde^2), type='b', axes=F, xlab='Number of components',
+     ylab='Contribution to the total variance', ylim=c(0,1),
+     main=paste("Case of",cat_curr_name))
+abline(h=1, col='blue')
+abline(h=0.8, lty=2, col='blue')
+box()
+axis(2,at=0:10/10,labels=0:10/10)
+axis(1,at=1:ncol(df_curr),labels=1:ncol(df_curr),las=2)
 ```
 
 Visualizing the loadings:
@@ -370,9 +391,16 @@ for(group in group_list){
 }
 ```
 
-Interpretation: seems easier than PCA thanks to rotations I guess
+# EFA
 
--   
+```{r}
+#Principal Component method
+for(group in group_list){
+  for(i in 1:dim(fit_FA_PC[[group]]$loadings)[2]){
+    barplot(fit_FA_OLS[[group]]$loadings[,i], main = paste("factor",group,i),las=2,cex.names=0.7)
+  }
+}
+```
 
 ## Classic PCA
 
