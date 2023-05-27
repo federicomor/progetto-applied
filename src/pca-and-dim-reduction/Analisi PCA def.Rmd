@@ -16,9 +16,9 @@ source("../include/Utilities.R")
 #variabili finite nel dataset
 tec=c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
 psi=c("PERCOMP","PERCOOP","ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
-clt=c("STUBEHA","JOYREAD","SCREADCOMP","HEDRES","CULTPOSS","LMINS","MMINS")
+clt=c("JOYREAD","SCREADCOMP","HEDRES","CULTPOSS","LMINS","MMINS")
 fam=c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
-tch=c("TEACHINT","TEACHSUP","STIMREAD","PROAT5AB","PROAT5AM","PROAT6","TEACHBEHA")
+tch=c("STUBEHA","TEACHINT","TEACHSUP","STIMREAD","PROAT5AB","PROAT5AM","PROAT6","TEACHBEHA")
 sch=c("ICTSCH","RATCMP1","STRATIO","SCHSIZE","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT")
 
 ## Da fare: spezzare quelle categorie in sotto gruppi, magari anche mischiati? per cercare di riassumere
@@ -439,6 +439,7 @@ clt=c("STUBEHA","JOYREAD","SCREADCOMP","HEDRES","CULTPOSS","LMINS","MMINS")
 clt_1= c("JOYREAD","HEDRES","CULTPOSS")
 clt_2 = c("LMINS","MMINS")
 # scartate STUBEHA e SCREADCOMP, magari quelle meglio includerle in psi
+# update: stubeha inclusa insieme a tchbeha in tch, che sembra funzionare bene
 	  
 for(i in clt){
 	print(paste(i))
@@ -759,21 +760,28 @@ for (i in 1:length(states)) {
 }
 ```
 
-## tch - FORSE FATTO
+## tch - FORSE FATTO, avanzerebbero 3 pcs
 ```{r}
 tch=c("TEACHINT","TEACHSUP","STIMREAD","PROAT5AB","PROAT5AM","PROAT6","TEACHBEHA")
-tch_1 = c("TEACHINT","TEACHSUP","STIMREAD","TEACHBEHA")
+tch_1 = c("TEACHINT","TEACHSUP","STIMREAD") # o mettere anche qui teachbeha, magari scalandola dopo
 tch_2 = c("PROAT5AB","PROAT5AM","PROAT6")
+# o altrimenti lasciarla esterna
+# o unirla con stubeha
+tch_3 = c("TEACHBEHA","STUBEHA")
 
 for(i in tch){
 	print(paste(i))
 	dimmi(i)
 	print(paste(""))
 }
-num_gruppi=2
+num_gruppi=3
 
 df_tch_1 = df[,colnames(df) %in% tch_1]
+# df_tch_1$TEACHBEHA = 0.60 * df_tch_1$TEACHBEHA
 df_tch_2 = df[,colnames(df) %in% tch_2]
+df_tch_3 = df[,colnames(df) %in% tch_3]
+
+ggcorr(select_if(df[,tch],is.numeric),label=TRUE,label_size = 2)
 
 ```
 
@@ -782,6 +790,7 @@ df_tch_2 = df[,colnames(df) %in% tch_2]
 for(it in 1:num_gruppi){
 	if(it==1){ cat_curr_vec = tch_1; cat_curr_name = "tch_1"; df_curr = df_tch_1 }
 	if(it==2){ cat_curr_vec = tch_2; cat_curr_name = "tch_2"; df_curr = df_tch_2 }
+	if(it==3){ cat_curr_vec = tch_3; cat_curr_name = "tch_3"; df_curr = df_tch_3 }
 
 
 ###############################################################################
@@ -924,19 +933,28 @@ for (i in 1:length(states)) {
 }
 }
 ```
-## sch
-```{r}
-sch=c("PERCOMP","PERCOOP","ICTSCH","RATCMP1","STRATIO","SCHSIZE","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT")
 
-sch_1 = c("ICTSCH","RATCMP1","CLSIZE","EDUSHORT")
-sch_2 = c("SCHSIZE","STRATIO","CREACTIV","STAFFSHORT")
+## sch - FORSE FATTO, avanzerebbero 5 pcs
+```{r}
+sch=c("ICTSCH","RATCMP1","STRATIO","SCHSIZE","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT")
+
+# sch_1 = c("SCHSIZE","STRATIO","CREACTIV")
+# sch_3 = c("SCHSIZE","STAFFSHORT","CREACTIV")
+# sch_2 = c("CLSIZE","EDUSHORT","STRATIO")
+# 
+# sch_1 = c("ICTSCH","RATCMP1","CLSIZE","EDUSHORT")
+# sch_2 = c("SCHSIZE","STRATIO","CREACTIV","STAFFSHORT","EDUSHORT")
+# 
+sch_1 = c("SCHSIZE","STAFFSHORT","RATCMP1") # disponibilità risorse
+sch_2 = c("ICTSCH","STRATIO","CLSIZE") # gestionabilità degli studenti
+sch_3 = c("CREACTIV","EDUSHORT") # disponibilità per attività extracurricolari
 
 for(i in sch){
 	print(paste(i))
 	dimmi(i)
 	print(paste(""))
 }
-num_gruppi=2
+num_gruppi=3
 
 df_sch_1 = df[,colnames(df) %in% sch_1]
 df_sch_2 = df[,colnames(df) %in% sch_2]
