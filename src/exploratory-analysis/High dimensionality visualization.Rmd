@@ -1,0 +1,51 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r, setup}
+#DIRECTORIES
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/pisa_school_final_wo_Outl_PCA_SCORES.csv",sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_path)
+head(pisa_data)
+library(rgl)
+```
+```{r}
+countrys = as.factor(pisa_data$CNT)
+pisa_data_cut = pisa_data[,3:dim(pisa_data)[2]]
+
+perplex = c(1,30,50)
+
+pdf("high dimensionality plots.pdf")
+
+for(k in perplex){
+  
+  tsne_results <- Rtsne(pisa_data_cut, perplexity=k, check_duplicates = FALSE, pca=FALSE)
+  title = paste("Perplexity = ", k)
+  plot(tsne_results$Y, col = "black", bg= countrys, pch = 21, cex = 1, main = title)
+  
+}
+dev.off()
+```
+```{r}
+countrys = as.factor(pisa_data$CNT)
+pisa_data_cut = pisa_data[,3:dim(pisa_data)[2]]
+
+tsne_results <- Rtsne(pisa_data_cut,dim=3, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+```
+
+
+```{r}
+countrys <- as.numeric(as.factor(pisa_data$CNT))
+plot3d(tsne_results$Y, pch = 19, cex = 2, col = countrys, main = "Perplexity = 30")
+
+```
+
+
