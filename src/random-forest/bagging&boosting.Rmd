@@ -1,0 +1,148 @@
+---
+title: "Random Forest & Boosting"
+---
+
+# SETTING UP
+
+```{r}
+#loaded librarires
+library(dplyr)
+library(psych) #for KMO test and principal()
+library(car) #to apply transformations
+library(MVN) #to perform multivariate gaussianity check
+library(GGally) #for ggcorr
+library(ggplot2)
+library(randomForest) #bagging
+library(gbm) #boosting
+```
+
+```{r, setup}
+#DIRECTORIES
+root_proj_dir = "../../"
+dataset_dir = paste(root_proj_dir,"/data/pisa_wPV_grouped_bysch.csv",sep="")
+include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_dir)
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_dir)
+```
+
+```{r}
+#some adjustments on the data
+pisa_data$X <- NULL
+pisa_data$schID <- NULL
+pisa_data$CNT <- as.factor(pisa_data$CNT)
+pisa_data$CNTSCHID <- as.factor(pisa_data$CNTSCHID)
+pisa_data$CNTSTUID <- as.factor(pisa_data$CNTSTUID)
+```
+
+```{r}
+#variabili finite nel dataset
+group_list <- c("tec","psi","clt","fam","tch","sch")
+grouped_variables <-list()
+#list of grouped variables
+grouped_variables[["tec"]] <- c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH", "ICTSCH","RATCMP1")
+grouped_variables[["psi"]] <- c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+grouped_variables[["clt"]] <- c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS","STUBEHA")
+grouped_variables[["fam"]] <- c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI","CULTPOSS","HEDRES","ICTHOME")
+grouped_variables[["tch"]] <- c("TEACHINT","TEACHSUP","STIMREAD","PROAT5AB","PROAT5AM","PROAT6","TEACHBEHA")
+grouped_variables[["sch"]] <- c("PERCOMP","PERCOOP","ICTSCH","RATCMP1","STRATIO","SCHSIZE","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT")
+```
+
+```{r}
+#cross-validation
+train <- sample(1:nrow(pisa_data), nrow(pisa_data)/2)
+```
+
+# SELECTING THE REGRESSORS
+
+```{r}
+#selecting the regressors
+included_regressors <- c("ESCS", "ICTCLASS", "COMPICT", "HOMESCH", "RATCMP1", "ICTRES", "ICTHOME", "INTICT", "MMINS")
+
+#print explaination for the included regressors
+for(regr in included_regressors){
+  cat(regr, "\n") 
+  cat(spiega(regr), "\n")
+}
+```
+
+# RANDOM FOREST
+
+## Tuning the hyperparameters
+
+Hyperameters to tune:
+
+-   candidates features for the split at each step while growing a tree:
+
+    -   RANDOM FOREST: mtry = sqrt(p) (rule of thumb) -\> goal: uncorrelate the trees
+
+    -   BAGGING: m = p, all the variables are candidates for the split
+
+-   number of trees (ntree)
+
+```{r}
+#compute the formula
+formula_str <- paste("PV1MATH", paste(included_regressors, collapse = "+"), sep ="~")
+
+#performing CV to select the parameter mtry
+OOB_error <- double(length(included_regressors))
+test_error <- double(length(included_regressors))
+
+for(mtry in 1:length(included_regressors)){
+  #fitting the model
+  forest_fit <- randomForest(as.formula(formula_str), 
+                              ntree = 500,
+                              data = pisa_data, 
+                              subset = train,
+                              mtry = mtry,
+                              importance = TRUE)
+  OOB_error[mtry] <- forest_fit$mse[400]
+  #predict the test set value for PV1MATH
+  pred <- predict(forest_fit, pisa_data[-train,])
+  
+  # save the test prediction mean square error
+  test_error[mtry] <- with(pisa_data[-train,],mean((PV1MATH-pred)^2))
+}
+
+#plotting the graph of OOB error and test error over mtry
+matplot(1:length(included_regressors), cbind(test_error,OOB_error),pch=19,col=c('red','blue'),type='b',ylab="Mean Squared Error")
+legend('topright',legend=c("Test","OOB"),pch=19,col=c('red','blue'))
+
+```
+
+## Analysing the fit with the best hyperparams previously selected
+
+```{r}
+best_fit <- randomForest(as.formula(formula_str), 
+                              ntree = 500,
+                              data = pisa_data, 
+                              subset = train,
+                              mtry = 2,
+                              importance = TRUE)
+
+# prediction and mse
+mean((pisa_data[-train,'PV1MATH']-predict(best_fit, pisa_data[-train,]))^2)
+
+#contribution of the regressors
+importance(best_fit)
+varImpPlot(best_fit)
+```
+
+# BOOSTING
+
+## Tuning the hyperparameters
+
+-   number of trees
+
+-   shrinkage coefficient
+
+-   number of spits while growing the trees
+
+```{r}
+library(gbm)
+set.seed(1)
+boost.boston <- gbm(medv ~ ., data = Boston[train, ],
+    distribution = "gaussian", n.trees = 5000,
+    interaction.depth = 4)
+```
