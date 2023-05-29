@@ -18,25 +18,38 @@ dimmi = racconta = raccontami = cose = cos_e = interpreta = interpretami = spieg
 ## quindi ora dimmi(ecc) e le altre funzionano allo stesso modo
 
 
-what_is[["scPC1_tec"]] = "quanta tecnologia gli studenti hanno a disposizione
-	alta -> maggiore disponibilità"
-what_is[["scPC2_tec"]] = "contrasto tra uso della tecnologia ed interesse/dedizione dello studente
-	alta -> gli studenti avrebbero anche molta tecnologia a disposizione ma non sembrano interessati/bravi
-	bassa -> gli studenti sono molto interessati alla tecnologia malgrado la poca disponibilità"
-what_is[["scPC3_tec"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC4_tec"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC1_psi"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC2_psi"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC3_psi"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC4_psi"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC5_psi"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC1_clt"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC2_clt"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC3_clt"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC1_fam"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC1_tch"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC1_sch"]] = "intepretazione ancora da dare/scrivere"
-what_is[["scPC2_sch"]] = "intepretazione ancora da dare/scrivere"
+## scores dataset
+what_is[["col1_tec"]] = "frequenza di utilizzo di strumenti informatici (lezioni e non), sfruttabilità"
+what_is[["col2_tec"]] = "quantità di materiale informatico (casa + scuola), disponibilità"
+what_is[["col3_tec"]] = "passione nell'informatica (interesse + competenza + utilizzo generale ecc)"
+what_is[["col4_tec"]] = "utilizzo motivato o forzato (più è negativa più si usa informatica fuori da scuola, 
+per lavoro o giochi, contro un impatto positivo dell'interesse"
+
+what_is[["col1_clt"]] = "quanto il clima culturale a casa è favorevole (gioia nella lettura, disponibilità di cultura, ecc), quindi tipo supporto culturale"
+what_is[["col2_clt"]] = "contrasto tra gioia di lettura (+) e risorse educative (-), quindi amore per la cultura contro la sua effettiva disponibilità.
+Alta se uno è interessato alla cultura ma in casa non ha molte risorse.
+Bassa se uno ha molte risorse ma non è interessato."
+what_is[["col3_clt"]] = "tempo di studio totale (language + math)"
+
+what_is[["col1_fam"]] = "indice di benessere sociale, economico, culturale anche della famiglia. 
+Più è alto più il clima, almeno su quegli aspetti, è ottimo, favorevole."
+
+what_is[["col1_tch"]] = "contributo positivo del prof (somma di tante cose belle)"
+what_is[["col2_tch"]] = "contrasto tra il supporto del prof e la passione trasmessa percepita.
+Quindi in breve magari quanto il prof compensa le sua carenze, compensazione.
+Più è negativa più il prof dà supporto. Pi è positiva pi riesce a stimolare gli studenti, a scapito magari di inesattezze sue."
+what_is[["col3_tch"]] = "qualifica professori. 
+Positiva se la maggioranza in quella ha scuola ha la triennale. Negativa se la maggioranza ecc ha la magistrale"
+what_is[["col4_tch"]] = "agio nel proseguire le attività didattiche. 
+Era la somma di quanto i prof e gli studenti ostacolano le lezioni. Ma più è alta più tutto va bene o più tutto è ostacolato?"
+
+what_is[["col1_sch"]] = "Dimension of the scholastic ambient (school + class size + prof ratio)"
+what_is[["col2_sch"]] = "Contrasto tra class size e student ratio. 
+Positiva se ci sono molti studenti (e precisamente molti studenti per prof). 
+Negativa se proprio ci sono pochi pochi studenti"
+what_is[["col3_sch"]] = "Mancanza di materiale e di personale scolsatico insieme. Quindi mala-organizzazione tipo"
+what_is[["col4_sch"]] = "La colonna originale creactive, Creative extra-curricular activities (Sum)"
+
 
 ## insert into hash table
 what_is[["MMINS"]] = "Learning time (minutes per week) - <Mathematics>" 
