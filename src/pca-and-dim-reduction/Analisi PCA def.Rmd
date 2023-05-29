@@ -13,13 +13,24 @@ source("../include/Utilities.R")
 
 # Setup
 ```{r}
+library(dplyr)
+library(psych)  
+library(car)  
+library(MVN) 
+library(GGally) 
+library(ggplot2)
+library(elasticnet)
+```
+
+
+```{r}
 #variabili finite nel dataset
-tec=c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
-psi=c("PERCOMP","PERCOOP","ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
-clt=c("JOYREAD","SCREADCOMP","HEDRES","CULTPOSS","LMINS","MMINS")
-fam=c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
-tch=c("STUBEHA","TEACHINT","TEACHSUP","STIMREAD","PROAT5AB","PROAT5AM","PROAT6","TEACHBEHA")
-sch=c("ICTSCH","RATCMP1","STRATIO","SCHSIZE","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT")
+# tec=c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
+# psi=c("PERCOMP","PERCOOP","ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+# clt=c("JOYREAD","SCREADCOMP","HEDRES","CULTPOSS","LMINS","MMINS")
+# fam=c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
+# tch=c("STUBEHA","TEACHINT","TEACHSUP","STIMREAD","PROAT5AB","PROAT5AM","PROAT6","TEACHBEHA")
+# sch=c("ICTSCH","RATCMP1","STRATIO","SCHSIZE","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT")
 
 ## Da fare: spezzare quelle categorie in sotto gruppi, magari anche mischiati? per cercare di riassumere
 ## più variabili in una/due sola/sole, tramite pca
@@ -34,15 +45,15 @@ colnames(df)
 want_to_plot_all_couples=0
 want_to_save_score_df=0
 
-sort(colnames(df[,-c(52)]))==sort(c(tec,psi,clt,fam,tch,sch))
-#c'è tutto ora
-
-df_tec = df[,colnames(df) %in% tec]
-df_psi = df[,colnames(df) %in% psi]
-df_clt = df[,colnames(df) %in% clt]
-df_fam = df[,colnames(df) %in% fam]
-df_tch = df[,colnames(df) %in% tch]
-df_sch = df[,colnames(df) %in% sch]
+# sort(colnames(df[,-c(52)]))==sort(c(tec,psi,clt,fam,tch,sch))
+# #c'è tutto ora
+#
+# df_tec = df[,colnames(df) %in% tec]
+# df_psi = df[,colnames(df) %in% psi]
+# df_clt = df[,colnames(df) %in% clt]
+# df_fam = df[,colnames(df) %in% fam]
+# df_tch = df[,colnames(df) %in% tch]
+# df_sch = df[,colnames(df) %in% sch]
 ```
 
 # States - skip this part
@@ -101,8 +112,8 @@ df_sc = NULL
 ## tec - FATTO
 ```{r}
 tec=c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH")
-tec_1 = c("ICTCLASS","ICTOUTSIDE") # uso informaticca a scuola
-tec_2 = c("ICTHOME","ICTRES") # quantità
+tec_1 = c("ICTCLASS","ICTOUTSIDE") # uso informatica a scuola
+tec_2 = c("ICTHOME","ICTRES","ICTSCH") # quantità
 tec_3 = c("AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH") # personal relation
 for(i in tec){
 	print(paste(i))
@@ -124,7 +135,6 @@ for(it in 1:num_gruppi){
 
 ###############################################################################
 colnames(df_curr)
-# boxplot(df_curr, las=2)
 want_to_scale=1
 
 if(want_to_scale==1){
@@ -133,6 +143,7 @@ if(want_to_scale==1){
   df2 = df_curr
 }
 df2 = data.frame(df2)
+boxplot(df2, las=2)
 df2["CNT"] = df$CNT
 df_pca = df2
 head(df_pca)
@@ -172,33 +183,31 @@ for(i in 1:2){
 }
 par(mfrow=c(1,1))
 
-###############################################################################
-# higher pcs
-# par(mar = c(2,2,2,1), mfrow=c(3,1))
-# for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
-# main=paste('Loadings PC ',i,sep=''),las=2)
+	if(it==1){ names= c(colnames(df_sc),"col1_tec"); df_sc = cbind(df_sc, pca$scores[,1]); colnames(df_sc) = names }
+	if(it==2){ names= c(colnames(df_sc),"col2_tec","col3_tec"); df_sc = cbind(df_sc, pca$scores[,1:2]); colnames(df_sc) = names  }
+	if(it==3){ names= c(colnames(df_sc),"col4_tec","col5_tec"); df_sc = cbind(df_sc, pca$scores[,1:2]); colnames(df_sc) = names  }
 }
 ```
 
 ### Scores dataset
 ```{r}
-df_sc = pca$scores[,1:4]
-colnames(df_sc) = c("scPC1_tec","scPC2_tec","scPC3_tec","scPC4_tec")
+dim(df_sc)
+colnames(df_sc)
+# col1_tec: frequenza di utilizzo di strumenti informatici (lezioni e non), sfruttabilità quindi (?) 
+
+# col2_tec: quantità di materiale informatico (casa+scuola), disponibilità quindi
+# col3_tec: contrasto casa scuola. Positiva se maggiore tecnologia disponibile a casa, negativa se scuola.
+
+# col4_tec: passione nell'informatica (interesse+competenza+utilizzo generale ecc)
+# col5_tec: utilizzo motivato (più è negativa più si usa informatica fuori da scuola, per lavoro o giochi,
+# contro un impatto positivo dell'interesse, quindi magari potremmo cambiargli segno qui)
 ```
 
 ### Interpretation
 ```{r}
-for (col in cat_curr_vec){
+for (col in tec){
   print(paste(col,what_is[[col]]))
 }
-# PC1 seems to collect the amount of tecnology in which lo studente si ritrova immerso
-# -> PC1 alta -> alta disponibilità di tecnologia
-# 
-# PC2 seems to contrast il mero uso della tecnologia (a scuola, casa, nelle lezioni, ecc)
-# contro il vero interesse/dedizione dello studente per la tecnologia (vedi le tre variabili negative)
-# -> PC2 bassa -> gli studenti sono molto interessati alla tecnologia malgrado la poca disponibilità
-# -> PC2 alta -> gli studenti avrebbero anche molta tecnologia a disposizione ma non sembrano interessati/bravi
-# 
 ```
 
 ### Scores plot
@@ -262,7 +271,7 @@ for (i in 1:length(states)) {
 ```
 
 
-## psi
+## psi - BEA
 ```{r}
 psi=c("PERCOMP","PERCOOP","ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
 psi_1 = c("GFOFAIL","EMOSUPS","BELONG","BEINGBULLIED","PERFEED") # sociale
@@ -279,6 +288,7 @@ df_psi_1 = df[,colnames(df) %in% psi_1]
 df_psi_2 = df[,colnames(df) %in% psi_2]
 df_psi_3 = df[,colnames(df) %in% psi_3]
 
+library(ggplot2)
 ggcorr(select_if(df[,psi],is.numeric),label=TRUE,label_size = 2)
 
 ```
@@ -353,7 +363,8 @@ par(mfrow=c(1,1))
 ### Scores datasets
 ```{r}
 dim(df_sc)
-names= c(colnames(df_sc),"scPC1_psi","scPC2_psi","scPC3_psi","scPC4_psi","scPC5_psi","scPC6_psi")
+colnames(df_sc)
+names= c(colnames(df_sc),"PC1_psi","PC2_psi","PC3_psi","PC4_psi","PC5_psi","PC6_psi")
 df_sc = cbind(df_sc, pca$scores[,1:6])
 colnames(df_sc) = names
 ```
@@ -446,11 +457,11 @@ for(i in clt){
 	dimmi(i)
 	print(paste(""))
 }
-num_gruppi=3
+num_gruppi=2
 
 df_clt_1 = df[,colnames(df) %in% clt_1]
 df_clt_2 = df[,colnames(df) %in% clt_2]
-df_clt_3 = df[,colnames(df) %in% clt_3]
+# df_clt_3 = df[,colnames(df) %in% clt_3]
 # df_clt_4 = df[,colnames(df) %in% clt_4]
 
 ggcorr(select_if(df[,clt],is.numeric),label=TRUE,label_size = 2)
@@ -520,34 +531,31 @@ for(i in 1:2){
       # pca$loadings[which(abs(pca$loadings[,i])>mean(pca$loadings[,i]))])
 }
 par(mfrow=c(1,1))
-
-###############################################################################
-# higher pcs
-# par(mar = c(2,2,2,1), mfrow=c(3,1))
-# for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
-# main=paste('Loadings PC ',i,sep=''),las=2)
+	
+	if(it==1){ names= c(colnames(df_sc),"col1_clt","col2_clt"); df_sc = cbind(df_sc, pca$scores[,1:2]); colnames(df_sc) = names }
+	if(it==2){ names= c(colnames(df_sc),"col3_clt"); df_sc = cbind(df_sc, pca$scores[,1]); colnames(df_sc) = names  }
 }
 ```
 
 ### Scores datasets
 ```{r}
 dim(df_sc)
-names= c(colnames(df_sc),"scPC1_clt","scPC2_clt","scPC3_clt","scPC4_clt")
-df_sc = cbind(df_sc, pca$scores[,1:4])
-colnames(df_sc) = names
+colnames(df_sc)
+# col1_clt: quanto il clima culturale a casa è favorevole (gioia nella lettura, disponibilità di cultura, ecc),
+# quindi tipo supporto culturale
+# col2_clt: contrasto tra gioia di lettura (+) e risorse educative (-), quindi amore per la cultura contro la
+# sua effettiva disponibilità. Alta se uno è interessato alla cultura ma in casa non ha molte risorse. Bassa se 
+# uno ha molte risorse ma non è interessato.
+# 
+# col3_clt: tempo di studio totale (language + math)
+
 ```
 
 ### Interpretation
 ```{r}
-for (col in cat_curr_vec){
+for (col in clt){
   print(paste(col,what_is[[col]]))
 }
-# pc1 alta -> gli studenti hanno molta cultura nel senso di lettura
-# pc1 bassa -> gli studenti spendono più tempo nello studio effettivo che nel leggere per cultura
-# 
-# pc2 alta -> gli studenti dedicano molto tempo allo studio ma comunque apprezzano anche la lettura
-# tipo per proprio diletto
-
 ```
 
 ### Scores plot
@@ -612,6 +620,7 @@ for (i in 1:length(states)) {
 
 ## fam - FATTO
 ```{r}
+fam=c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
 cat_curr_vec = fam
 cat_curr_name = "fam"
 df_curr = df_fam
@@ -665,38 +674,24 @@ for(i in 1:2){
       # pca$loadings[which(abs(pca$loadings[,i])>mean(pca$loadings[,i]))])
 }
 
-###############################################################################
-# higher pcs
-# par(mar = c(2,2,2,1), mfrow=c(3,1))
-# for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
-# main=paste('Loadings PC ',i,sep=''),las=2)
-pca$loadings
-summary(pca)
+names= c(colnames(df_sc),"col1_fam"); df_sc = cbind(df_sc, pca$scores[,1]); colnames(df_sc) = names
 ```
 
 ### Scores datasets
 ```{r}
 dim(df_sc)
-names = c(colnames(df_sc),"scPC1_fam")
-df_sc = cbind(df_sc, pca$scores[,1])
-colnames(df_sc) = names
+colnames(df_sc)
+# what_is[["col1_fam"]] = indice di benessere sociale, economico, culturale anche della famiglia. Più è alto più il clima, 
+# almeno su quegli aspetti, è ottimo, favorevole.
 
 ```
 
 ### Interpretation
 ```{r}
-for (col in cat_curr_vec){
+for (col in fam){
   print(paste(col,what_is[[col]]))
 }
 # ISEI is an International Socio-Economic Index of occupational status
-
-
-# pc1 fa una media di tutto, quindi 
-# pc1 alta -> tutto va bene in famiglia, almeno a livello economico
-# 
-# pc2 fa contrasto tra possessioni materiali (wealth, homeposs) e culturali
-# -> pc2 bassa (intesa naturalmente anche come <0) -> maggiore peso culturale
-# -> pc2 alta -> la famiglia è più facoltosa nella realtà di quanto non magari culturalmente buona
 ```
 
 ### Scores plot
@@ -760,9 +755,9 @@ for (i in 1:length(states)) {
 }
 ```
 
-## tch - FORSE FATTO, avanzerebbero 3 pcs
+## tch - FATTO
 ```{r}
-tch=c("TEACHINT","TEACHSUP","STIMREAD","PROAT5AB","PROAT5AM","PROAT6","TEACHBEHA")
+tch=c("STUBEHA","TEACHINT","TEACHSUP","STIMREAD","PROAT5AB","PROAT5AM","PROAT6","TEACHBEHA")
 tch_1 = c("TEACHINT","TEACHSUP","STIMREAD") # o mettere anche qui teachbeha, magari scalandola dopo
 tch_2 = c("PROAT5AB","PROAT5AM","PROAT6")
 # o altrimenti lasciarla esterna
@@ -842,11 +837,9 @@ for(i in 1:2){
       # pca$loadings[which(abs(pca$loadings[,i])>mean(pca$loadings[,i]))])
 }
 par(mfrow=c(1,1))
-###############################################################################
-# higher pcs
-# par(mar = c(2,2,2,1), mfrow=c(3,1))
-# for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
-# main=paste('Loadings PC ',i,sep=''),las=2)
+	if(it==1){ names= c(colnames(df_sc),"col1_tch","col2_tch"); df_sc = cbind(df_sc, pca$scores[,1:2]); colnames(df_sc) = names }
+	if(it==2){ names= c(colnames(df_sc),"col3_tch"); df_sc = cbind(df_sc, pca$scores[,1]); colnames(df_sc) = names  }
+	if(it==3){ names= c(colnames(df_sc),"col4_tch"); df_sc = cbind(df_sc, pca$scores[,1]); colnames(df_sc) = names  }
 }
 ```
 
@@ -854,24 +847,22 @@ par(mfrow=c(1,1))
 ### Scores datasets
 ```{r}
 dim(df_sc)
-names = c(colnames(df_sc),"scPC1_tch","scPC2_tch","scPC3_tch")
-df_sc = cbind(df_sc, pca$scores[,3])
-colnames(df_sc) = names
-
+colnames(df_sc)
+# what_is[["col1_tch"]] = "contributo positivo del prof (somma di tante cose belle)"
+# what_is[["col2_tch"]] = "contrasto tra il supporto del prof e la passione trasmessa percepita. Quindi in breve magari
+# quanto il prof compensa le sua carenze, compensazione. Più è negativa più il prof dà supporto. Pi è positiva pi riesce
+# a stimolare gli studenti, a scapito magari di inesattezze sue."
+# 
+# what_is[["col3_tch"]] = "qualifica professori. Positiva. se la maggioranza in quella ha scuola ha la triennale. Negativa se la maggioranza ecc ha la magistrale"
+# 
+# what_is[["col4_tch"]] = "agio nel proseguire le attività didattiche. Era la somma di quanto i prof e gli studenti ostacolano le lezioni. Ma più è alta più tutto va bene o più tutto è ostacolato?"
 ```
 
 ### Interpretation
 ```{r}
-for (col in cat_curr_vec){
+for (col in tch){
   print(paste(col,what_is[[col]]))
 }
-# pc1 fa una media dei vari contributi
-# -> pc1 alta -> grande supporto dei prof per gli studenti
-# 
-# pc2 fa contrasto tra eh, queste variabili non hanno una spiegazione molto chiara. Forse
-# -> pc2 alta -> il prof supporta molto i suoi studenti, ma in modo più pratico
-# -> pc2 bassa (naturalmente anche <0) -> il prof dà più stimoli culturali (supporto alla lettura
-# per esempio) che pratici
 ```
 
 ### Scores plot
@@ -934,33 +925,30 @@ for (i in 1:length(states)) {
 }
 ```
 
-## sch - FORSE FATTO, avanzerebbero 5 pcs
+## sch - FATTO?
 ```{r}
-sch=c("ICTSCH","RATCMP1","STRATIO","SCHSIZE","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT")
+sch=c("RATCMP1","STRATIO","SCHSIZE","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT")
 
-# sch_1 = c("SCHSIZE","STRATIO","CREACTIV")
-# sch_3 = c("SCHSIZE","STAFFSHORT","CREACTIV")
-# sch_2 = c("CLSIZE","EDUSHORT","STRATIO")
-# 
-# sch_1 = c("ICTSCH","RATCMP1","CLSIZE","EDUSHORT")
-# sch_2 = c("SCHSIZE","STRATIO","CREACTIV","STAFFSHORT","EDUSHORT")
-# 
-sch_1 = c("SCHSIZE","STAFFSHORT","RATCMP1") # disponibilità risorse
-sch_2 = c("ICTSCH","STRATIO","CLSIZE") # gestionabilità degli studenti
-sch_3 = c("CREACTIV","EDUSHORT") # disponibilità per attività extracurricolari
+# ICTSCH moved into tec
+# RATCMP1 fa male ovunque quindi la scarterei, tanto di tecnologia c'è abbastanza
+
+sch_1 = c("SCHSIZE","STRATIO","CLSIZE") 
+sch_2 = c("STAFFSHORT","EDUSHORT") 
+# lei da lasciare sola "CREACTIV")
 
 for(i in sch){
 	print(paste(i))
 	dimmi(i)
 	print(paste(""))
 }
-num_gruppi=3
+num_gruppi=2
 
 df_sch_1 = df[,colnames(df) %in% sch_1]
 df_sch_2 = df[,colnames(df) %in% sch_2]
-df_sch_3 = df[,colnames(df) %in% sch_3]
+# df_sch_3 = df[,colnames(df) %in% sch_3]
 # df_sch_4 = df[,colnames(df) %in% sch_4]
 
+# c'è poco da fare :/ tutti un po' scorrelati, difficili da riassumere
 ggcorr(select_if(df[,sch],is.numeric),label=TRUE,label_size = 2)
 ```
 
@@ -1022,12 +1010,12 @@ for(i in 1:2){
 }
 par(mfrow=c(1,1))
 
-###############################################################################
-# higher pcs
-# par(mar = c(2,2,2,1), mfrow=c(3,1))
-# for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
-# main=pasteLoadings PC ',i,sep=''),las=2)
+	if(it==1){ names= c(colnames(df_sc),"col1_sch","col2_sch"); df_sc = cbind(df_sc, pca$scores[,1:2]); colnames(df_sc) = names }
+	if(it==2){ names= c(colnames(df_sc),"col3_sch"); df_sc = cbind(df_sc, pca$scores[,1]); colnames(df_sc) = names  }
+
 }
+#aggiungiamo creactive lasciata fuori
+names= c(colnames(df_sc),"col4_sch"); df_sc = cbind(df_sc, df$CREACTIV); colnames(df_sc) = names
 ```
 
 
@@ -1035,22 +1023,22 @@ par(mfrow=c(1,1))
 ### Scores datasets
 ```{r}
 dim(df_sc)
-names = c(colnames(df_sc),"scPC1_sch","scPC2_sch")
-df_sc = cbind(df_sc, pca$scores[,1:2])
-colnames(df_sc) = names
+colnames(df_sc)
+# what_is[["col1_sch"]] = dimension of the scholastic ambient (school + class size + prof ratio)
+# what_is[["col2_sch"]] = contrasto tra class size e student ratio. Positiva se ci sono molti studenti (e precisamente
+# molti studenti per prof). Negativa se proprio ci sono pochi pochi studenti
+# 
+# what_is[["col3_sch"]] = Mancanza di materiale e di personale scolsatico insieme. Quindi mala-organizzazione tipo
+# what_is[["col4_sch"]] = la colonna originale creactive, Creative extra-curricular activities (Sum)
 
 ```
 
 
 ### Interpretation
 ```{r}
-for (col in cat_curr_vec){
+for (col in sch){
   print(paste(col,what_is[[col]]))
 }
-# pc1 alta -> buono clima nella scuola? (alta competitività, ma anche cooperazione, e ICT available)
-# pc2 sembra invece contrastare il contesto sociale con quello tecnologico
-# pc2 alta -> la scuola ha un bel clima sociale
-# pc2 bassa -> la scuola ha un contesto più ricco sul lato tecnologico (quindi peggio dal lato umano forse) 
 ```
 
 ### Scores plot
@@ -1121,6 +1109,7 @@ for (i in 1:length(states)) {
 if(want_to_save_score_df==1){
 	dim(df)
 	dim(df_sc)
+	colnames(df_sc)
 	# PCs selected
 	
 	df_sc_with_cnt=cbind(df$CNT,df_sc)
