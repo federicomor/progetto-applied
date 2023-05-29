@@ -5,6 +5,8 @@ editor_options:
   chunk_output_type: inline
 ---
 
+--> <https://medium.com/swlh/t-sne-explained-math-and-intuition-94599ab164cf>
+
 ```{r, setup}
 #DIRECTORIES
 root_proj_dir = "../../"
@@ -16,6 +18,8 @@ source(include_path)
 pisa_data <- read.csv(file=dataset_path)
 head(pisa_data)
 library(rgl)
+library(tsne)
+library(Rtsne)
 ```
 ```{r}
 countrys = as.factor(pisa_data$CNT)
