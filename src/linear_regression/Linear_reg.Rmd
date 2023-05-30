@@ -1,0 +1,186 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Iniziare con modelli lineari per le varie categorie: tecnologia, psicologia,...
+Può anche servire a individuare variabili molto correlate o poco utili (?)
+Poi cercare un modello unico che spieghi il benessere in relazione alle altre categorie
+Bisognerà probabilmente riprovare con gli indici ottenuti dalla pca 
+
+
+
+```{r}
+library(MASS)
+library(car)
+library(rgl)
+library(glmnet)
+library(tree)
+
+rm(list=ls())
+graphics.off()
+
+
+data <- read.csv("pisa_wPV_grouped_bysch.csv")
+
+data$X <- NULL
+data$schID <- NULL
+data$CNT <- as.factor(data$CNT)
+data$CNTSCHID <- as.factor(data$CNTSCHID)
+data$CNTSTUID <- as.factor(data$CNTSTUID)
+data <- data[,23:74] #excluding target variables
+```
+
+Ad esempio per la tecnologia
+TECNOLOGIA
+```{r}
+attach(data)
+techno=subset(select=c(COMPICT,ICTCLASS,ICTHOME,ICTOUTSIDE,ICTRES,ENTUSE,HOMESCH,USESCH,INTICT,AUTICT),data)
+detach(data)
+#provare a creare nuovo piccolo dataset dedicato alla tecnologia ma non serve
+attach(techno)
+
+tec1=lm(COMPICT ~ ICTCLASS+ICTHOME+ICTOUTSIDE+ICTRES+ENTUSE+HOMESCH+USESCH+INTICT+AUTICT)
+summary(tec1)
+#pvalue basso ma R_adj^2=0.5796 modello non spiega bene 
+vif(tec1)
+#vif bassi tra 1 e 2 -> collinearità non è problema
+
+tec2=lm(COMPICT ~ AUTICT+INTICT)
+summary(tec2)
+#R_adj^2 0.5707 modello non basta ma equivalente a quello completo 
+vif(tec2)
+
+AUT2=AUTICT^2
+INT2=INTICT^2
+AUT3=AUTICT^3
+INT3=INTICT^3
+tec3=lm(COMPICT ~ AUTICT+INTICT+INT2+INT3+AUT3)
+summary(tec3)
+#R_adj^2 0.5839 si sta alzando ma di poco -> ordine salirebbe troppo prima di raggiungere R^2 accettabile -> overfitting 
+vif(tec3) #vif ancora buono
+
+
+detach(techno)
+```
+
+###
+Questi sono solo possibili esempi -> anche cambiando variabili non si nota un miglioramento dell'R_adj^2
+
+=>variabili non si spiegano l'una con l'altra
+nonostante pvalue basso modello non molto buono
+Idem per ciò che segue
+
+
+CULTURA/STUDIO
+```{r}
+#"JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS"
+
+attach(data)
+
+TMINS=MMINS+LMINS
+
+clt1=lm( TMINS ~ JOYREAD+CULTPOSS+HEDRES+SCREADCOMP)
+summary(clt1)
+#Radj2 0.03 modello non spiega bene 
+vif(clt1)
+#vif bassi tra 1 e 1.5 -> collinearità non è problema
+
+
+
+detach(data)
+
+```
+
+
+PSICOLOGIA
+```{r}
+#"ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED"
+
+attach(data)
+psi1=lm( SWBP ~ ATTLNACT+EMOSUPS+COMPETE+GFOFAIL+EUDMO+RESILIENCE+BELONG+BEINGBULLIED+PERFEED)
+summary(psi1)
+#Radj2 0.342 modello non spiega bene 
+vif(psi1)
+#vif bassi tra 1 e 2 -> collinearità non è problema
+
+
+
+detach(data)
+
+```
+
+SCUOLA/PROFESSORI
+```{r}
+#STRATIO","SCHSIZE","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT","STUBEHA"
+
+attach(data)
+sch1=lm( CREACTIV ~ STRATIO+SCHSIZE+CLSIZE+EDUSHORT+STAFFSHORT+STUBEHA)
+summary(sch1)
+#Radj2 0.03 modello non spiega bene 
+vif(sch1)
+#vif bassi tra 1 e 1.5 -> collinearità non è problema
+
+sch2=lm( STRATIO ~ SCHSIZE+CLSIZE+STAFFSHORT)
+summary(sch2)
+#Radj2 0.19 un po' meglio ma non funziona 
+vif(sch2)
+
+detach(data)
+
+```
+
+
+
+
+Provare con gli alberi
+```{r}
+
+attach(data)
+
+
+tree.tec <- tree(COMPICT ~ ICTCLASS+ICTHOME+ICTOUTSIDE+ICTRES+ENTUSE+AUTICT,data)
+summary(tree.tec)
+
+plot(tree.tec)
+text(tree.tec,pretty=0)
+
+cv.tec <- cv.tree(tree.tec)
+plot(cv.tec$size,cv.tec$dev,type='b',xlab='size',ylab='deviance')
+
+#pruning per ridurre albero anche se solo una variabile considerata
+prune.tec <- prune.tree(tree.tec,best=4)
+plot(prune.tec)
+text(prune.tec,pretty=0)
+
+#considera solo autict 
+
+detach(data)
+
+```
+
+
+Spiegare SWBP con modello totale
+```{r}
+attach(data)
+tot1=lm( SWBP ~ ATTLNACT+EMOSUPS+COMPETE+GFOFAIL+EUDMO+RESILIENCE+BELONG+BEINGBULLIED+PERFEED+CREACTIV+STRATIO+SCHSIZE+CLSIZE+EDUSHORT+STAFFSHORT+STUBEHA+TMINS+ JOYREAD+CULTPOSS+HEDRES+SCREADCOMP+COMPICT+ICTCLASS+ICTHOME+ICTOUTSIDE+ICTRES+ENTUSE+HOMESCH+USESCH+INTICT+AUTICT)
+summary(tot1)
+#Radj2 0.4426 modello non spiega bene nonostante includa tutte le variabili
+#si potrebbe rimuovere qualcosa ma non gioverebbe a R_adj^2
+vif(tot1)
+#vif bassi 
+
+
+
+detach(data)
+
+
+
+```
+
+
+
+Nessun modello sembra promettente 
+R_adj^2 molto bassi -> modelli poco informativi
+
+
