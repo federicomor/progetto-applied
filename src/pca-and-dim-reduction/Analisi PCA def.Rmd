@@ -20,6 +20,9 @@ library(MVN)
 library(GGally) 
 library(ggplot2)
 library(elasticnet)
+library(magrittr)
+
+library(vioplot)
 ```
 
 
@@ -37,9 +40,11 @@ library(elasticnet)
 
 df=read.csv("../../data/pisa_wPV_grouped_bysch.csv")
 colnames(df)
-library(dplyr)
 df=df[,-c(1,2,3)] #remove X (index) column
-df <- df %>% select(-starts_with("PV")) #excluding target variables 
+
+# df <- df %>% select(-starts_with("PV")) #excluding target variables 
+df=df[,-c(1:20)] # same but surely works
+
 colnames(df)
 
 want_to_plot_all_couples=0
@@ -133,6 +138,8 @@ for(it in 1:num_gruppi){
 
 ###############################################################################
 colnames(df_curr)
+vioplot(df_curr, las=2,main="before scaling")
+
 want_to_scale=1
 
 if(want_to_scale==1){
@@ -141,7 +148,9 @@ if(want_to_scale==1){
   df2 = df_curr
 }
 df2 = data.frame(df2)
-boxplot(df2, las=2)
+# boxplot(df2, las=2)
+vioplot(df2, las=2,main="after scaling")
+
 df2["CNT"] = df$CNT
 df_pca = df2
 head(df_pca)
@@ -273,8 +282,8 @@ for (i in 1:length(states)) {
 ```{r}
 psi=c("PERCOMP","PERCOOP","ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
 
-psi_1 = c("GFOFAIL","EMOSUPS","BELONG","BEINGBULLIED","PERFEED") # sociale
-psi_2 = c("EMOSUPS","PERFEED") # percepite
+psi_1 = c("ATTLNACT","COMPETE","EUDMO","RESILIENCE") # sociale
+psi_2 = c("PERCOMP","PERCOOP","PERFEED","EMOSUPS") # percepite
 
 psi_3 = c("BELONG","SWBP","GFOFAIL","BEINGBULLIED") # target
 # psi_3 = c("BELONG","SWBP","RESILIENCE") # target
@@ -312,7 +321,6 @@ if(want_to_scale==1){
 }
 df2 = data.frame(df2)
 # boxplot(df2, las=2,main="after scaling")
-library(vioplot)
 vioplot(df2, las=2,main="after scaling")
 
 df2["CNT"] = df$CNT
