@@ -1,0 +1,11 @@
+Il bot così è già online, cioè funziona.
+Ma funziona solo finché il codice dentro a main.jl viene eseguito, e lasciato in esecuzione.
+
+Quindi lo si può hostare su replit, o lasciare uno dei nostri pc ad eseguirlo, ovviamente solo durante la storia della sessione poster.
+
+Per replit:
+https://replit.com/@Federico-Angelo/AppStat-Bot#main.jl
+
+Per pacchetti julia:
+https://juliapackages.com/p/telegrambot
+https://arkoniak.github.io/Telegram.jl/stable/usage/#Using-Telegram-Bot-API
