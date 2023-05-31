@@ -1,56 +1,284 @@
 ---
 title: "R Notebook"
 output: html_notebook
+editor_options: 
+  chunk_output_type: inline
 ---
+# TO DO
+- transforming the dataset (if necessary)
+- Ridge and Lasso (?)
+- Plots (if number of variables permits it)
+- introduction of groups (for LMM)
 
-Iniziare con modelli lineari per le varie categorie: tecnologia, psicologia,...
-Può anche servire a individuare variabili molto correlate o poco utili (?)
-Poi cercare un modello unico che spieghi il benessere in relazione alle altre categorie
-Bisognerà probabilmente riprovare con gli indici ottenuti dalla pca 
-
-
-
-```{r}
+```{r, setup}
+#DIRECTORIES
+rm(list=ls())
+graphics.off()
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/pisa_wPV_grouped_bysch.csv",sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+data <- read.csv(file=dataset_path)
+head(data)
+library(mvtnorm)
 library(MASS)
 library(car)
 library(rgl)
+library(leaps)
+library(ISLR)
 library(glmnet)
-library(tree)
-
-rm(list=ls())
-graphics.off()
 
 
-data <- read.csv("pisa_wPV_grouped_bysch.csv")
+```
 
+```{r}
 data$X <- NULL
 data$schID <- NULL
 data$CNT <- as.factor(data$CNT)
 data$CNTSCHID <- as.factor(data$CNTSCHID)
 data$CNTSTUID <- as.factor(data$CNTSTUID)
 data <- data[,23:74] #excluding target variables
+head(data)
 ```
 
-Ad esempio per la tecnologia
-TECNOLOGIA
+# choice of the model
+```{r}
+total_model = c("ATTLNACT","EMOSUPS","COMPETE","GFOFAIL","EUDMO","RESILIENCE","BELONG","BEINGBULLIED",
+                "PERFEED","CREACTIV","STRATIO","SCHSIZE","CLSIZE","EDUSHORT","STAFFSHORT","STUBEHA","TMINS",
+                "JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","COMPICT","ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES",
+                "ENTUSE","HOMESCH","USESCH","INTICT","AUTICT")
+response_variable_total = "SWBP"
+
+########
+tech <- c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","ENTUSE","HOMESCH","USESCH","INTICT","AUTICT")
+tech2 <- c("AUTICT","INTICT")
+response_variable_tech = "COMPICT"
+########
+
+culture = c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP")
+TMINS=data$MMINS+data$LMINS
+response_variable_culture = "TMINS"
+########
+
+psychology = c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+response_variable_psy = "SWBP"
+########
+
+school_prof = c("STRATIO","SCHSIZE","CLSIZE","EDUSHORT","STAFFSHORT","STUBEHA")
+response_variable_school = "CREACTIV"
+########
+
+school_prof_2 = c("SCHSIZE","CLSIZE","STAFFSHORT")
+response_variable_school_2 = "STRATIO"
+########################
+
+
+vars = psychology
+response_variable = response_variable_psy
+number_of_covariates = length(vars)
+number_of_covariates
+```
+
+# run the model
+```{r}
+formula <- paste(paste(response_variable,"~"), paste(vars, collapse = "+"))
+formula
+linear_model <- lm(formula,data)
+summary(linear_model)
+vif(linear_model)
+```
+
+#  Verify assumptions (used for inference and estimate of parameters)
+```{r, warning=FALSE, message=FALSE}
+# * Gaussianity
+# * Homoschedasticity
+plot(linear_model)
+
+# Comment
+#   1. We want to see no pattern: a cloud around the zero
+#   2. We want to see a good fit on the line
+#   3. Again, we want to see no pattern
+#   4. We have the iso-lines of the Cook distance: we can identify the outliers
+
+shapiro.test(residuals(linear_model))
+
+```
+
+
+# Variable selection
+
+## **1.** Best Subset Selection (exhaustive search) 
+```{r, warning=FALSE, message=FALSE}
+# Best Subset Selection
+formula_reg = formula(paste(response_variable,"~."))
+regfit.full = regsubsets(formula_reg, data=data,really.big = T)
+summary(regfit.full)
+
+# Best Subset Selection: we say when we stop
+nv_max = number_of_covariates
+regfit.full = regsubsets(formula_reg, data=data, nvmax=nv_max,really.big = T)
+summary(regfit.full)
+
+reg.summary = summary(regfit.full)
+
+# Which one we choose:
+reg.summary$which
+
+# R-squared
+reg.summary$rsq
+
+# R.adj^2
+reg.summary$adjr2
+
+# SSres (residual sum of squares)
+reg.summary$rss
+
+# Plots
+par(mfrow=c(1,3))
+plot(reg.summary$rsq, xlab="Number of Variables", ylab="R-squared", type="b")
+plot(reg.summary$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
+plot(reg.summary$rss, xlab="Number of Variables", ylab="RSS", type="b")
+
+# We want the model with max r.adj^2 so we extract the coefficients of that model
+# Note: ind = how many coefficients has the model
+ind = which.max(reg.summary$adjr2)
+coef(regfit.full, ind)
+
+# Graphical table of best results
+par(mfrow=c(1,2))
+plot(regfit.full, scale="r2", main="Exhaustive search")
+plot(regfit.full, scale="adjr2", main="Exhaustive search")
+
+```
+
+## **2.** Forward and Backward Stepwise Selection
+```{r, warning=FALSE, message=FALSE}
+# Forward
+regfit.fwd = regsubsets(Y~.,data=data,nvmax=nv_max,method="forward")
+summary(regfit.fwd)
+
+# Plot
+par(mfrow=c(1,3))
+plot(summary(regfit.fwd)$rsq, xlab="Number of Variables", ylab="R-squared", type="b")
+plot(summary(regfit.fwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
+plot(summary(regfit.fwd)$rss, xlab="Number of Variables", ylab="RSS", type="b")
+
+par(mfrow=c(1,2))
+plot(regfit.fwd,scale="r2",main="Forward Stepwise Selection")
+plot(regfit.fwd,scale="adjr2",main="Forward Stepwise Selection")
+
+# Backward
+regfit.bwd = regsubsets(Y~.,data=data,nvmax=nv_max,method="backward")
+summary(regfit.bwd)
+
+# Plot
+par(mfrow=c(1,3))
+plot(summary(regfit.bwd)$rsq, xlab="Number of Variables", ylab="R-squared", type="b")
+plot(summary(regfit.bwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
+plot(summary(regfit.bwd)$rss, xlab="Number of Variables", ylab="RSS", type="b")
+
+par(mfrow=c(1,2))
+plot(regfit.bwd,scale="r2",main="Backward Stepwise Selection")
+plot(regfit.bwd,scale="adjr2",main="Backward Stepwise Selection")
+
+```
+
+## **3.** Comparison
+```{r, warning=FALSE, message=FALSE}
+coef(regfit.full,7) # Exhaustive search
+coef(regfit.fwd,7) # Forward Stepwise Selection
+coef(regfit.bwd,7) # Backward Stepwise Selection
+```
+
+## **4.** K-fold-cross-validation (exhaustive search)
+```{r, warning=FALSE, message=FALSE}
+k = 10
+folds = sample(1:k,nrow(data),replace=TRUE)
+table(folds)
+
+# Function that performs the prediction for regsubsets
+predict.regsubsets = function(object,newdata,id){
+  form  = as.formula(object$call[[2]])
+  mat   = model.matrix(form,newdata)
+  coefi = coef(object,id=id)
+  xvars = names(coefi)
+  mat[,xvars]%*%coefi
+}
+p = number_of_covariates
+cv.errors = matrix(NA,k,p, dimnames=list(NULL, paste(1:number_of_covariates)))
+
+for(j in 1:k){
+  best.fit = regsubsets(formula_reg,data=data[folds!=j,],nvmax=number_of_covariates,really.big=T)
+  for(i in 1:p){
+    pred = predict(best.fit,data[folds==j,],id=i)
+    cv.errors[j,i] = mean( (data$Y[folds==j]-pred)^2 )
+  }
+}
+
+cv.errors
+
+root.mean.cv.errors = sqrt(apply(cv.errors,2,mean)) # average over the columns
+root.mean.cv.errors
+
+# Plot
+plot(root.mean.cv.errors,type='b')
+points(which.min(root.mean.cv.errors),
+       root.mean.cv.errors[which.min(root.mean.cv.errors)], col='red',pch=19)
+which.min(root.mean.cv.errors)
+
+# Estimation on the full dataset
+reg.best = regsubsets(Y~.,data=data, nvmax=number_of_covariates)
+coef(reg.best,10)
+
+```
+# Inference on Betas
+```{r, warning=FALSE, message=FALSE}
+## Assuption: Eps ~ N(0, sigma^2)
+## Test (Fisher):
+##    H0: (beta1, beta2) == (0, 0)
+##    H1: (beta1, beta2) != (0, 0)
+r = linear_model$rank - 1  # number of regressors
+
+# needs to be specified
+kk=9
+linearHypothesis(linear_model, cbind(rep(0,kk),diag(kk)), rep(0,kk))
+linear_model
+# Comment
+#   Pr(>F) = final p-value in summary(fm)
+```
+
+#  Bonferroni Intervals 
+```{r, warning=FALSE, message=FALSE}
+alpha = 0.05
+qT = qt(1-alpha/(2*p), n-(r+1))
+
+vals = c(2,3)
+C = diag(3)
+Bf = c()
+for(j in vals){
+  Bf = rbind(Bf,
+         c( (C %*%coefficients(linear_model))[j]-sqrt((C %*%vcov(linear_model) %*% t(C))[j,j])*qT,
+            (C %*%coefficients(linear_model))[j]+sqrt((C %*%vcov(linear_model) %*% t(C))[j,j])*qT))
+}
+
+Bf
+
+# Generic beta_j (p, r, n, alpha generici)
+# beta_j = c(coefficients(fm)[j]-sqrt(vcov(fm)[j,j])*qt(1-alpha/(2*p), n-(r+1)),
+#            coefficients(fm)[j]+sqrt(vcov(fm)[j,j])*qt(1-alpha/(2*p), n-(r+1)))
+
+# Alternatively: Bonferroni's correction
+confint(fm, level= 1-alpha/p)[vals,]
+```
+
+
+
+
+# variable transformation-tech
 ```{r}
 attach(data)
-techno=subset(select=c(COMPICT,ICTCLASS,ICTHOME,ICTOUTSIDE,ICTRES,ENTUSE,HOMESCH,USESCH,INTICT,AUTICT),data)
-detach(data)
-#provare a creare nuovo piccolo dataset dedicato alla tecnologia ma non serve
-attach(techno)
-
-tec1=lm(COMPICT ~ ICTCLASS+ICTHOME+ICTOUTSIDE+ICTRES+ENTUSE+HOMESCH+USESCH+INTICT+AUTICT)
-summary(tec1)
-#pvalue basso ma R_adj^2=0.5796 modello non spiega bene 
-vif(tec1)
-#vif bassi tra 1 e 2 -> collinearità non è problema
-
-tec2=lm(COMPICT ~ AUTICT+INTICT)
-summary(tec2)
-#R_adj^2 0.5707 modello non basta ma equivalente a quello completo 
-vif(tec2)
-
 AUT2=AUTICT^2
 INT2=INTICT^2
 AUT3=AUTICT^3
@@ -59,9 +287,7 @@ tec3=lm(COMPICT ~ AUTICT+INTICT+INT2+INT3+AUT3)
 summary(tec3)
 #R_adj^2 0.5839 si sta alzando ma di poco -> ordine salirebbe troppo prima di raggiungere R^2 accettabile -> overfitting 
 vif(tec3) #vif ancora buono
-
-
-detach(techno)
+detach(data)
 ```
 
 ###
@@ -72,68 +298,10 @@ nonostante pvalue basso modello non molto buono
 Idem per ciò che segue
 
 
-CULTURA/STUDIO
-```{r}
-#"JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS"
-
-attach(data)
-
-TMINS=MMINS+LMINS
-
-clt1=lm( TMINS ~ JOYREAD+CULTPOSS+HEDRES+SCREADCOMP)
-summary(clt1)
-#Radj2 0.03 modello non spiega bene 
-vif(clt1)
-#vif bassi tra 1 e 1.5 -> collinearità non è problema
 
 
 
-detach(data)
-
-```
-
-
-PSICOLOGIA
-```{r}
-#"ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED"
-
-attach(data)
-psi1=lm( SWBP ~ ATTLNACT+EMOSUPS+COMPETE+GFOFAIL+EUDMO+RESILIENCE+BELONG+BEINGBULLIED+PERFEED)
-summary(psi1)
-#Radj2 0.342 modello non spiega bene 
-vif(psi1)
-#vif bassi tra 1 e 2 -> collinearità non è problema
-
-
-
-detach(data)
-
-```
-
-SCUOLA/PROFESSORI
-```{r}
-#STRATIO","SCHSIZE","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT","STUBEHA"
-
-attach(data)
-sch1=lm( CREACTIV ~ STRATIO+SCHSIZE+CLSIZE+EDUSHORT+STAFFSHORT+STUBEHA)
-summary(sch1)
-#Radj2 0.03 modello non spiega bene 
-vif(sch1)
-#vif bassi tra 1 e 1.5 -> collinearità non è problema
-
-sch2=lm( STRATIO ~ SCHSIZE+CLSIZE+STAFFSHORT)
-summary(sch2)
-#Radj2 0.19 un po' meglio ma non funziona 
-vif(sch2)
-
-detach(data)
-
-```
-
-
-
-
-Provare con gli alberi
+# Provare con gli alberi
 ```{r}
 
 attach(data)
@@ -158,29 +326,4 @@ text(prune.tec,pretty=0)
 detach(data)
 
 ```
-
-
-Spiegare SWBP con modello totale
-```{r}
-attach(data)
-tot1=lm( SWBP ~ ATTLNACT+EMOSUPS+COMPETE+GFOFAIL+EUDMO+RESILIENCE+BELONG+BEINGBULLIED+PERFEED+CREACTIV+STRATIO+SCHSIZE+CLSIZE+EDUSHORT+STAFFSHORT+STUBEHA+TMINS+ JOYREAD+CULTPOSS+HEDRES+SCREADCOMP+COMPICT+ICTCLASS+ICTHOME+ICTOUTSIDE+ICTRES+ENTUSE+HOMESCH+USESCH+INTICT+AUTICT)
-summary(tot1)
-#Radj2 0.4426 modello non spiega bene nonostante includa tutte le variabili
-#si potrebbe rimuovere qualcosa ma non gioverebbe a R_adj^2
-vif(tot1)
-#vif bassi 
-
-
-
-detach(data)
-
-
-
-```
-
-
-
-Nessun modello sembra promettente 
-R_adj^2 molto bassi -> modelli poco informativi
-
 
