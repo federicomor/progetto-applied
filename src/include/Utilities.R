@@ -25,6 +25,17 @@ what_is[["col3_tec"]] = "passione nell'informatica (interesse + competenza + uti
 what_is[["col4_tec"]] = "utilizzo motivato o forzato (più è negativa più si usa informatica fuori da scuola, 
 per lavoro o giochi, contro un impatto positivo dell'interesse"
 
+what_is[["col1_psi"]] = "impeto, energia dello studente nel vivere la scuola.
+(fin troppo poetica, è una somma della sua attitudine, tendenza alla competitività e resilienza)"
+what_is[["col2_psi"]] = "todo"
+what_is[["col3_psi"]] = "todo"
+what_is[["col4_psi"]] = "todo"
+what_is[["col5_psi"]] = "todo"
+what_is[["col6_psi"]] = "target, somma contributi positivi vs negativi. Alta se si sta meglio (ci ho cambiato segno)"
+what_is[["col7_psi"]] = "quanto lo studente si sente accolto, ascoltato. Alta se alta belong, bassa se alte swbp e beingbbullied.
+Sembra un controsenso ma magari un bambino si mostra che sta bene perché non crede che gli altri lo possano/vogliano accogliere,
+ascoltare, risolvere le sue problematiche. Come i gatti che non mostrano quando stanno male, per non farsi vedere deboli"
+
 what_is[["col1_clt"]] = "quanto il clima culturale a casa è favorevole (gioia nella lettura, disponibilità di cultura, ecc), quindi tipo supporto culturale"
 what_is[["col2_clt"]] = "contrasto tra gioia di lettura (+) e risorse educative (-), quindi amore per la cultura contro la sua effettiva disponibilità.
 Alta se uno è interessato alla cultura ma in casa non ha molte risorse.

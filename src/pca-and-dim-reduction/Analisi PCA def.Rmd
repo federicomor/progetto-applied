@@ -48,7 +48,7 @@ df=df[,-c(1:20)] # same but surely works
 colnames(df)
 
 want_to_plot_all_couples=0
-want_to_save_score_df=0
+want_to_save_score_df=1
 
 # sort(colnames(df[,-c(52)]))==sort(c(tec,psi,clt,fam,tch,sch))
 # #c'è tutto ora
@@ -198,6 +198,7 @@ par(mfrow=c(1,1))
 
 ### Scores dataset
 ```{r}
+head(df_sc)
 dim(df_sc)
 colnames(df_sc)
 # col1_tec: frequenza di utilizzo di strumenti informatici (lezioni e non), sfruttabilità quindi (?) 
@@ -282,9 +283,9 @@ for (i in 1:length(states)) {
 ```{r}
 psi=c("PERCOMP","PERCOOP","ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
 
-psi_1 = c("ATTLNACT","COMPETE","EUDMO","RESILIENCE") # sociale
+# EUDMO scartata perché bah che ne sanno del senso della vita a quindici anni
+psi_1 = c("ATTLNACT","COMPETE","RESILIENCE") # sociale
 psi_2 = c("PERCOMP","PERCOOP","PERFEED","EMOSUPS") # percepite
-
 psi_3 = c("BELONG","SWBP","GFOFAIL","BEINGBULLIED") # target
 # psi_3 = c("BELONG","SWBP","RESILIENCE") # target
 
@@ -312,7 +313,7 @@ for(it in 1:num_gruppi){
 colnames(df_curr)
 vioplot(df_curr, las=2,main="before scaling")
 
-want_to_scale=1
+want_to_scale=0
 
 if(want_to_scale==1){
   df2 = scale(df_curr[,])
@@ -330,7 +331,7 @@ head(df_pca)
 
 
 pca = princomp(df_pca[,1:dim(df_pca)[2]-1])
-summary(pca)
+show(summary(pca))
 
 ###############################################################################
 plot(cumsum(pca$sde^2)/sum(pca$sde^2), type='b', axes=F, xlab='Number of components',
@@ -349,8 +350,9 @@ mean(pca$loadings[,1]) #test soglia
 median(pca$loadings[,1]) #test soglia
 
 ###############################################################################
-par(mfrow=c(2,1))
-for(i in 1:2){
+k=ifelse(it==1 || it==3,2,3)
+par(mfrow=c(k,1))
+for(i in 1:k){
   # soglia = quantile(pca$loadings[,i],0.6)),i]
   soglia = 0
   barplot(
@@ -364,37 +366,43 @@ for(i in 1:2){
 
 par(mfrow=c(1,1))
 
-show(pca$loadings)
-###############################################################################
-# higher pcs
-# par(mar = c(2,2,2,1), mfrow=c(3,1))
-# for(i in 3:5)barplot(pca$loadings[,i], ylim = c(-1, 1),
-# main=paste('Loadings PC ',i,sep=''),las=2)
+	if(it==1){ names= c(colnames(df_sc),"col1_psi","col2_psi"); df_sc = cbind(df_sc, pca$scores[,1:2]); colnames(df_sc) = names }
+	if(it==2){ names= c(colnames(df_sc),"col3_psi","col4_psi","col5_psi"); 
+		df_sc = cbind(df_sc, pca$scores[,1:3]); colnames(df_sc) = names  }
+	if(it==3){ names= c(colnames(df_sc),"col6_psi","col7_psi"); df_sc = cbind(df_sc, pca$scores[,1:2]); colnames(df_sc) = names  }
 }
 ```
 
 ### Scores datasets
 ```{r}
+head(df_sc)
+df_sc[,11] = -df_sc[,11]
+head(df_sc)
+
 dim(df_sc)
 colnames(df_sc)
-names= c(colnames(df_sc),"PC1_psi","PC2_psi","PC3_psi","PC4_psi","PC5_psi","PC6_psi")
-df_sc = cbind(df_sc, pca$scores[,1:6])
-colnames(df_sc) = names
+# what_is[["col1_psi"]] = impeto, energia dello studente nel vivere la scuola
+# (fin troppo poetica, è una somma della sua attitudine, tendenza alla competitività e resilienza)
+# what_is[["col2_psi"]] = 
+# 
+# what_is[["col3_psi"]] = todo
+# what_is[["col4_psi"]] = todo
+# what_is[["col5_psi"]] = todo
+# 
+# what_is[["col6_psi"]] = target, somma contributi positivi vs negativi. Alta se si sta meglio (ci ho cambiato segno)
+# what_is[["col7_psi"]] = quanto lo studente si sente accolto, ascoltato. Alta se alta belong, bassa se alte swbp e beingbbullied.
+# Sembra un controsenso ma magari un bambino si mostra che sta bene perché non crede che gli altri lo possano/vogliano accogliere,
+# ascoltare, risolvere le sue problematiche. Come i gatti che non mostrano quando stanno male, per non farsi vedere deboli
+# (a bit personal here)
+# 
 ```
 
 
 ### Interpretation
 ```{r}
-for (col in cat_curr_vec){
+for (col in psi){
   print(paste(col,what_is[[col]]))
 }
-# PC1 sembra fare la somma dei contributi positivi contro quelli negativi: cioè tutti
-# sommati tranne gfofail e beingbullied
-# -> PC1 alta -> gli studenti stanno molto bene
-#
-# PC2 sembra un po' difficile da interpretare. Forse
-# pc2 bassa -> gli studenti se la cavano bene da soli (percepiscono buoni feedback, acquistano
-# resilienza, magari dopo essere bullizzati, e competitvità e fiducia nella vita)
 ```
 
 ### Scores plot
@@ -632,6 +640,7 @@ for (i in 1:length(states)) {
 ## fam - FATTO
 ```{r}
 fam=c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
+df_fam = df[,colnames(df) %in% fam]
 cat_curr_vec = fam
 cat_curr_name = "fam"
 df_curr = df_fam
@@ -1113,19 +1122,22 @@ for (i in 1:length(states)) {
 
 # Write the score dataset
 ```{r}
+dim(df)
+dim(df_sc)
+head(df_sc)
+colnames(df_sc)
+
 if(want_to_save_score_df==1){
-	dim(df)
-	dim(df_sc)
-	colnames(df_sc)
 	# PCs selected
 	
 	df_sc_with_cnt=cbind(df$CNT,df_sc)
 	names=colnames(df_sc)
+	# df_sc=as.numeric(df_sc)
 	colnames(df_sc_with_cnt) = c("CNT",names)
-	df_sc_with_cnt
+	head(df_sc_with_cnt)
 	
 	# and the oscar to the longest name goes to...
-	write.csv(data.frame(df_sc_with_cnt),"../../data/pisa_school_final_wo_Outl_PCA_SCORES.csv")
+	write.csv(data.frame(df_sc_with_cnt),"../../data/df_pca_scores.csv")
 	head(data.frame(df_sc_with_cnt))
 }
 ```
