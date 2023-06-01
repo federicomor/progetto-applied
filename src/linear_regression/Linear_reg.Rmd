@@ -15,7 +15,7 @@ editor_options:
 rm(list=ls())
 graphics.off()
 root_proj_dir = "../../"
-dataset_path = paste(root_proj_dir,"data/pisa_wPV_grouped_bysch.csv",sep="")
+dataset_path = paste(root_proj_dir,"data/df_pca_scores.csv",sep="")
 include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_path)
@@ -35,11 +35,8 @@ library(glmnet)
 
 ```{r}
 data$X <- NULL
-data$schID <- NULL
 data$CNT <- as.factor(data$CNT)
-data$CNTSCHID <- as.factor(data$CNTSCHID)
-data$CNTSTUID <- as.factor(data$CNTSTUID)
-data <- data[,23:74] #excluding target variables
+#data <- data[,23:74] #excluding target variables
 head(data)
 ```
 
@@ -73,10 +70,26 @@ response_variable_school = "CREACTIV"
 school_prof_2 = c("SCHSIZE","CLSIZE","STAFFSHORT")
 response_variable_school_2 = "STRATIO"
 ########################
+```
 
+```{r}
+all_vars = colnames(data)
 
-vars = psychology
+tech <- colnames(data[grep("tec", all_vars)])
+tech
+psic <- colnames(data[grep("psi", all_vars)])
+psic
+culture <- colnames(data[grep("clt", all_vars)])
+culture
+teach <- colnames(data[grep("tch", all_vars)])
+teach
+school <- colnames(data[grep("sch", all_vars)])
+school
+```
+
+```{r}
 response_variable = response_variable_psy
+vars = psychology
 number_of_covariates = length(vars)
 number_of_covariates
 ```
