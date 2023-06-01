@@ -81,33 +81,79 @@ psic <- colnames(data[grep("psi", all_vars)])
 psic
 culture <- colnames(data[grep("clt", all_vars)])
 culture
+family <- colnames(data[grep("fam", all_vars)])
+family
 teach <- colnames(data[grep("tch", all_vars)])
 teach
 school <- colnames(data[grep("sch", all_vars)])
 school
 ```
 
+
 ```{r}
-response_variable = response_variable_psy
-vars = psychology
+response_variable = psic[6]
+response_variable
+vars = all_vars
+vars = vars[vars!=response_variable]
+vars= vars[vars!="CNT"]
+vars
+
+not_signific_vars = c("col1_clt","col3_tch","col4_tch","col3_sch")
+for(i in 1:length(not_signific_vars)){
+  spiega(not_signific_vars[i])
+  print("")
+}
+
+vars= vars[!(vars %in% not_signific_vars )]
+vars
 number_of_covariates = length(vars)
 number_of_covariates
 ```
 
 # run the model
 ```{r}
-formula <- paste(paste(response_variable,"~"), paste(vars, collapse = "+"))
+formula <- paste(paste(response_variable,"~"), paste(vars, collapse = "+"),paste("+(1|CNT)"))
+formula_classic <- paste(paste(response_variable,"~"), paste(vars, collapse = "+"))
 formula
-linear_model <- lm(formula,data)
+linear_model_classic <- lm(formula_classic,data)
+summary(linear_model_classic)
+```
+
+
+```{r}
+linear_model <- lmer(formula,data)
 summary(linear_model)
+print("######################### VIF ##########################")
 vif(linear_model)
 ```
+# RANDOM EFFECTS
+
+questo puÚ darci un idea del contributo del paese per il well being
+```{r}
+rand_eff<-ranef(linear_model)
+dotplot(rand_eff)
+```
+
+```{r}
+qqnorm(resid(linear_model))
+qqline(resid(linear_model))
+
+qqnorm(unlist(ranef(linear_model)$CNT))
+qqline(unlist(ranef(linear_model)$CNT))
+
+hist(resid(linear_model))
+```
+
 
 #  Verify assumptions (used for inference and estimate of parameters)
 ```{r, warning=FALSE, message=FALSE}
 # * Gaussianity
 # * Homoschedasticity
-plot(linear_model)
+plot(linear_model,col=data$CNT)
+boxplot(linear_model_classic$residuals ~ data$CNT, col=unique(data$CNT),
+        xlab='countrys', ylab='Residuals') 
+abline(h=0)
+
 
 # Comment
 #   1. We want to see no pattern: a cloud around the zero
@@ -126,9 +172,12 @@ shapiro.test(residuals(linear_model))
 ```{r, warning=FALSE, message=FALSE}
 # Best Subset Selection
 formula_reg = formula(paste(response_variable,"~."))
-regfit.full = regsubsets(formula_reg, data=data,really.big = T)
+regfit.full = regsubsets(formula_reg, data=data[,!(colnames(data)=="CNT")],really.big = T)
 summary(regfit.full)
+```
 
+
+```{r, warning=FALSE, message=FALSE}
 # Best Subset Selection: we say when we stop
 nv_max = number_of_covariates
 regfit.full = regsubsets(formula_reg, data=data, nvmax=nv_max,really.big = T)
@@ -286,37 +335,8 @@ Bf
 confint(fm, level= 1-alpha/p)[vals,]
 ```
 
-
-
-
-# variable transformation-tech
-```{r}
-attach(data)
-AUT2=AUTICT^2
-INT2=INTICT^2
-AUT3=AUTICT^3
-INT3=INTICT^3
-tec3=lm(COMPICT ~ AUTICT+INTICT+INT2+INT3+AUT3)
-summary(tec3)
-#R_adj^2 0.5839 si sta alzando ma di poco -> ordine salirebbe troppo prima di raggiungere R^2 accettabile -> overfitting 
-vif(tec3) #vif ancora buono
-detach(data)
-```
-
-###
-Questi sono solo possibili esempi -> anche cambiando variabili non si nota un miglioramento dell'R_adj^2
-
-=>variabili non si spiegano l'una con l'altra
-nonostante pvalue basso modello non molto buono
-Idem per ci√≤ che segue
-
-
-
-
-
 # Provare con gli alberi
 ```{r}
-
 attach(data)
 
 
