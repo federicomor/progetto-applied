@@ -128,7 +128,7 @@ vif(linear_model)
 ```
 # RANDOM EFFECTS
 
-questo può darci un idea del contributo del paese per il well being
+questo pu? darci un'idea del contributo del paese per il well being
 ```{r}
 rand_eff<-ranef(linear_model)
 dotplot(rand_eff)
@@ -218,6 +218,7 @@ plot(regfit.full, scale="adjr2", main="Exhaustive search")
 ## **2.** Forward and Backward Stepwise Selection
 ```{r, warning=FALSE, message=FALSE}
 # Forward
+Y=response_variable
 regfit.fwd = regsubsets(Y~.,data=data,nvmax=nv_max,method="forward")
 summary(regfit.fwd)
 
@@ -295,6 +296,7 @@ reg.best = regsubsets(Y~.,data=data, nvmax=number_of_covariates)
 coef(reg.best,10)
 
 ```
+
 # Inference on Betas
 ```{r, warning=FALSE, message=FALSE}
 ## Assuption: Eps ~ N(0, sigma^2)
@@ -310,6 +312,7 @@ linear_model
 # Comment
 #   Pr(>F) = final p-value in summary(fm)
 ```
+
 
 #  Bonferroni Intervals 
 ```{r, warning=FALSE, message=FALSE}
@@ -334,6 +337,106 @@ Bf
 # Alternatively: Bonferroni's correction
 confint(fm, level= 1-alpha/p)[vals,]
 ```
+
+
+
+
+Inferenza sui beta classic model
+```{r}
+## Assuption: Eps ~ N(0, sigma^2)
+## Test (Fisher):
+##    H0: (beta1, beta2) == (0, 0)
+##    H1: (beta1, beta2) != (0, 0)
+r = linear_model_classic$rank - 1  # number of regressors
+
+# needs to be specified
+kk=19
+linearHypothesis(linear_model_classic, cbind(rep(0,kk),diag(kk)), rep(0,kk))
+linear_model_classic
+
+```
+
+Ridge regression classic model
+```{r}
+#try a range of lambda values, then choose the one that minimizes generalized cross validation  
+lambda.c <- seq(30,40,0.01)
+#varie prove di intervalli (zoom su quello contenente lambda opt)
+
+#fit.ridge <- lm.ridge(response_variable ~ data$col1_tec+data$col2_tec+data$col3_tec+data$col4_tec+data$col5_tec+data$col1_psi+data$col2_psi+data$col3_psi+data$col4_psi+data$col5_psi+ data$col7_psi+data$col1_clt+data$col2_clt+data$col3_clt+data$col1_fam+data$col1_tch+data$col2_tch+data$col3_tch+data$col4_tch+data$col1_sch+data$col2_sch+data$col3_sch +data$col4_sch,lambda=lambda.c)
+fit.ridge <- lm.ridge(formula_classic,data,lambda=lambda.c)
+
+lambda.opt <- lambda.c[which.min(fit.ridge$GCV)]
+lambda.opt  
+#molto dritte, sembrano quasi delle rette (?)
+
+for (i in 1:number_of_covariates) {
+  plot(lambda.c,coef(fit.ridge)[,i], type='l', xlab=expression(lambda),
+     ylab=expression(beta[i-1]))
+  abline(v=lambda.opt, col=2, lty=2)
+}
+
+coef.ridge <- coef(fit.ridge)[which.min(fit.ridge$GCV),]
+coef.ridge
+
+
+#lambdaopt=33.95
+#              col1_tec    col2_tec    col3_tec    col4_tec    col5_tec    col1_psi    col2_psi    col3_psi    col4_psi    col5_psi    col7_psi    col2_clt    col3_clt 
+# 0.06927790 -0.02416874  0.06091557  0.03385272  0.02213204  0.04015382  0.43701278 -0.08521387  0.16889777  0.26573159  0.21113793 -0.10879213  0.04765208  0.03400456 
+#   col1_fam    col1_tch    col2_tch    col1_sch    col2_sch    col4_sch 
+#-0.02785968  0.05312325 -0.19340668  0.04877980 -0.03586436 -0.04417708 
+
+#non identici ma molto simili a coefficienti precedenti
+
+```
+
+Lasso regression classic model
+```{r}
+#predictors matrix and response vector
+x <- model.matrix(as.formula(formula_classic),data)[,-1]
+y <- data$col6_psi
+
+lambda.grid <- 10^seq(5,-3,length=100)
+fit.lasso <- glmnet(x,y, lambda = lambda.grid) 
+
+plot(fit.lasso,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
+legend('topright', dimnames(x)[[2]], col =  rainbow(dim(x)[2]), lty=1, cex=1)
+
+#cross validation for lambda
+cv.lasso <- cv.glmnet(x,y,lambda=lambda.grid)
+
+bestlam.lasso <- cv.lasso$lambda.min
+bestlam.lasso
+
+plot(cv.lasso)
+abline(v=log(bestlam.lasso), lty=1)
+
+
+coef.lasso <- predict(fit.lasso, s=bestlam.lasso, type = 'coefficients')[1:20,]
+coef.lasso 
+
+# (Intercept) data$col1_tec data$col2_tec data$col3_tec data$col4_tec data$col5_tec data$col1_psi data$col2_psi data$col3_psi data$col4_psi data$col5_psi data$col7_psi 
+#   0.06853704   -0.02285816    0.05934161    0.03282803    0.02167061    0.03967517    0.44227522   -0.08174265    0.16678511    0.26215337    0.20793069   -0.10538030 
+#data$col2_clt data$col3_clt data$col1_fam data$col1_tch data$col2_tch data$col1_sch data$col2_sch data$col4_sch 
+#   0.04682972    0.03334747   -0.02698860    0.05121214   -0.19250747    0.04835701   -0.03490630   -0.04370465 
+#nessuna componente va a 0
+#ancora coefficienti molto simili ai precedenti
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Provare con gli alberi
 ```{r}
