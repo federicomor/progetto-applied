@@ -18,6 +18,7 @@ dimmi = racconta = raccontami = cose = cos_e = interpreta = interpretami = spieg
 ## quindi ora dimmi(ecc) e le altre funzionano allo stesso modo
 
 
+
 ## scores dataset
 what_is[["col1_tec"]] = "frequenza di utilizzo di strumenti informatici (lezioni e non), sfruttabilità"
 what_is[["col2_tec"]] = "quantità di materiale informatico (casa + scuola), disponibilità"
@@ -27,10 +28,14 @@ per lavoro o giochi, contro un impatto positivo dell'interesse"
 
 what_is[["col1_psi"]] = "impeto, energia dello studente nel vivere la scuola.
 (fin troppo poetica, è una somma della sua attitudine, tendenza alla competitività e resilienza)"
-what_is[["col2_psi"]] = "todo"
-what_is[["col3_psi"]] = "todo"
-what_is[["col4_psi"]] = "todo"
-what_is[["col5_psi"]] = "todo"
+what_is[["col2_psi"]] = "Modo in cui vive la vita scolastica.
+Bassa se lui è forzato ad essere più resiliente e combattivo, alta se può essere più pacifico, easy."
+what_is[["col3_psi"]] = "Somma di contributi positivi
+(supporto dei prof, genitori, compagni come aiuto ma anche stimolo alla competizione)"
+what_is[["col4_psi"]] = "Supporto interno o esterno. Alta se supporto maggiore da parte dei genitori o compagni.
+Bassa se più supportato invece dai prof."
+what_is[["col5_psi"]] = "Tendenza alla singolarità, indipendenza vs lavoro di squadra.
+Alta se maggiore cooperazione, bassa se maggiore competizione"
 what_is[["col6_psi"]] = "target, somma contributi positivi vs negativi. Alta se si sta meglio (ci ho cambiato segno)"
 what_is[["col7_psi"]] = "quanto lo studente si sente accolto, ascoltato. Alta se alta belong, bassa se alte swbp e beingbbullied.
 Sembra un controsenso ma magari un bambino si mostra che sta bene perché non crede che gli altri lo possano/vogliano accogliere,
