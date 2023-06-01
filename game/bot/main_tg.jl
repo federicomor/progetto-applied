@@ -5,7 +5,7 @@ dotenv()
 
 # sendMessage(text = "Hello world")
 
-# println(tg.getMe())
+println(tg.getMe())
 
 # open("picture.png", "r") do io
 #     sendPhoto(photo = io)

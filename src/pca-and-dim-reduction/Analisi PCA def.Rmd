@@ -6,13 +6,10 @@ editor_options:
 ---
 
 # Map for variable meaning
-```{r}
-source("../include/Utilities.R")
-```
-
-
 # Setup
-```{r}
+```{r, setup}
+source("../include/Utilities.R")
+
 library(dplyr)
 library(psych)  
 library(car)  

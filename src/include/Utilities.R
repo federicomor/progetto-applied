@@ -3,6 +3,14 @@
 ## (1) dictionary to get the variables description ----
 what_is <- new.env(hash = TRUE, parent = emptyenv(), size = NA)
 
+fun_colori = function(len=2, seed=33){
+	hcols_ = hcl.pals()
+	col.ramp_ = hcl.colors(len,palette=hcols_[seed%%115+1])
+	return(col.ramp_)
+}
+colori_fun = colorami = colora = fun_colori
+
+
 ## for the scores dataset
 ## 
 ## better usage: cat(what_is[["scPC1_tec"]])
@@ -17,16 +25,14 @@ spiegami = function(colonna){
 dimmi = racconta = raccontami = cose = cos_e = interpreta = interpretami = spiega = spiegami
 ## quindi ora dimmi(ecc) e le altre funzionano allo stesso modo
 
-
-
 ## scores dataset
-what_is[["col1_tec"]] = "frequenza di utilizzo di strumenti informatici (lezioni e non), sfruttabilità"
-what_is[["col2_tec"]] = "quantità di materiale informatico (casa + scuola), disponibilità"
-what_is[["col3_tec"]] = "passione nell'informatica (interesse + competenza + utilizzo generale ecc)"
-what_is[["col4_tec"]] = "utilizzo motivato o forzato (più è negativa più si usa informatica fuori da scuola, 
+what_is[["col1_tec"]] = "Frequenza di utilizzo di strumenti informatici (lezioni e non), sfruttabilità"
+what_is[["col2_tec"]] = "Quantità di materiale informatico (casa + scuola), disponibilità"
+what_is[["col3_tec"]] = "Passione nell'informatica (interesse + competenza + utilizzo generale ecc)"
+what_is[["col4_tec"]] = "Utilizzo motivato o forzato (più è negativa più si usa informatica fuori da scuola, 
 per lavoro o giochi, contro un impatto positivo dell'interesse"
 
-what_is[["col1_psi"]] = "impeto, energia dello studente nel vivere la scuola.
+what_is[["col1_psi"]] = "Impeto, energia dello studente nel vivere la scuola
 (fin troppo poetica, è una somma della sua attitudine, tendenza alla competitività e resilienza)"
 what_is[["col2_psi"]] = "Modo in cui vive la vita scolastica.
 Bassa se lui è forzato ad essere più resiliente e combattivo, alta se può essere più pacifico, easy."
