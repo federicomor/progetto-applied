@@ -29,8 +29,18 @@ library(rgl)
 library(leaps)
 library(ISLR)
 library(glmnet)
+library(lme4)
+library(nlmeU) ## --> for the dataset
+library(nlme)  ## --> for models implementation
+
+library(corrplot)
+library(lattice)
+library(plot.matrix)
 
 
+library(insight)
+
+library(ggplot2)
 ```
 
 ```{r}
@@ -218,8 +228,7 @@ plot(regfit.full, scale="adjr2", main="Exhaustive search")
 ## **2.** Forward and Backward Stepwise Selection
 ```{r, warning=FALSE, message=FALSE}
 # Forward
-Y=response_variable
-regfit.fwd = regsubsets(Y~.,data=data,nvmax=nv_max,method="forward")
+regfit.fwd = regsubsets(formula_reg,data=data,nvmax=nv_max,method="forward")
 summary(regfit.fwd)
 
 # Plot
@@ -233,7 +242,7 @@ plot(regfit.fwd,scale="r2",main="Forward Stepwise Selection")
 plot(regfit.fwd,scale="adjr2",main="Forward Stepwise Selection")
 
 # Backward
-regfit.bwd = regsubsets(Y~.,data=data,nvmax=nv_max,method="backward")
+regfit.bwd = regsubsets(formula_reg,data=data,nvmax=nv_max,method="backward")
 summary(regfit.bwd)
 
 # Plot
@@ -303,7 +312,7 @@ coef(reg.best,10)
 ## Test (Fisher):
 ##    H0: (beta1, beta2) == (0, 0)
 ##    H1: (beta1, beta2) != (0, 0)
-r = linear_model$rank - 1  # number of regressors
+r = linear_model_classic$rank - 1  # number of regressors
 
 # needs to be specified
 kk=9
@@ -317,31 +326,33 @@ linear_model
 #  Bonferroni Intervals 
 ```{r, warning=FALSE, message=FALSE}
 alpha = 0.05
+n = dim(data)[1]
 qT = qt(1-alpha/(2*p), n-(r+1))
 
-vals = c(2,3)
-C = diag(3)
+vals = 1:20
+C = diag(20)
 Bf = c()
 for(j in vals){
   Bf = rbind(Bf,
-         c( (C %*%coefficients(linear_model))[j]-sqrt((C %*%vcov(linear_model) %*% t(C))[j,j])*qT,
-            (C %*%coefficients(linear_model))[j]+sqrt((C %*%vcov(linear_model) %*% t(C))[j,j])*qT))
+         c( (C %*%coefficients(linear_model_classic))[j]-sqrt((C %*%vcov(linear_model_classic) %*% t(C))[j,j])*qT,
+            (C %*%coefficients(linear_model_classic))[j]+sqrt((C %*%vcov(linear_model_classic) %*% t(C))[j,j])*qT))
 }
 
-Bf
+Bf = data.frame(Bf)
+all(Bf[,1]*Bf[,2]>0)
 
 # Generic beta_j (p, r, n, alpha generici)
 # beta_j = c(coefficients(fm)[j]-sqrt(vcov(fm)[j,j])*qt(1-alpha/(2*p), n-(r+1)),
 #            coefficients(fm)[j]+sqrt(vcov(fm)[j,j])*qt(1-alpha/(2*p), n-(r+1)))
 
 # Alternatively: Bonferroni's correction
-confint(fm, level= 1-alpha/p)[vals,]
+confint(linear_model_classic, level= 1-alpha/p)[vals,]
 ```
 
 
 
 
-Inferenza sui beta classic model
+# Inferenza sui beta classic model
 ```{r}
 ## Assuption: Eps ~ N(0, sigma^2)
 ## Test (Fisher):
@@ -356,7 +367,7 @@ linear_model_classic
 
 ```
 
-Ridge regression classic model
+# Ridge regression classic model
 ```{r}
 #try a range of lambda values, then choose the one that minimizes generalized cross validation  
 lambda.c <- seq(30,40,0.01)
@@ -389,7 +400,7 @@ coef.ridge
 
 ```
 
-Lasso regression classic model
+# Lasso regression classic model
 ```{r}
 #predictors matrix and response vector
 x <- model.matrix(as.formula(formula_classic),data)[,-1]
