@@ -15,7 +15,7 @@ editor_options:
 rm(list=ls())
 graphics.off()
 root_proj_dir = "../../"
-dataset_path = paste(root_proj_dir,"data/pisa_wPV_grouped_bysch.csv",sep="")
+dataset_path = paste(root_proj_dir,"data/df_pca_scores.csv",sep="")
 include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_path)
@@ -29,17 +29,24 @@ library(rgl)
 library(leaps)
 library(ISLR)
 library(glmnet)
+library(lme4)
+library(nlmeU) ## --> for the dataset
+library(nlme)  ## --> for models implementation
+
+library(corrplot)
+library(lattice)
+library(plot.matrix)
 
 
+library(insight)
+
+library(ggplot2)
 ```
 
 ```{r}
 data$X <- NULL
-data$schID <- NULL
 data$CNT <- as.factor(data$CNT)
-data$CNTSCHID <- as.factor(data$CNTSCHID)
-data$CNTSTUID <- as.factor(data$CNTSTUID)
-data <- data[,23:74] #excluding target variables
+#data <- data[,23:74] #excluding target variables
 head(data)
 ```
 
@@ -73,28 +80,90 @@ response_variable_school = "CREACTIV"
 school_prof_2 = c("SCHSIZE","CLSIZE","STAFFSHORT")
 response_variable_school_2 = "STRATIO"
 ########################
+```
+
+```{r}
+all_vars = colnames(data)
+
+tech <- colnames(data[grep("tec", all_vars)])
+tech
+psic <- colnames(data[grep("psi", all_vars)])
+psic
+culture <- colnames(data[grep("clt", all_vars)])
+culture
+family <- colnames(data[grep("fam", all_vars)])
+family
+teach <- colnames(data[grep("tch", all_vars)])
+teach
+school <- colnames(data[grep("sch", all_vars)])
+school
+```
 
 
-vars = psychology
-response_variable = response_variable_psy
+```{r}
+response_variable = psic[6]
+response_variable
+vars = all_vars
+vars = vars[vars!=response_variable]
+vars= vars[vars!="CNT"]
+vars
+
+not_signific_vars = c("col1_clt","col3_tch","col4_tch","col3_sch")
+for(i in 1:length(not_signific_vars)){
+  spiega(not_signific_vars[i])
+  print("")
+}
+
+vars= vars[!(vars %in% not_signific_vars )]
+vars
 number_of_covariates = length(vars)
 number_of_covariates
 ```
 
 # run the model
 ```{r}
-formula <- paste(paste(response_variable,"~"), paste(vars, collapse = "+"))
+formula <- paste(paste(response_variable,"~"), paste(vars, collapse = "+"),paste("+(1|CNT)"))
+formula_classic <- paste(paste(response_variable,"~"), paste(vars, collapse = "+"))
 formula
-linear_model <- lm(formula,data)
+linear_model_classic <- lm(formula_classic,data)
+summary(linear_model_classic)
+```
+
+
+```{r}
+linear_model <- lmer(formula,data)
 summary(linear_model)
+print("######################### VIF ##########################")
 vif(linear_model)
 ```
+# RANDOM EFFECTS
+
+questo pu? darci un'idea del contributo del paese per il well being
+```{r}
+rand_eff<-ranef(linear_model)
+dotplot(rand_eff)
+```
+
+```{r}
+qqnorm(resid(linear_model))
+qqline(resid(linear_model))
+
+qqnorm(unlist(ranef(linear_model)$CNT))
+qqline(unlist(ranef(linear_model)$CNT))
+
+hist(resid(linear_model))
+```
+
 
 #  Verify assumptions (used for inference and estimate of parameters)
 ```{r, warning=FALSE, message=FALSE}
 # * Gaussianity
 # * Homoschedasticity
-plot(linear_model)
+plot(linear_model,col=data$CNT)
+boxplot(linear_model_classic$residuals ~ data$CNT, col=unique(data$CNT),
+        xlab='countrys', ylab='Residuals') 
+abline(h=0)
+
 
 # Comment
 #   1. We want to see no pattern: a cloud around the zero
@@ -113,9 +182,12 @@ shapiro.test(residuals(linear_model))
 ```{r, warning=FALSE, message=FALSE}
 # Best Subset Selection
 formula_reg = formula(paste(response_variable,"~."))
-regfit.full = regsubsets(formula_reg, data=data,really.big = T)
+regfit.full = regsubsets(formula_reg, data=data[,!(colnames(data)=="CNT")],really.big = T)
 summary(regfit.full)
+```
 
+
+```{r, warning=FALSE, message=FALSE}
 # Best Subset Selection: we say when we stop
 nv_max = number_of_covariates
 regfit.full = regsubsets(formula_reg, data=data, nvmax=nv_max,really.big = T)
@@ -156,7 +228,7 @@ plot(regfit.full, scale="adjr2", main="Exhaustive search")
 ## **2.** Forward and Backward Stepwise Selection
 ```{r, warning=FALSE, message=FALSE}
 # Forward
-regfit.fwd = regsubsets(Y~.,data=data,nvmax=nv_max,method="forward")
+regfit.fwd = regsubsets(formula_reg,data=data,nvmax=nv_max,method="forward")
 summary(regfit.fwd)
 
 # Plot
@@ -170,7 +242,7 @@ plot(regfit.fwd,scale="r2",main="Forward Stepwise Selection")
 plot(regfit.fwd,scale="adjr2",main="Forward Stepwise Selection")
 
 # Backward
-regfit.bwd = regsubsets(Y~.,data=data,nvmax=nv_max,method="backward")
+regfit.bwd = regsubsets(formula_reg,data=data,nvmax=nv_max,method="backward")
 summary(regfit.bwd)
 
 # Plot
@@ -233,13 +305,14 @@ reg.best = regsubsets(Y~.,data=data, nvmax=number_of_covariates)
 coef(reg.best,10)
 
 ```
+
 # Inference on Betas
 ```{r, warning=FALSE, message=FALSE}
 ## Assuption: Eps ~ N(0, sigma^2)
 ## Test (Fisher):
 ##    H0: (beta1, beta2) == (0, 0)
 ##    H1: (beta1, beta2) != (0, 0)
-r = linear_model$rank - 1  # number of regressors
+r = linear_model_classic$rank - 1  # number of regressors
 
 # needs to be specified
 kk=9
@@ -249,53 +322,128 @@ linear_model
 #   Pr(>F) = final p-value in summary(fm)
 ```
 
+
 #  Bonferroni Intervals 
 ```{r, warning=FALSE, message=FALSE}
 alpha = 0.05
+n = dim(data)[1]
 qT = qt(1-alpha/(2*p), n-(r+1))
 
-vals = c(2,3)
-C = diag(3)
+vals = 1:20
+C = diag(20)
 Bf = c()
 for(j in vals){
   Bf = rbind(Bf,
-         c( (C %*%coefficients(linear_model))[j]-sqrt((C %*%vcov(linear_model) %*% t(C))[j,j])*qT,
-            (C %*%coefficients(linear_model))[j]+sqrt((C %*%vcov(linear_model) %*% t(C))[j,j])*qT))
+         c( (C %*%coefficients(linear_model_classic))[j]-sqrt((C %*%vcov(linear_model_classic) %*% t(C))[j,j])*qT,
+            (C %*%coefficients(linear_model_classic))[j]+sqrt((C %*%vcov(linear_model_classic) %*% t(C))[j,j])*qT))
 }
 
-Bf
+Bf = data.frame(Bf)
+all(Bf[,1]*Bf[,2]>0)
 
 # Generic beta_j (p, r, n, alpha generici)
 # beta_j = c(coefficients(fm)[j]-sqrt(vcov(fm)[j,j])*qt(1-alpha/(2*p), n-(r+1)),
 #            coefficients(fm)[j]+sqrt(vcov(fm)[j,j])*qt(1-alpha/(2*p), n-(r+1)))
 
 # Alternatively: Bonferroni's correction
-confint(fm, level= 1-alpha/p)[vals,]
+confint(linear_model_classic, level= 1-alpha/p)[vals,]
 ```
 
 
 
 
-# variable transformation-tech
+# Inferenza sui beta classic model
 ```{r}
-attach(data)
-AUT2=AUTICT^2
-INT2=INTICT^2
-AUT3=AUTICT^3
-INT3=INTICT^3
-tec3=lm(COMPICT ~ AUTICT+INTICT+INT2+INT3+AUT3)
-summary(tec3)
-#R_adj^2 0.5839 si sta alzando ma di poco -> ordine salirebbe troppo prima di raggiungere R^2 accettabile -> overfitting 
-vif(tec3) #vif ancora buono
-detach(data)
+## Assuption: Eps ~ N(0, sigma^2)
+## Test (Fisher):
+##    H0: (beta1, beta2) == (0, 0)
+##    H1: (beta1, beta2) != (0, 0)
+r = linear_model_classic$rank - 1  # number of regressors
+
+# needs to be specified
+kk=19
+linearHypothesis(linear_model_classic, cbind(rep(0,kk),diag(kk)), rep(0,kk))
+linear_model_classic
+
 ```
 
-###
-Questi sono solo possibili esempi -> anche cambiando variabili non si nota un miglioramento dell'R_adj^2
+# Ridge regression classic model
+```{r}
+#try a range of lambda values, then choose the one that minimizes generalized cross validation  
+lambda.c <- seq(30,40,0.01)
+#varie prove di intervalli (zoom su quello contenente lambda opt)
 
-=>variabili non si spiegano l'una con l'altra
-nonostante pvalue basso modello non molto buono
-Idem per ciò che segue
+#fit.ridge <- lm.ridge(response_variable ~ data$col1_tec+data$col2_tec+data$col3_tec+data$col4_tec+data$col5_tec+data$col1_psi+data$col2_psi+data$col3_psi+data$col4_psi+data$col5_psi+ data$col7_psi+data$col1_clt+data$col2_clt+data$col3_clt+data$col1_fam+data$col1_tch+data$col2_tch+data$col3_tch+data$col4_tch+data$col1_sch+data$col2_sch+data$col3_sch +data$col4_sch,lambda=lambda.c)
+fit.ridge <- lm.ridge(formula_classic,data,lambda=lambda.c)
+
+lambda.opt <- lambda.c[which.min(fit.ridge$GCV)]
+lambda.opt  
+#molto dritte, sembrano quasi delle rette (?)
+
+for (i in 1:number_of_covariates) {
+  plot(lambda.c,coef(fit.ridge)[,i], type='l', xlab=expression(lambda),
+     ylab=expression(beta[i-1]))
+  abline(v=lambda.opt, col=2, lty=2)
+}
+
+coef.ridge <- coef(fit.ridge)[which.min(fit.ridge$GCV),]
+coef.ridge
+
+
+#lambdaopt=33.95
+#              col1_tec    col2_tec    col3_tec    col4_tec    col5_tec    col1_psi    col2_psi    col3_psi    col4_psi    col5_psi    col7_psi    col2_clt    col3_clt 
+# 0.06927790 -0.02416874  0.06091557  0.03385272  0.02213204  0.04015382  0.43701278 -0.08521387  0.16889777  0.26573159  0.21113793 -0.10879213  0.04765208  0.03400456 
+#   col1_fam    col1_tch    col2_tch    col1_sch    col2_sch    col4_sch 
+#-0.02785968  0.05312325 -0.19340668  0.04877980 -0.03586436 -0.04417708 
+
+#non identici ma molto simili a coefficienti precedenti
+
+```
+
+# Lasso regression classic model
+```{r}
+#predictors matrix and response vector
+x <- model.matrix(as.formula(formula_classic),data)[,-1]
+y <- data$col6_psi
+
+lambda.grid <- 10^seq(5,-3,length=100)
+fit.lasso <- glmnet(x,y, lambda = lambda.grid) 
+
+plot(fit.lasso,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
+legend('topright', dimnames(x)[[2]], col =  rainbow(dim(x)[2]), lty=1, cex=1)
+
+#cross validation for lambda
+cv.lasso <- cv.glmnet(x,y,lambda=lambda.grid)
+
+bestlam.lasso <- cv.lasso$lambda.min
+bestlam.lasso
+
+plot(cv.lasso)
+abline(v=log(bestlam.lasso), lty=1)
+
+
+coef.lasso <- predict(fit.lasso, s=bestlam.lasso, type = 'coefficients')[1:20,]
+coef.lasso 
+
+# (Intercept) data$col1_tec data$col2_tec data$col3_tec data$col4_tec data$col5_tec data$col1_psi data$col2_psi data$col3_psi data$col4_psi data$col5_psi data$col7_psi 
+#   0.06853704   -0.02285816    0.05934161    0.03282803    0.02167061    0.03967517    0.44227522   -0.08174265    0.16678511    0.26215337    0.20793069   -0.10538030 
+#data$col2_clt data$col3_clt data$col1_fam data$col1_tch data$col2_tch data$col1_sch data$col2_sch data$col4_sch 
+#   0.04682972    0.03334747   -0.02698860    0.05121214   -0.19250747    0.04835701   -0.03490630   -0.04370465 
+#nessuna componente va a 0
+#ancora coefficienti molto simili ai precedenti
+
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -303,7 +451,6 @@ Idem per ciò che segue
 
 # Provare con gli alberi
 ```{r}
-
 attach(data)
 
 

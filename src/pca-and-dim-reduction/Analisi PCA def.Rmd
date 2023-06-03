@@ -6,13 +6,10 @@ editor_options:
 ---
 
 # Map for variable meaning
-```{r}
-source("../include/Utilities.R")
-```
-
-
 # Setup
-```{r}
+```{r, setup}
+source("../include/Utilities.R")
+
 library(dplyr)
 library(psych)  
 library(car)  
@@ -297,6 +294,7 @@ num_gruppi=3
 df_psi_1 = df[,colnames(df) %in% psi_1]
 df_psi_2 = df[,colnames(df) %in% psi_2]
 df_psi_3 = df[,colnames(df) %in% psi_3]
+# df_psi_4 = df[,colnames(df) %in% psi_4]
 
 ggcorr(select_if(df[,psi],is.numeric),label=TRUE,label_size = 2)
 
@@ -308,6 +306,7 @@ for(it in 1:num_gruppi){
 	if(it==1){ cat_curr_vec = psi_1; cat_curr_name = "psi_1"; df_curr = df_psi_1 }
 	if(it==2){ cat_curr_vec = psi_2; cat_curr_name = "psi_2"; df_curr = df_psi_2 }
 	if(it==3){ cat_curr_vec = psi_3; cat_curr_name = "psi_3"; df_curr = df_psi_3 }
+	# if(it==4){ cat_curr_vec = psi_4; cat_curr_name = "psi_4"; df_curr = df_psi_4 }
 
 ###############################################################################
 colnames(df_curr)
@@ -322,7 +321,7 @@ if(want_to_scale==1){
 }
 df2 = data.frame(df2)
 # boxplot(df2, las=2,main="after scaling")
-vioplot(df2, las=2,main="after scaling")
+vioplot(df2, las=2,main="after scaling (if scaled)")
 
 df2["CNT"] = df$CNT
 df_pca = df2
@@ -383,17 +382,19 @@ dim(df_sc)
 colnames(df_sc)
 # what_is[["col1_psi"]] = impeto, energia dello studente nel vivere la scuola
 # (fin troppo poetica, è una somma della sua attitudine, tendenza alla competitività e resilienza)
-# what_is[["col2_psi"]] = 
+# what_is[["col2_psi"]] = Modo in cui vive la vita scolastica.
+# Bassa se lui è forzato ad essere più resiliente e combattivo, alta se può essere più pacifico, easy. 
 # 
-# what_is[["col3_psi"]] = todo
-# what_is[["col4_psi"]] = todo
-# what_is[["col5_psi"]] = todo
+# what_is[["col3_psi"]] = Somma di contributi positivi (supporto dei prof, genitori, compagni come aiuto ma anche stimolo alla competizione)
+# what_is[["col4_psi"]] = Supporto interno o esterno. Alta se supporto maggiore da parte dei genitori o compagni.
+# Bassa se più supportato invece dai prof.
+# what_is[["col5_psi"]] = Tendenza alla singolarità, indipendenza vs lavoro di squadra.
+# Alta se maggiore cooperazione, bassa se maggiore competizione
 # 
 # what_is[["col6_psi"]] = target, somma contributi positivi vs negativi. Alta se si sta meglio (ci ho cambiato segno)
 # what_is[["col7_psi"]] = quanto lo studente si sente accolto, ascoltato. Alta se alta belong, bassa se alte swbp e beingbbullied.
 # Sembra un controsenso ma magari un bambino si mostra che sta bene perché non crede che gli altri lo possano/vogliano accogliere,
 # ascoltare, risolvere le sue problematiche. Come i gatti che non mostrano quando stanno male, per non farsi vedere deboli
-# (a bit personal here)
 # 
 ```
 
@@ -562,9 +563,8 @@ dim(df_sc)
 colnames(df_sc)
 # col1_clt: quanto il clima culturale a casa è favorevole (gioia nella lettura, disponibilità di cultura, ecc),
 # quindi tipo supporto culturale
-# col2_clt: contrasto tra gioia di lettura (+) e risorse educative (-), quindi amore per la cultura contro la
-# sua effettiva disponibilità. Alta se uno è interessato alla cultura ma in casa non ha molte risorse. Bassa se 
-# uno ha molte risorse ma non è interessato.
+# col2_clt: preferenza del mezzo di fruizione per la cultura. ALta se preferiscono dai libri, bassa se hanno altri mezzi (
+# documentari, youtube, ecc)
 # 
 # col3_clt: tempo di studio totale (language + math)
 
@@ -695,6 +695,7 @@ for(i in 1:2){
 }
 
 names= c(colnames(df_sc),"col1_fam"); df_sc = cbind(df_sc, pca$scores[,1]); colnames(df_sc) = names
+
 ```
 
 ### Scores datasets
@@ -1044,8 +1045,7 @@ colnames(df_sc)
 # what_is[["col2_sch"]] = contrasto tra class size e student ratio. Positiva se ci sono molti studenti (e precisamente
 # molti studenti per prof). Negativa se proprio ci sono pochi pochi studenti
 # 
-# what_is[["col3_sch"]] = Mancanza di materiale e di personale scolsatico insieme. Quindi mala-organizzazione tipo
-# what_is[["col4_sch"]] = la colonna originale creactive, Creative extra-curricular activities (Sum)
+# what_is[["col3_sch"]] = Mancanza di materiale e di personale scolsatico insieme. Quindi mala-organizzazione, povertà
 
 ```
 
