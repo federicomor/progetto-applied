@@ -216,10 +216,11 @@ fit_PCA_advanced <- list()
 #fitting the models
 for(group in group_list){
   #FA with ML
-  fit_FA_ML[[group]] <- fa(r = select_if(pisa_data[,grouped_variables[[group]]],is.numeric),
-                            factors = nfactors[[group]]$FA, 
-                            rotation = "promax", 
-                            fm = "mle")
+  # fit_FA_ML[[group]] <- fa(r = select_if(pisa_data[,grouped_variables[[group]]],is.numeric),
+  #                           factors = nfactors[[group]]$FA,
+  #                           rotation = "promax",
+  #                           fm = "mle")
+  
   #classic PCA
   fit_PCA_classic[[group]] <- princomp(select_if(pisa_data[,grouped_variables[[group]]],is.numeric))
   #FA with PF
