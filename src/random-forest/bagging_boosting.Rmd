@@ -1,19 +1,26 @@
 ---
-title: "Random Forest & Boosting"
+title: "Bagging & Boosting"
 ---
+
+# REFERENCES
+
+-   use of caret package: <https://topepo.github.io/caret/model-training-and-tuning.html#custom>
 
 # SETTING UP
 
 ```{r}
 #loaded librarires
 library(dplyr)
-library(psych) #for KMO test and principal()
 library(car) #to apply transformations
 library(MVN) #to perform multivariate gaussianity check
+
 library(GGally) #for ggcorr
 library(ggplot2)
+
 library(randomForest) #bagging
 library(gbm) #boosting
+
+library(caret) #tuner for ML algorithms
 ```
 
 ```{r, setup}
@@ -86,53 +93,72 @@ Hyperameters to tune:
 
     -   RANDOM FOREST: mtry = sqrt(p) (rule of thumb) -\> goal: uncorrelate the trees
 
-    -   BAGGING: m = p, all the variables are candidates for the split
+    -   BAGGING: mtry = p, all the variables are candidates for the split
 
--   number of trees (ntree)
+-   number of trees (ntree)Evaluating the best fit
+
+Tuning mtry
 
 ```{r}
-#performing CV to select the parameter mtry
-OOB_error <- double(length(included_regressors))
-test_error <- double(length(included_regressors))
+# Create model with default paramters
+control <- trainControl(method="repeatedcv", 
+                        number=10, #number of folder in K-fold CV
+                        repeats=3, #number of repetitions
+                        verboseIter = TRUE)
+set.seed(1)
 
-for(mtry in 1:length(included_regressors)){
-  #fitting the model
-  forest_fit <- randomForest(as.formula(formula_str), 
-                              ntree = 500,
-                              data = pisa_data, 
-                              subset = train,
-                              mtry = mtry,
-                              importance = TRUE)
-  OOB_error[mtry] <- forest_fit$mse[400]
-  #predict the test set value for PV1MATH
-  pred <- predict(forest_fit, pisa_data[-train,])
-  
-  # save the test prediction mean square error
-  test_error[mtry] <- with(pisa_data[-train,],mean((PV1MATH-pred)^2))
-}
+# grid
+tunegrid <- expand.grid(.mtry = c(2,3,4))
 
-#plotting the graph of OOB error and test error over mtry
-matplot(1:length(included_regressors), cbind(test_error,OOB_error),pch=19,col=c('red','blue'),type='b',ylab="Mean Squared Error")
-legend('topright',legend=c("Test","OOB"),pch=19,col=c('red','blue'))
+# training
+rf_training <- train(as.formula(formula_str), 
+                     data = pisa_data, 
+                     method = "rf", 
+                     metric = "Rsquared", 
+                     tuneGrid=tunegrid, 
+                     trControl=control )
 
+print(rf_training)
 ```
 
-## Evaluating the best fit
+## Interpretation
 
 ```{r}
-best_fit <- randomForest(as.formula(formula_str), 
-                              ntree = 500,
-                              data = pisa_data, 
-                              subset = train,
-                              mtry = 3,
-                              importance = TRUE)
-
-# prediction and mse
-mean((pisa_data[-train,'PV1MATH']-predict(best_fit, pisa_data[-train,]))^2)
-
 #contribution of the regressors
-importance(best_fit)
-varImpPlot(best_fit)
+importance(rf_training$finalModel)
+varImpPlot(rf_training$finalModel)
+```
+
+Customizing the training
+
+```{r eval=FALSE, include=FALSE}
+customRF <- list(type = "Regression", library = "randomForest", loop = NULL)
+customRF$parameters <- data.frame(parameter = c("mtry", "ntree"), class = rep("numeric", 2), label = c("mtry", "ntree"))
+customRF$grid <- function(x, y, len = NULL, search = "grid") {}
+customRF$fit <- function(x, y, wts, param, lev, last, weights, classProbs, ...) {
+  randomForest(x, y, mtry = param$mtry, ntree=param$ntree, ...)
+}
+customRF$predict <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
+   predict(modelFit, newdata)
+customRF$prob <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
+   predict(modelFit, newdata, type = "prob")
+customRF$sort <- function(x) x[order(x[,1]),]
+customRF$levels <- function(x) x$classes
+```
+
+```{r eval=FALSE, include=FALSE}
+# train model
+control <- trainControl(method="LOOCV", verboseIter = TRUE, number = 1, repeats = 5)
+tunegrid <- expand.grid(.mtry= sqrt(length(included_regressors)), .ntree=c(1000, 2500))
+set.seed(1)
+custom <- train(as.formula(formula_str), 
+                data=pisa_data[train,], 
+                method=customRF, 
+                metric="Rsquared", 
+                tuneGrid=tunegrid, 
+                trControl=control)
+summary(custom)
+plot(custom)
 ```
 
 # BOOSTING
@@ -146,37 +172,28 @@ varImpPlot(best_fit)
 -   number of spits while growing the trees
 
 ```{r}
-set.seed(1)
+# training settings
+gbm_control <- trainControl(method="repeatedcv", 
+                        number=10, 
+                        repeats=1,
+                        verboseIter = TRUE)
+# setting the grid
+gbm_grid <- expand.grid(n.trees = c(1000, 5000),
+                        interaction.depth = c(3, 6),
+                        shrinkage = c(0.01, 0.001),
+                        n.minobsinnode = 20)
+                                        
+# actual training
+gbm_training <- train(as.formula(formula_str), 
+                    data=pisa_data, 
+                    method="gbm", 
+                    metric = "Rsquared", 
+                    tuneGrid = gbm_grid, 
+                    trControl = gbm_control,
+                    verbose = FALSE)
 
-pisa_test <- pisa_data[-train,]
-
-#grid search
-n_trees <- c(5000, 10000, 15000)
-shrinkage_coeff <- c(0.01, 0.1, 0.2)
-interaction_d <- c(2,4,6)
-
-grid_mse <- array(dim = c(length(n_trees), length(shrinkage_coeff), length(interaction_d)))
-
-for(i in 1:length(n_trees)){
-  for(j in 1:length(shrinkage_coeff)){
-    for(k in 1:length(interaction_d)){
-      #fitting the model
-      pisa_boost <- gbm(as.formula(formula_str), 
-                        data = pisa_data[train, ],
-                        distribution = "gaussian", 
-                        n.trees = n_trees[i],
-                        interaction.depth = interaction_d[k],
-                        shrinkage = shrinkage_coeff[j])
-      #prediction on test set
-      yhat.boost <- predict(pisa_boost,
-                            newdata = pisa_data[-train, ], 
-                            n.trees = n_trees[i])
-
-      #computing the mse
-      grid_mse[i,j,k] <- mean((yhat.boost - pisa_test)^2)
-    }
-  }
-}
+# print the summary
+gbm_training
 ```
 
-## Evaluating the best fit
+## 
