@@ -30,28 +30,39 @@ function print_help()
 end
 
 
-function build_keyboard_state()
-    keyboard = Vector{Vector{String}}()
-    push!(keyboard,["HRV"])
-    push!(keyboard,["CZE"])
-    push!(keyboard,["DNK"])
-    push!(keyboard,["EST"]) 
-    push!(keyboard,["FIN"])
-    push!(keyboard,["FRA"])
-    push!(keyboard,["GRC"])
-    push!(keyboard,["HUN"]) 
-    push!(keyboard,["LTU"])
-    push!(keyboard,["LUX"]) 
-    push!(keyboard,["POL"])
-    push!(keyboard,["SVK"]) 
-    push!(keyboard,["SVN"])
-    push!(keyboard,["ESP"])
-    return Dict(:keyboard => keyboard, :one_time_keyboard => true)
+function filter_value(text, value_for_type_conversion)
+    # function to get the value in the string of the form "/command value"
+    # Esempio: 
+    # text = "/psi 13"
+    # filter_value(text,0) -> 13
+    # filter_value(text,0.232) -> 13.0
+    text_value = split(text," ")[2]
+    return parse(typeof(value_for_type_conversion), text_value)
 end
 
 
+# function build_keyboard_state()
+#     keyboard = Vector{Vector{String}}()
+#     push!(keyboard,["HRV"])
+#     push!(keyboard,["CZE"])
+#     push!(keyboard,["DNK"])
+#     push!(keyboard,["EST"]) 
+#     push!(keyboard,["FIN"])
+#     push!(keyboard,["FRA"])
+#     push!(keyboard,["GRC"])
+#     push!(keyboard,["HUN"]) 
+#     push!(keyboard,["LTU"])
+#     push!(keyboard,["LUX"]) 
+#     push!(keyboard,["POL"])
+#     push!(keyboard,["SVK"]) 
+#     push!(keyboard,["SVN"])
+#     push!(keyboard,["ESP"])
+#     return Dict(:keyboard => keyboard, :one_time_keyboard => true)
+# end
+
+
 # Funzione per gestire i comandi ricevuti
-function handle_command(msg, WAIT_FOR_UPDATE)
+function handle_command(msg)
     # Ottieni l'ID della chat corrente
     chat_id = msg.message.chat.id
     curr_update_id = msg.update_id
@@ -78,11 +89,11 @@ function handle_command(msg, WAIT_FOR_UPDATE)
             USER = chat_id
         end
 
-        # if who=="dear"
-        #     sendMessage(tg,
-        #     text="Telegram does not let me know who you are!\nPlease type \"Call me\" to tell me your name. I need it for setupping the finak scoreboard.",
-        #     chat_id=chat_id)
-        # end
+        if who=="dear"
+            sendMessage(tg,
+            text="Telegram does not let me know who you are! Please type \"/myself <name>\" to tell me your name. I need it for setupping the final scoreboard.",
+            chat_id=chat_id)
+        end
 
     elseif msg.message.text == "/help"
         sendMessage(tg,
