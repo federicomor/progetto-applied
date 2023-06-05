@@ -1,5 +1,8 @@
 using Telegram, Telegram.API
 using ConfigEnv
+using DataFrames
+
+# https://dataframes.juliadata.org/stable/man/basics/
 
 ############# Debug stuff #############
 dotenv()
@@ -10,15 +13,54 @@ tg = TelegramClient(BOT_API)
 
 
 ############# Game variables #############
-USER = ""
-USER_STATE = ""
-USER_BUDGET = Dict("tec"=>-1, "psi"=>-1, "clt"=>-1, "fam"=>-1, "tch"=>-1, "sch"=>-1)
-# access value with BUDGET["cat"], is like a map
+cols_dict = Dict(
+    "player_id"=>-1,"player_name"=>"Pippo",
+    "state"=>"ITA",
+    "tec"=>-1,"psi"=>-1,"clt"=>-1,"fam"=>-1,"tch"=>-1,"sch"=>-1,
+    "score"=>0 )
+df = DataFrame(cols_dict)
+empty!(df)
+describe(df)
+
+function is_player_registered(player_id)
+    return player_id in df.player_id
+end
+
+function register_player(player_id, player_name="missing")
+    push!(df, Dict(:player_id => player_id, :player_name => player_name,
+                :state => "missing",
+                :tec=>0,:psi=>0,:clt=>0,:fam=>0,:tch=>0,:sch=>0,
+                :score => 0))
+end
+
+function set_player_data(player_id, field::Symbol, value)
+    # set_player_data(1234,:player_name,"Gio")
+    if !is_player_registered(player_id)
+        register_player(player_id)
+    end
+        df[findfirst(isequal.(df.player_id,player_id)),field] = value
+end
 
 
 ############# Global const variables #############
-STATES = ["HRV" "CZE" "DNK" "EST" "FIN" "FRA" "GRC"
-          "HUN" "LTU" "LUX" "POL" "SVK" "SVN" "ESP"]
+STATES = [ "HRV" "CZE" "DNK" "EST" "FIN" "FRA" "GRC" "HUN" "LTU" "LUX" "POL" "SVK" "SVN" "ESP" ]
+
+FULL_STATES = Dict(
+    "HRV"=>"name",
+    "CZE"=>"name",
+    "DNK"=>"name",
+    "EST"=>"name",
+    "FIN"=>"name",
+    "FRA"=>"name",
+    "GRC"=>"name",
+    "HUN"=>"name",
+    "LTU"=>"name",
+    "LUX"=>"name",
+    "POL"=>"name",
+    "SVK"=>"name",
+    "SVN"=>"name",
+    "ESP"=>"name" )
+
 CATEGORIES = ["tec" "psi" "clt" "fam" "tch" "sch"]
 KEYWORDS = ["callme" "play" "tec" "psi" "clt" "fam" "tch" "sch"]
 
@@ -42,7 +84,7 @@ function print_help()
     Each interactive command expects that you send a message in the form "*keyword value*", a syntax which let us set a certain parameter game to the value you want to assign. 
     For example "play ESP" selects ESP as the state to play with, "tec 60" selects to invest 60% of your budget on category technology, "callme Jhonny" selects your username to be Jhonny, etc.
 
-    Keywords are: _callme, play, tec, psi, clt, fam, tch, sch_. Values should be: a string (for the state and callme) or a number (for the budget). All is case-insensitive, so play or Play won't get the bot crash, for example.
+    Keywords are: _callme, play, tec, psi, clt, fam, tch, sch_. Values should be: a string (for the state and callme) or a number (for the budget). All is case-insensitive, so callme or Callme or CallMe won't get the bot crash, for example.
     """
     # useremo la funzione lowercase(input) ovunque
     return str
@@ -86,60 +128,34 @@ function is_valid_keyword(text)
     return false
 end
 
-
-# function build_keyboard_state()
-#     keyboard = Vector{Vector{String}}()
-#     push!(keyboard,["HRV"])
-#     push!(keyboard,["CZE"])
-#     push!(keyboard,["DNK"])
-#     push!(keyboard,["EST"]) 
-#     push!(keyboard,["FIN"])
-#     push!(keyboard,["FRA"])
-#     push!(keyboard,["GRC"])
-#     push!(keyboard,["HUN"]) 
-#     push!(keyboard,["LTU"])
-#     push!(keyboard,["LUX"]) 
-#     push!(keyboard,["POL"])
-#     push!(keyboard,["SVK"]) 
-#     push!(keyboard,["SVN"])
-#     push!(keyboard,["ESP"])
-#     return Dict(:keyboard => keyboard, :one_time_keyboard => true)
-# end
-
-
-# Funzione per gestire i comandi ricevuti
 function handle_command(msg)
-    # Ottieni l'ID della chat corrente
     chat_id = msg.message.chat.id
-    curr_update_id = msg.update_id
+    if !is_player_registered(chat_id)
+        register_player(chat_id)
+    end
     
     name = msg.message.from.first_name    
     username = msg.message.from.username    
     who="dear"
-    if username != ""
-        who=username
-    end
     if name != ""
         who=name
     end
-        
+    if username != ""
+        who=username
+    end
+
+    if who=="dear"
+        sendMessage(tg,
+        text="Telegram does not let me know who you are! Use \"callme ...\" syntax to tell us how should I call you. We need it for setupping the final scoreboard.",
+        chat_id=chat_id)
+    end
+    
     if msg.message.text == "/start"
         @show chat_id
         sendMessage(tg,
             text="Hello $(who)!\nTechnically, you for me are $chat_id",
             chat_id=chat_id)
 
-        if who!="dear"
-            USER = who
-        else
-            USER = chat_id
-        end
-
-        if who=="dear"
-            sendMessage(tg,
-            text="Telegram does not let me know who you are! Unless you want to be called user_$chat_id, use \"callme ...\" syntax to tell how should I call you. We need it for setupping the final scoreboard.",
-            chat_id=chat_id)
-        end
 
     elseif msg.message.text == "/help"
         sendMessage(tg,
@@ -147,33 +163,18 @@ function handle_command(msg)
             chat_id = chat_id,
             parse_mode="Markdown")
 
-    # elseif msg.message.text == "/state"
-    #     sendMessage(tg,
-    #         text="Choose the state you want to play with.",
-    #         reply_markup = build_keyboard_state(),
-    #         chat_id = chat_id)    
 
     elseif msg.message.text == "/state"
         sendMessage(tg,
             text="Choose the state you want to play with. These are the possibilities:\n\nTODO ELENCO",
             chat_id = chat_id)
 
+
     elseif msg.message.text == "/budget"
         sendMessage(tg,
-            text="Choose how you want to manage your budget. How much do you want to invest on the following categories?\nGive a value between 0 and 100 to reflect your \"trust\" in it; the values should add up to 100 but dont worry for possile mistakes, later we will take care and normalize everything to 1\n\nTODO ELENCO",
+            text="Choose how you want to manage your budget. How much do you want to invest on the following categories?\nGive a value between 0 and 100 for each category; the values should add up to 100 but don't worry for possile mistakes, we will fix them, if any, normalizing everything to 1.\n\nTODO ELENCO",
             chat_id = chat_id)
 
-        # for cat in CATEGORIES
-        #     out = sendMessage(tg,
-        #         text="$cat:",
-        #         chat_id = chat_id)
-        # end
-
-        ## come ricevere una risposta? forse gestendo gli update_id? 
-        ## che sembrano essere sequenziali.
-        ## Forse meglio semplicemente fare comandi /psi /tec ecc da usare
-        ## nella forma /comando valore, e filtrare il valore
-        ## Idem sopra, /state stato, anziché complicare troppo con la keyboard
 
     # just a random test with numbers
     elseif match(r"^[0-9 \.]+$", msg.message.text) !== nothing
@@ -182,20 +183,14 @@ function handle_command(msg)
             text = "Your number squared is $(x.^2)",
             chat_id=chat_id)
 
-    # elseif msg.message.text in STATES
-    #     sendMessage(tg,
-    #         text = "State chosen: $(msg.message.text)",
-    #         chat_id=chat_id)
-    #     STATE_CHOICE = msg.message.text
 
     elseif length(split(msg.message.text," "))==2
         if is_valid_keyword(split(msg.message.text," ")[1])
             ## we are in the "keyword value" case
             ## so we get our data here
             sendMessage(tg,
-                text = "Got your parameter game for keyword _$(split(msg.message.text," ")[1])_",
-                chat_id=chat_id,
-                parse_mode="Markdown")
+                text = "Parameters game updated.",
+                chat_id=chat_id)
             # process value
         else
             sendMessage(tg,
@@ -215,6 +210,7 @@ end
 function main()
     run_bot() do msg
         @show msg
+        @show df
             handle_command(msg)
     end
 end
