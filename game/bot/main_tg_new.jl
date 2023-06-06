@@ -12,7 +12,7 @@ BOT_API = "6203755027:AAFvDKYwPUSFJeOHs97fjjpuzk2vF9kBaws"
 tg = TelegramClient(BOT_API)
 
 
-############# Game variables #############
+############# Dataframe handling #############
 cols_dict = Dict(
     "player_id"=>-1,"player_name"=>"Pippo",
     "state"=>"ITA",
@@ -33,33 +33,37 @@ function register_player(player_id, player_name="missing")
                 :score => 0))
 end
 
+# set_player_data(1234,:player_name,"Gio")
 function set_player_data(player_id, field::Symbol, value)
-    # set_player_data(1234,:player_name,"Gio")
     if !is_player_registered(player_id)
         register_player(player_id)
     end
         df[findfirst(isequal.(df.player_id,player_id)),field] = value
 end
+# for i in 1:10
+    # set_player_data(i,:score,i^2)
+# end
+# sort(df,:score,rev=true)
 
 
 ############# Global const variables #############
 STATES = [ "HRV" "CZE" "DNK" "EST" "FIN" "FRA" "GRC" "HUN" "LTU" "LUX" "POL" "SVK" "SVN" "ESP" ]
 
 FULL_STATES = Dict(
-    "HRV"=>"name",
-    "CZE"=>"name",
-    "DNK"=>"name",
-    "EST"=>"name",
-    "FIN"=>"name",
-    "FRA"=>"name",
-    "GRC"=>"name",
-    "HUN"=>"name",
-    "LTU"=>"name",
-    "LUX"=>"name",
-    "POL"=>"name",
-    "SVK"=>"name",
-    "SVN"=>"name",
-    "ESP"=>"name" )
+    "HRV"=>"Croatia",
+    "CZE"=>"Czech Republic",
+    "DNK"=>"Denmark",
+    "EST"=>"Estonia",
+    "FIN"=>"Finland",
+    "FRA"=>"France",
+    "GRC"=>"Greece",
+    "HUN"=>"Hungary",
+    "LTU"=>"Lithuania",
+    "LUX"=>"Luxembourg",
+    "POL"=>"Poland",
+    "SVK"=>"Slovakia",
+    "SVN"=>"Slovenia",
+    "ESP"=>"Spain" )
 
 CATEGORIES = ["tec" "psi" "clt" "fam" "tch" "sch"]
 KEYWORDS = ["callme" "play" "tec" "psi" "clt" "fam" "tch" "sch"]
@@ -102,36 +106,68 @@ end
 ## E da quella ci siamo.
 
 
-function filter_value_to_Number(text, T::DataType)
-    # function to get the value in the string of the form "/command value"
-    # filter_value("psi 13",Int64) -> 13
-    # filter_value("psi 13",Float64) -> 13.0
-    target = split(text," ")[1]
-    value = split(text," ")[2]
-    return (target,parse(T, value))
-end
+############# Program functions #############
 
-function filter_value_to_String(text)
-    target = split(text," ")[1]
-    value = split(text," ")[2]
-    return (target,value)
-end
+# function filter_value_to_Number(text, T::DataType)
+#     # filter_value("psi 13",Int64) -> 13
+#     # filter_value("psi 13",Float64) -> 13.0
+#     target = split(text," ")[1]
+#     value = split(text," ")[2]
+#     return (target,parse(T, value))
+# end
+
+# function filter_value_to_String(text)
+#     target = split(text," ")[1]
+#     value = split(text," ")[2]
+#     return (target,value)
+# end
+
+# function filter_value(text)
+#     target = split(text," ")[1]
+#     value = split(text," ")[2]
+#     return (target,value)
+# end
 
 function is_valid_keyword(text)
-    if lowercase(text) in KEYWORDS
-        return true
-    end
-    # handle case where user put a slash before, /psi, /play, ecc
-    if lowercase(text[2:end]) in KEYWORDS
+    if (lowercase(text) in KEYWORDS) || (lowercase(text[2:end]) in KEYWORDS)
         return true
     end
     return false
 end
 
+function which_keyword(text)
+    key = split(text," ")[1]
+    if key[1]=="/"
+        key = key[2:end]
+    end
+    return KEYWORDS[findfirst(isequal.(KEYWORDS,lowercase(key)))[2]]
+end
+
+function process_keyword_value(text, player_id)
+    key = which_keyword(text)
+    val = split(text," ")[2]
+    if key == "callme"
+        set_player_data(player_id, :player_name, val)
+        return "Game parameters updated."
+    elseif key == "play"
+        set_player_data(player_id, :state, val)
+        return "Game parameters updated."
+    else
+        val_num = parse(Float64,val)
+        if 0<=val_num<=100
+            set_player_data(player_id, Symbol(key), val_num)
+            return "Game parameters updated."
+        else
+            return "Give a value in [0,100]."
+        end
+    end
+end
+
 function handle_command(msg)
     chat_id = msg.message.chat.id
-    if !is_player_registered(chat_id)
-        register_player(chat_id)
+    player_id = chat_id
+    if !is_player_registered(player_id)
+        register_player(player_id)
     end
     
     name = msg.message.from.first_name    
@@ -148,6 +184,8 @@ function handle_command(msg)
         sendMessage(tg,
         text="Telegram does not let me know who you are! Use \"callme ...\" syntax to tell us how should I call you. We need it for setupping the final scoreboard.",
         chat_id=chat_id)
+    else
+        set_player_data(player_id, :player_name, who)
     end
     
     if msg.message.text == "/start"
@@ -165,14 +203,39 @@ function handle_command(msg)
 
 
     elseif msg.message.text == "/state"
+        to_send = """
+            Choose the state you want to play with. These are the possibilities:
+             HRV -> Croatia
+             CZE -> Czech Republic
+             DNK -> Denmark
+             EST -> Estonia
+             FIN -> Finland
+             FRA -> France
+             GRC -> Greece
+             HUN -> Hungary
+             LTU -> Lithuania
+             LUX -> Luxembourg
+             POL -> Poland
+             SVK -> Slovakia
+             SVN -> Slovenia
+             ESP -> Spain"""
         sendMessage(tg,
-            text="Choose the state you want to play with. These are the possibilities:\n\nTODO ELENCO",
+            text=to_send,
             chat_id = chat_id)
 
 
     elseif msg.message.text == "/budget"
+        to_send = """
+            Choose how you want to manage your budget. How much do you want to invest on the following categories?
+             tec -> technology
+             psi -> psychology
+             clt -> culture
+             fam -> family
+             tch -> teacher
+             sch -> school
+           Give a value between 0 and 100 for each category; the values should add up to 100 but don't worry for possile mistakes, we will fix them, if any, normalizing everything to 1."""
         sendMessage(tg,
-            text="Choose how you want to manage your budget. How much do you want to invest on the following categories?\nGive a value between 0 and 100 for each category; the values should add up to 100 but don't worry for possile mistakes, we will fix them, if any, normalizing everything to 1.\n\nTODO ELENCO",
+            text=to_send,
             chat_id = chat_id)
 
 
@@ -189,9 +252,9 @@ function handle_command(msg)
             ## we are in the "keyword value" case
             ## so we get our data here
             sendMessage(tg,
-                text = "Parameters game updated.",
+                # text = "Parameters game updated.",
+                text = process_keyword_value(msg.message.text, player_id),
                 chat_id=chat_id)
-            # process value
         else
             sendMessage(tg,
                 text = "I didnt manage to parse your input correctly.\nSo I will cowardly ignore your message.",
