@@ -13,7 +13,7 @@ println(getMe())
 
 BOT_API = "6203755027:AAFvDKYwPUSFJeOHs97fjjpuzk2vF9kBaws"
 tg = TelegramClient(BOT_API)
-
+@show ARGS
 
 ############# Dataframe handling #############
 cols_dict = Dict(
@@ -24,7 +24,6 @@ cols_dict = Dict(
     "score"=>Float64(0) )
 df = DataFrame(cols_dict)
 
-@show ARGS
 @show df
 empty!(df)
 @show df
@@ -33,10 +32,10 @@ describe(df)
 if ("rec" in ARGS)
     println("Recovering the previous dataframe.")
     df = DataFrame(CSV.File("df.csv",stringtype=String))
+    @show df
 end
-@show df
 
-
+# include("functions.jl")
 function is_player_registered(player_id)
     return player_id in df.player_id
 end
@@ -223,21 +222,35 @@ function process_keyword_value(text, player_id)
     return "Something went wrong here."
 end
 
+
 function handle_command(msg)
     chat_id = ""
     msg_text = ""
     name = ""
     username = ""
-    if haskey(msg,"message")
-        chat_id = msg.message.chat.id
-        msg_text = msg.message.text
-        name = msg.message.from.first_name    
-        username = msg.message.from.username    
-    else
-        chat_id = msg.edited_message.chat.id
-        msg_text = msg.edited_message.text
-        name = msg.edited_message.from.first_name    
-        username = msg.edited_message.from.username 
+
+    e = Any
+    try
+        if haskey(msg,"message")
+            chat_id = msg.message.chat.id
+            msg_text = msg.message.text
+            name = msg.message.from.first_name    
+            username = msg.message.from.username    
+        else
+            chat_id = msg.edited_message.chat.id
+            msg_text = msg.edited_message.text
+            name = msg.edited_message.from.first_name    
+            username = msg.edited_message.from.username 
+        end
+    catch e
+    end
+
+    @show e
+    if isa(e,ErrorException)
+        sendMessage(tg,
+            text="$(e.msg)",
+            chat_id = chat_id)
+        return
     end
         
     who = "$chat_id"
@@ -263,6 +276,7 @@ function handle_command(msg)
         @show chat_id
         sendMessage(tg,
             text="Hello $(who)!\nTechnically, you for me are $chat_id",
+            # text="Hello $(who)!\nTechnically, you for me are $(who==chat_id ? "still $chat_id" : "$chat_id")",
             chat_id=chat_id)
         print_help(chat_id)
 
