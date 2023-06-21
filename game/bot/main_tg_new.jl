@@ -16,12 +16,20 @@ tg = TelegramClient(BOT_API)
 @show ARGS
 
 ############# Dataframe handling #############
+
+## Forse aggiungere una colonna bool per dire "parametri confermati"?
+## Cioè per impedire all'utente di fare poi altre modifiche ai suoi dati
+## e quindi aggiungere un comando /confirm o /validate o /done
+## O forse meglio evitare per non appesantire ulteriormente le istruzioni che l'utente deve comprendere e seguire, cioè per lasciare il gioco pi easy
+## Però forse serve per capire quando normalizzare il punteggio
+
 cols_dict = Dict(
-    "player_id"=>Float64(0),"player_name"=>"Pippo",
+    "player_id"=>Int64(0),"player_name"=>"Pippo",
     "state"=>"ITA",
     "tec"=>Float64(0),"psi"=>Float64(0),"clt"=>Float64(0),
     "fam"=>Float64(0),"tch"=>Float64(0),"sch"=>Float64(0),
-    "score"=>Float64(0) )
+    "score"=>Float64(0),
+    "zdone"=>Int64(0) ) # z to let it be at the end of the dataframe
 df = DataFrame(cols_dict)
 
 @show df
@@ -29,7 +37,8 @@ empty!(df)
 @show df
 describe(df)
 
-if ("rec" in ARGS)
+# maybe this should always be done
+if ("rec" in ARGS || 1==1)
     println("Recovering the previous dataframe.")
     df = DataFrame(CSV.File("df.csv",stringtype=String))
     @show df
@@ -45,7 +54,7 @@ function register_player(player_id, player_name="missing")
                 :state => "missing",
                 :tec=>Float64(0),:psi=>Float64(0),:clt=>Float64(0),
                 :fam=>Float64(0),:tch=>Float64(0),:sch=>Float64(0),
-                :score => Float64(0)))
+                :score => Float64(0), :zdone => Int64(0)))
 end
 
 # set_player_data(1234,:player_name,"Gio")
@@ -60,18 +69,43 @@ end
 # end
 # sort(df,:score,rev=true)
 
+function normalize_player_data(player_id)
+    tot = 0
+    for categ in CATEGORIES
+        tot += df[findfirst(isequal.(df.player_id,player_id)),Symbol(categ)]
+    end
+    if tot != 0
+        for categ in CATEGORIES
+            df[findfirst(isequal.(df.player_id,player_id)),Symbol(categ)] /= tot
+        end
+    end
+end
+
+
+function compute_score(player_id)
+    include("get_sol.jl")
+    # to get the parameters sol wihtout that users can read it
+    # so we will remove that get_sol.jl file on github, at the end, 
+    # and just keep it locally
+
+    # ecc
+end
+
+
 function summary_player(player_id)
     df_player = df[findfirst(isequal.(df.player_id,player_id)),:]
+        # player_id = $(df_player[3])
     to_send = """
-        player_id = $(df_player[3])
         player_name = $(df_player[4] =="missing" ? "NA" : df_player[4])
         state = $(df_player[8]=="missing" ? "NA" : df_player[8])
-        tec = $(df_player[10]==0 ? "NA" : df_player[10])
-        psi = $(df_player[5]==0 ? "NA" : df_player[5])
-        clt = $(df_player[1]==0 ? "NA" : df_player[1])
-        fam = $(df_player[2]==0 ? "NA" : df_player[2])
-        tch = $(df_player[9]==0 ? "NA" : df_player[9])
-        sch = $(df_player[6]==0 ? "NA" : df_player[6])"""
+        tec = $(df_player[10])
+        psi = $(df_player[5])
+        clt = $(df_player[1])
+        fam = $(df_player[2])
+        tch = $(df_player[9])
+        sch = $(df_player[6])
+        done? = $(df_player[11]==1 ? "yes" : "not yet")"""
+        # Fill all the NAs to setup your game!
     return to_send
 end
 
@@ -109,11 +143,13 @@ function print_help(chat_id)
 
     str2 = """
     *Instructions to play the game*
-    (1) Type /start for the welcome message.
+    (1) Type /start to get the welcome message.
+    (2) Type /help to read again the instructions.
     (2) Type /state to choose the state to play with.
     (3) Type /budget to implement your strategy.
-    (4) Talk with us at our poster section!
-    (5) Type /results to see your position in the ranking!"""
+    (4) Type /summary to see your game parameters.
+    (5) Type /done to confirm your parameters choice.
+    (6) Type /results to see your position in the ranking!"""
 
     str3 = """
     *Command execution*
@@ -137,17 +173,6 @@ function print_help(chat_id)
             parse_mode="Markdown")
     
 end
-
-
-## Idea: prendere tutti gli input dall'utente per definire il suo gioco. Forse ci sarà
-## da filtrare anche in base a chat_id, perché non so se tipo questo codice viene eseguito
-## più volte su diverse chat (come SIMD) o è solo un codice eseguito che gestisce tutti i
-## messaggi (MISD). Per capirlo occorrà fare dei test.
-## Se SIMD tutto easy, le variabili legate all'USER sono tutte indipendenti tra loro.
-## Se MISD dovremmo salvare tutto in una matrice magari, un dataset in pratica, con ogni
-## riga i-esima che si riferisce ai parameteri per l'utente i-esimo.
-## Comunque una volta fatto, si passano quei risultati a una funzione compute_score(...).
-## E da quella ci siamo.
 
 
 ############# Program functions #############
@@ -190,21 +215,24 @@ end
 function process_keyword_value(text, player_id)
     key = which_keyword(text)
     val = split(text," ")[2]
-    if key == "callme"
+    done = df[findfirst(isequal.(df.player_id,player_id)),:zdone]
+
+    if key == "callme" # && done==0
+        # maybe one can still change his/her player_name even after /done
         if in(val,df[:,:player_name])
             return "Error: name already taken."
         else
             set_player_data(player_id, :player_name, val)
             return "Game parameters updated."
         end
-    elseif key == "play"
+    elseif key == "play" && done==0
         if uppercase(val) in STATES || val in STATES
             set_player_data(player_id, :state, uppercase(val))
             return "Game parameters updated."
         else
             return "Error: give a correct state acronym."
         end
-    else
+    elseif key != "play" && key != "callme" && done==0
         val_num = 0
         try 
             val_num = parse(Float64,val)
@@ -214,11 +242,15 @@ function process_keyword_value(text, player_id)
         end
         if 0<=val_num<=100
             set_player_data(player_id, Symbol(key), val_num)
+            # normalize_player_data(player_id)
             return "Game parameters updated."
         else
             return "Error: give a value in [0,100]."
         end
+    else
+        return "You can't change anymore your game parameters."
     end
+
     return "Something went wrong here."
 end
 
@@ -230,6 +262,7 @@ function handle_command(msg)
     username = ""
 
     e = Any
+    # safety first! 
     try
         if haskey(msg,"message")
             chat_id = msg.message.chat.id
@@ -252,6 +285,10 @@ function handle_command(msg)
             chat_id = chat_id)
         return
     end
+
+    if chat_id=="" || msg_text==""
+        return
+    end
         
     who = "$chat_id"
     if name != ""
@@ -266,11 +303,7 @@ function handle_command(msg)
         register_player(player_id, who)
     end
 
-    # if who=="dear"
-    #     sendMessage(tg,
-    #     text="Telegram does not let me know who you are! Use \"callme ...\" syntax to tell us how should I call you. We need it for setupping the final scoreboard.",
-    #     chat_id=chat_id)
-    
+
 
     if msg_text == "/start"
         @show chat_id
@@ -278,17 +311,39 @@ function handle_command(msg)
             text="Hello $(who)!\nTechnically, you for me are $chat_id",
             # text="Hello $(who)!\nTechnically, you for me are $(who==chat_id ? "still $chat_id" : "$chat_id")",
             chat_id=chat_id)
-        print_help(chat_id)
+        sendMessage(tg,
+            text="Talk with us at our stand to undertand the game procedure. Anyway the command /help is available if you need it.",
+            chat_id=chat_id)
+        # print_help(chat_id)
 
 
     elseif msg_text == "/help"
         print_help(chat_id)
 
 
+    elseif msg_text == "/done"
+        sendMessage(tg,
+            text="Game parameters confirmed! Now you can't change them anymore. We are now computing your score, so type /results to see (at the end of the project session) your ranking in the scoreboard!",
+            chat_id=chat_id)
+        
+        set_player_data(player_id, :zdone, 1)
+        normalize_player_data(player_id)
+        compute_score(player_id)
+
+
+
     elseif msg_text == "/summary"
         sendMessage(tg,
             text=summary_player(player_id),
             chat_id = chat_id)
+            # parse_mode="Markdown")
+
+
+    elseif msg_text == "/results"
+        sendMessage(tg,
+            text="Come here and see your final position!\nhttps://github.com/federicomor/progetto-applied/blob/main/game/bot/scoreboard.md",
+            chat_id = chat_id)
+        # per farlo andare c'è da rendere pubblica la nostra repository
 
 
     elseif msg_text == "/state"
@@ -331,8 +386,7 @@ function handle_command(msg)
             *tch* = teacher
             More awareness in the children needs from the teachers.
             *sch* = school
-            A general improvement in the school quality.
-           """
+            A general improvement in the school quality."""
         sendMessage(tg,
             text=to_send,
             chat_id = chat_id,
@@ -376,6 +430,23 @@ function handle_command(msg)
                 chat_id=chat_id)
         end
 
+
+    ############# Messages controlled by me #############
+    # using my chat_id as reference
+    elseif lowercase(msg_text)=="/send_results" && chat_id==641681765
+        sendMessage(tg,
+            text = "Hey player, the results are now available! Here you can find them\nhttps://github.com/federicomor/progetto-applied/blob/main/game/bot/scoreboard.md",
+            chat_id=chat_id)
+
+    elseif occursin("/bcast",lowercase(msg_text)) && chat_id==641681765
+        to_send = replace(msg_text,"/bcast" => "")
+        if to_send != ""
+            sendMessage(tg,
+                text = to_send,
+                chat_id=chat_id)
+        end
+    ############# end #############
+
     else
         sendMessage(tg,
             text = "I didnt manage to parse your input correctly.\nSo I will cowardly ignore your message.",
@@ -388,6 +459,7 @@ end
 function main()
     run_bot() do msg
         @show msg
+        # @show typeof(msg)
             handle_command(msg)
         @show df
         CSV.write("df.csv", df)
