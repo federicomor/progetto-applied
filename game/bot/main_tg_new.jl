@@ -2,6 +2,7 @@ using Telegram, Telegram.API
 using ConfigEnv
 using DataFrames
 # https://dataframes.juliadata.org/stable/man/basics/
+using Dates
 using CSV
 # DataFrame(CSV.File("file.csv"))
 # CSV.write("file.csv", df)
@@ -463,6 +464,8 @@ function main()
             handle_command(msg)
         @show df
         CSV.write("df.csv", df)
+        # csv_name = "df_$(string(now())[1:13]).csv"
+        # CSV.write("$csv_name", df)
     end
 end
 
