@@ -24,6 +24,7 @@ library(caret) #tuner for ML algorithms
 ```
 
 ```{r, setup}
+set.seed(42)
 #DIRECTORIES
 root_proj_dir = "../../"
 dataset_dir = paste(root_proj_dir,"/data/pisa_wPV_grouped_bysch.csv",sep="")
@@ -97,15 +98,14 @@ Hyperameters to tune:
 
 -   number of trees (ntree)Evaluating the best fit
 
-Tuning mtry
+Tuning mtry:
 
 ```{r}
 # Create model with default paramters
 control <- trainControl(method="repeatedcv", 
-                        number=10, #number of folder in K-fold CV
-                        repeats=3, #number of repetitions
+                        number=5, #number of folder in K-fold CV
+                        repeats=1, #number of repetitions
                         verboseIter = TRUE)
-set.seed(1)
 
 # grid
 tunegrid <- expand.grid(.mtry = c(2,3,4))
@@ -116,9 +116,13 @@ rf_training <- train(as.formula(formula_str),
                      method = "rf", 
                      metric = "Rsquared", 
                      tuneGrid=tunegrid, 
-                     trControl=control )
+                     trControl=control)
 
+#printing the training results
 print(rf_training)
+
+#to see what's inside the method used to fit
+getModelInfo(model = "rf", regex = FALSE)
 ```
 
 ## Interpretation
@@ -129,36 +133,14 @@ importance(rf_training$finalModel)
 varImpPlot(rf_training$finalModel)
 ```
 
-Customizing the training
+Try to:
 
-```{r eval=FALSE, include=FALSE}
-customRF <- list(type = "Regression", library = "randomForest", loop = NULL)
-customRF$parameters <- data.frame(parameter = c("mtry", "ntree"), class = rep("numeric", 2), label = c("mtry", "ntree"))
-customRF$grid <- function(x, y, len = NULL, search = "grid") {}
-customRF$fit <- function(x, y, wts, param, lev, last, weights, classProbs, ...) {
-  randomForest(x, y, mtry = param$mtry, ntree=param$ntree, ...)
-}
-customRF$predict <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
-   predict(modelFit, newdata)
-customRF$prob <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
-   predict(modelFit, newdata, type = "prob")
-customRF$sort <- function(x) x[order(x[,1]),]
-customRF$levels <- function(x) x$classes
-```
+-   customize the method (see the caret page)
 
-```{r eval=FALSE, include=FALSE}
-# train model
-control <- trainControl(method="LOOCV", verboseIter = TRUE, number = 1, repeats = 5)
-tunegrid <- expand.grid(.mtry= sqrt(length(included_regressors)), .ntree=c(1000, 2500))
-set.seed(1)
-custom <- train(as.formula(formula_str), 
-                data=pisa_data[train,], 
-                method=customRF, 
-                metric="Rsquared", 
-                tuneGrid=tunegrid, 
-                trControl=control)
-summary(custom)
-plot(custom)
+-   mixed effect random forest <https://www.mate.polimi.it/biblioteca/add/qmox/36-2020.pdf>
+
+```{r}
+
 ```
 
 # BOOSTING
@@ -174,14 +156,14 @@ plot(custom)
 ```{r}
 # training settings
 gbm_control <- trainControl(method="repeatedcv", 
-                        number=10, 
+                        number=5, 
                         repeats=1,
                         verboseIter = TRUE)
 # setting the grid
-gbm_grid <- expand.grid(n.trees = c(1000, 5000),
+gbm_grid <- expand.grid(n.trees = c(5000,10000),
                         interaction.depth = c(3, 6),
-                        shrinkage = c(0.01, 0.001),
-                        n.minobsinnode = 20)
+                        shrinkage = c(0.01, 0.05),
+                        n.minobsinnode = 10)
                                         
 # actual training
 gbm_training <- train(as.formula(formula_str), 
@@ -191,6 +173,9 @@ gbm_training <- train(as.formula(formula_str),
                     tuneGrid = gbm_grid, 
                     trControl = gbm_control,
                     verbose = FALSE)
+
+#to see what's inside the method used to fit
+getModelInfo(model = "gbm", regex = FALSE)
 
 # print the summary
 gbm_training
