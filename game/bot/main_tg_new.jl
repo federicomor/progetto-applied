@@ -457,7 +457,7 @@ function handle_command(msg)
                 chat_id=chat_id)
         else
             sendMessage(tg,
-                text = "I didnt manage to parse your input correctly.\nSo I will cowardly ignore your message.",
+                text = "I didn't manage to parse your input correctly.\nSo I will cowardly ignore your message.",
                 chat_id=chat_id)
         end
 
@@ -465,12 +465,12 @@ function handle_command(msg)
     ############# Messages controlled by me #############
     # using my chat_id as reference
 
-    elseif lowercase(msg_text)=="/send_results" && chat_id==641681765
+    elseif lowercase(msg_text)=="/ME_send_results" && chat_id==641681765
         sendMessage(tg,
-            text = "Hey player, the results are now available! Here you can find them\nhttps://github.com/federicomor/progetto-applied/blob/main/game/bot/scoreboard.md",
+            text = "Hey player, the final results are now available! Here you can find them\nhttps://github.com/federicomor/progetto-applied/blob/main/game/bot/scoreboard.md",
             chat_id=chat_id)
 
-    elseif occursin("/bcast",lowercase(msg_text)) && chat_id==641681765
+    elseif occursin("/ME_bcast",lowercase(msg_text)) && chat_id==641681765
         to_send = replace(msg_text,"/bcast" => "")
         if to_send != ""
             sendMessage(tg,
@@ -479,21 +479,25 @@ function handle_command(msg)
         end
 
     ############# DANGER ZONE #############
-    elseif occursin("/done_for_all",lowercase(msg_text)) && chat_id==641681765
+    elseif occursin("/ME_done_for_all",lowercase(msg_text)) && chat_id==641681765
         sendMessage(tg,
-            text = "Time's up, game ended! Now see the final scoreboard",
+            text = "Time's up, game ended!",
             chat_id=chat_id)
-        for idd in df[:,player_id]
-            if get_player_data(idd,:zdone)==0
-                if get_player_data(idd,:state) == "nothing"
-                    set_player_data(idd,:state,rand(STATES)) # default random one
+        for idd in df.player_id
+            try
+                if get_player_data(idd,:zdone)==0
+                    if get_player_data(idd,:state) == "nothing"
+                        set_player_data(idd,:state,rand(STATES)) # default random one
+                    end
+                    set_player_data(idd, :zdone, 1)
+                    normalize_player_data(idd)
+                    compute_score(idd)
                 end
-                set_player_data(idd, :zdone, 1)
-                normalize_player_data(idd)
-                compute_score(idd)
+            catch e
+                @show e
             end
         end    
-        
+
     ############# end #############
 
     else
