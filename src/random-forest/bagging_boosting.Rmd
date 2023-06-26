@@ -2,11 +2,13 @@
 title: "Bagging & Boosting"
 ---
 
-# REFERENCES
+# Bagging & Boosting
+
+## References
 
 -   use of caret package: <https://topepo.github.io/caret/model-training-and-tuning.html#custom>
 
-# SETTING UP
+## Settings
 
 ```{r}
 #loaded librarires
@@ -69,7 +71,7 @@ grouped_variables[["sch"]] <- c("PERCOMP","PERCOOP","ICTSCH","RATCMP1","STRATIO"
 train <- sample(1:nrow(pisa_data), nrow(pisa_data)/2)
 ```
 
-# SELECTING THE REGRESSORS
+# Selected variables
 
 ```{r}
 #selecting the regressors
@@ -84,7 +86,7 @@ for(regr in included_regressors){
 formula_str <- paste("PV1MATH", paste(included_regressors, collapse = "+"), sep ="~")
 ```
 
-# RANDOM FOREST
+# Random Forest
 
 ## Tuning the hyperparameters
 
@@ -139,11 +141,7 @@ Try to:
 
 -   mixed effect random forest <https://www.mate.polimi.it/biblioteca/add/qmox/36-2020.pdf>
 
-```{r}
-
-```
-
-# BOOSTING
+# Boosting
 
 ## Tuning the hyperparameters
 
