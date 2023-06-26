@@ -1,0 +1,107 @@
+---
+title: "DB-scan"
+---
+
+# Settings
+
+```{r setup}
+library(mvtnorm)
+library(MVN)
+library(rgl)
+library(car)
+library(dbscan)
+library(cluster)
+library(fields)
+library(ggplot2)
+library(GGally)
+```
+
+```{r}
+#directories
+dataset_dir = "../../data/"
+include_dir = "../include/Utilities.R"
+#including utilities
+source(include_dir)
+#importing the dataset
+pisa_data <- read.csv(file=paste(dataset_dir,"pisa_wPV_grouped_bysch.csv",sep=""))
+```
+
+```{r}
+#variabili finite nel dataset
+grouped_variables <-list()
+#list of grouped variables
+grouped_variables[["ICT available at school"]] <- c("ICTSCH","RATCMP1")
+grouped_variables[["ICT used at school"]] <- c("ICTSCH","RATCMP1","USESCH","ICTCLASS")
+grouped_variables[["relationship with ICT"]] <- c("AUTICT","COMPICT","INTICT","ENTUSE")
+grouped_variables[["tec"]] <- c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH", "ICTSCH","RATCMP1")
+grouped_variables[["psi"]] <- c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
+grouped_variables[["clt"]] <- c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
+grouped_variables[["fam"]] <- c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI","CULTPOSS","HEDRES","ICTHOME")
+grouped_variables[["tch"]] <- c("TEACHINT","TEACHSUP","STIMREAD")
+grouped_variables[["sch"]] <- c("PERCOMP","PERCOOP","ICTSCH","RATCMP1")
+
+group_list <- names(grouped_variables)
+```
+
+# DB-scan
+
+## Hyperparameters
+
+```{r}
+eps_chosen <- list()
+eps_chosen[["ICT available at school"]] <- 0.5
+eps_chosen[["ICT used at school"]] <- 1
+eps_chosen[["relationship with ICT"]] <- 0.5
+eps_chosen[["tec"]] <- 2.7
+eps_chosen[["psi"]] <- 1.2
+eps_chosen[["clt"]] <- 10
+eps_chosen[["fam"]] <- 6
+eps_chosen[["tch"]] <- 0.3
+eps_chosen[["sch"]] <- 1
+
+for(group_name in names(grouped_variables)){
+  data_to_cluster = pisa_data[,grouped_variables[[group_name]]]
+  
+  # Rule of thumb, minPts = dimensionality + 1
+  # How to choose eps from minPts?
+  # Plot of the distances to the minPts nearest neighbor
+  
+  k_chosen_2=dim(data_to_cluster)[2]+1
+  kNNdistplot(as.matrix(data_to_cluster), k = k_chosen_2)
+  title(group_name)
+  abline(h = eps_chosen[[group_name]], col = "red", lty = 2)
+}
+```
+
+## Clustering
+
+```{r}
+sil_score <- function(labels, dist) {
+  # Compute the average of the silhouette widths
+  sil <- silhouette(labels, dist)
+  sil_widths <- sil[,"sil_width"]
+  return(mean(sil_widths))
+}
+```
+
+With the current choiceas of hyperparameters DB-scan find just one cluster and silhoutte doesn't work with just one cluster
+
+```{r}
+for(group_name in names(grouped_variables)){
+  data_to_cluster = pisa_data[,grouped_variables[[group_name]]]
+  p <- dim(data_to_cluster)[2]
+  
+  dbs <- dbscan(data_to_cluster, eps = eps_chosen[[group_name]], minPts = p+1)
+  cat("\n")
+  print(group_name)
+  print(dbs)
+  
+  #evaluation through silhouette
+  clustered_index <- which(dbs$cluster != 0) # Index of non noise points
+  clustered_points <- data_to_cluster[clustered_index,] # only clustered points
+  clustered_labels <- dbs$cluster[clustered_index] # corresponding labels
+  diss_mat <- dist(clustered_points)
+  cat("Silhouette score:\n")
+  print(sil_score(clustered_labels, diss_mat))
+}
+```
