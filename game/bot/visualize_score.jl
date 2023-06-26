@@ -39,7 +39,7 @@ sort!(data,:score,rev=true)
 
 ############# Scoreboard 2 #############
 println("Writing scoreboard 2...")
-f = open("scoreboard_plot.md", "w")
+f = open("project_game_scoreboard/scoreboard.md", "w")
 
 write(f,"# 🚩 Live Scoreboard\n")
 write(f,"Game ends at 19:00! ")
