@@ -141,31 +141,35 @@ vif(linear_model)
 ## Combination of variables with beta coefficients
 ```{r}
 # coefficienti tratti dal summary
-tec_beta_comb = (-0.008862) * df$col1_tec+
+tec_beta_comb = 
+    (-0.008862) * df$col1_tec+
     ( 0.029719) * df$col2_tec+
     ( 0.011752) * df$col3_tec+
     (-0.005932) * df$col4_tec+
     ( 0.015692) * df$col5_tec
 
-psi_beta_comb = ( 0.282455) * df$col1_psi+
+psi_beta_comb = ( 
+  0.282455) * df$col1_psi+
     (-0.137583) * df$col2_psi+
     ( 0.190003) * df$col3_psi+
     ( 0.238503) * df$col4_psi+
     ( 0.239341) * df$col5_psi+
     (-0.038022) * df$col7_psi
 
-clt_beta_comb = (-0.028202) * df$col2_clt+
+clt_beta_comb =
+    (-0.028202) * df$col2_clt+
     ( 0.005754) * df$col3_clt
 
-    (-0.008007) * df$col1_fam
+fam_beta_comb = (-0.008007) * df$col1_fam
 
-tch_beta_comb = ( 0.034128) * df$col1_tch+
+tch_beta_comb = 
+    ( 0.034128) * df$col1_tch+
     (-0.068108) * df$col2_tch
 
-sch_beta_comb = ( 0.007906) * df$col1_sch+
+sch_beta_comb = 
+    ( 0.007906) * df$col1_sch+
     (-0.005847) * df$col2_sch+
     (-0.005905) * df$col4_sch
-
 
 
 boxplot(tec_beta_comb ~ df_tec$CNT, col=fun_colori(length(unique(df$CNT))),
@@ -182,6 +186,69 @@ boxplot(sch_beta_comb ~ df_tec$CNT, col=fun_colori(length(unique(df$CNT))),
         las=2,main = "sch combined with betas")
 
 ```
+
+## Clustering sulle combination?
+Sembra ci siano divisioni per contributi migliori/peggiori, ma all'interno delle
+scuole dei vari stati, non tra i singoli stati uno contro l'altro.
+
+
+```{r}
+cols=colori_fun(14,52)
+breaks=c(0,which((df$CNT[1:length(df$CNT)-1]==df$CNT[2:length(df$CNT)])==FALSE))+181
+```
+
+
+```{r}
+val_cur = tec_beta_comb
+
+plot(val_cur, col=cols[as.numeric(as.factor(df$CNT))])
+abline(v=breaks, lty=2,col="gray")
+text(unique(df$CNT),x=breaks,y=1,cex=0.5)
+
+val_clust = hclust(dist(val_cur,method="euclidean"),method="complete")
+plot(val_clust,hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+clusts = cutree(val_clust,k=3)
+
+plot(val_cur, col=cols[as.numeric(as.factor(df$CNT))],pch=clusts)
+abline(v=breaks, lty=2,col="gray")
+text(unique(df$CNT),x=breaks,y=-0.2,cex=0.5)
+```
+
+```{r}
+val_cur = psi_beta_comb
+
+plot(val_cur, col=cols[as.numeric(as.factor(df$CNT))])
+abline(v=breaks, lty=2,col="gray")
+text(unique(df$CNT),x=breaks,y=1,cex=0.5)
+
+val_clust = hclust(dist(val_cur,method="euclidean"),method="complete")
+plot(val_clust,hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+clusts = cutree(val_clust,k=3)
+
+plot(val_cur, col=cols[as.numeric(as.factor(df$CNT))],pch=clusts)
+abline(v=breaks, lty=2,col="gray")
+text(unique(df$CNT),x=breaks,y=1,cex=0.5)
+```
+
+```{r}
+val_cur = clt_beta_comb
+
+plot(val_cur, col=cols[as.numeric(as.factor(df$CNT))])
+abline(v=breaks, lty=2,col="gray")
+text(unique(df$CNT),x=breaks,y=1,cex=0.5)
+
+val_clust = hclust(dist(val_cur,method="euclidean"),method="complete")
+plot(val_clust,hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+clusts = cutree(val_clust,k=3)
+
+plot(val_cur, col=cols[as.numeric(as.factor(df$CNT))],pch=clusts)
+abline(v=breaks, lty=2,col="gray")
+text(unique(df$CNT),x=breaks,y=-0.15,cex=0.5)
+```
+
+
+
+
 # RANDOM EFFECTS
 
 questo pu? darci un'idea del contributo del paese per il well being
