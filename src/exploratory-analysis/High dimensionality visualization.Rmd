@@ -17,7 +17,7 @@ source(include_path)
 #IMPORTING THE DATASET
 pisa_data <- read.csv(file=dataset_path)
 head(pisa_data)
-#library(tsne)
+library(rgl)
 library(Rtsne)
 ```
 ```{r}
@@ -47,7 +47,7 @@ plot(tsne_results$Y,col=countrys_num, main = "Perplexity = 30")
 ```{r}
 tsne_results_3d <- Rtsne(pisa_data_cut,dim=3, perplexity=30, check_duplicates = FALSE, pca=FALSE)
 
-plot3d(tsne_results_3d$Y, pch = 19, cex = 2, col = countrys, main = "Perplexity = 30")
+plot3d(tsne_results_3d$Y, pch = 19, cex = 2, col = countrys_num, main = "Perplexity = 30")
 
 ```
 

@@ -142,36 +142,55 @@ vif(linear_model)
 ```{r}
 ##??
 df=data
+
 # coefficienti tratti dal summary
-tec_beta_comb = 
-    (-0.008862) * df$col1_tec+
-    ( 0.029719) * df$col2_tec+
-    ( 0.011752) * df$col3_tec+
-    (-0.005932) * df$col4_tec+
-    ( 0.015692) * df$col5_tec
+coeff = coefficients(linear_model)$CNT[1,2:20]
 
-psi_beta_comb = ( 
-  0.282455) * df$col1_psi+
-    (-0.137583) * df$col2_psi+
-    ( 0.190003) * df$col3_psi+
-    ( 0.238503) * df$col4_psi+
-    ( 0.239341) * df$col5_psi+
-    (-0.038022) * df$col7_psi
+tec_beta_comb = 0
+tech <- colnames(coeff[grep("tec", vars)])
+for (col in tech){
+  tec_beta_comb = tec_beta_comb + coeff[,col]*df[,col]
+  
+}
 
-clt_beta_comb =
-    (-0.028202) * df$col2_clt+
-    ( 0.005754) * df$col3_clt
+psi_beta_comb = 0
+psi <- colnames(coeff[grep("psi", vars)])
+for (col in psi){
+  psi_beta_comb = psi_beta_comb + coeff[,col]*df[,col]
+  
+}
 
-fam_beta_comb = (-0.008007) * df$col1_fam
 
-tch_beta_comb = 
-    ( 0.034128) * df$col1_tch+
-    (-0.068108) * df$col2_tch
+clt_beta_comb = 0
+clt <- colnames(coeff[grep("clt", vars)])
+for (col in clt){
+  clt_beta_comb = clt_beta_comb + coeff[,col]*df[,col]
+  
+}
 
-sch_beta_comb = 
-    ( 0.007906) * df$col1_sch+
-    (-0.005847) * df$col2_sch+
-    (-0.005905) * df$col4_sch
+fam_beta_comb = 0
+fam <- colnames(coeff[grep("fam", vars)])
+for (col in clt){
+  fam_beta_comb = fam_beta_comb + coeff[,col]*df[,col]
+  
+}
+
+
+tch_beta_comb = 0
+tch <- colnames(coeff[grep("tch", vars)])
+for (col in clt){
+  tch_beta_comb = tch_beta_comb + coeff[,col]*df[,col]
+  
+}
+
+
+sch_beta_comb = 0
+sch <- colnames(coeff[grep("sch", vars)])
+for (col in clt){
+  sch_beta_comb = sch_beta_comb + coeff[,col]*df[,col]
+  
+}
+
 
 ##??
 df_tec=df
