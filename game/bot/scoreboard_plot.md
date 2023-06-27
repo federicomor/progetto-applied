@@ -1,5 +1,5 @@
 # 🚩 Live Scoreboard
-Game ends at 19:00! Last update at time 15:41
+Game ends at 19:00! Last update at time 15:39
 ```R
 
    Fede_Mor 1 ┤■■■■■■■■■■■■■ 100.0   
