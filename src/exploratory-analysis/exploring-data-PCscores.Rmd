@@ -85,6 +85,10 @@ for(c in countries){
   shap <- c(shap,shapiro.test(pisa_data[which(pisa_data$CNT==c),i])$p.value)
 }
 }
+```
+
+
+```{r}
 plot(seq(1,(dim(pisa_data)[2]-1)*length(countries)),shap)
 hist(shap)
 ```
@@ -111,12 +115,23 @@ for (categ in categories_variables){
 ```{r}
 pisa_data$CNT = as.factor(pisa_data$CNT)
 plot(pisa_data[,school], col=pisa_data$CNT,pch=16)
-legend("bottomright",legend=unique(pisa_data$CNT),col=1:length(pisa_data$CNT),pch=16)
+legend("bottomright",legend=unique(pisa_data$CNT),col=pisa_data$CNT,pch=16)
 ```
 
 ```{r}
-for (col in colnames(pisa_data)){
-  plot(pisa_data[,col],col=1:length(pisa_data$CNT),pch=16,main = col)
+countrys = levels(pisa_data$CNT)
+for (column in colnames(pisa_data)){
+  plot(pisa_data[,column],col=pisa_data$CNT,pch=16,main = column)
 }
+```
+```{r}
+countrys
+hist(pisa_data$col3_tch)
+hist(pisa_data$col1_tec)
+hist(pisa_data$col4_sch)
+unique(pisa_data$CNT)
+
+count_num = as.numeric(pisa_data$CNT)
+plot(count_num)
 ```
 
