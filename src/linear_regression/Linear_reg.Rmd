@@ -51,7 +51,7 @@ head(data)
 ```
 
 # choice of the model
-```{r}
+
 total_model = c("ATTLNACT","EMOSUPS","COMPETE","GFOFAIL","EUDMO","RESILIENCE","BELONG","BEINGBULLIED",
                 "PERFEED","CREACTIV","STRATIO","SCHSIZE","CLSIZE","EDUSHORT","STAFFSHORT","STUBEHA","TMINS",
                 "JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","COMPICT","ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES",
@@ -80,7 +80,7 @@ response_variable_school = "CREACTIV"
 school_prof_2 = c("SCHSIZE","CLSIZE","STAFFSHORT")
 response_variable_school_2 = "STRATIO"
 ########################
-```
+
 
 ```{r}
 all_vars = colnames(data)
@@ -140,6 +140,8 @@ vif(linear_model)
 
 ## Combination of variables with beta coefficients
 ```{r}
+##??
+df=data
 # coefficienti tratti dal summary
 tec_beta_comb = 
     (-0.008862) * df$col1_tec+
@@ -171,7 +173,8 @@ sch_beta_comb =
     (-0.005847) * df$col2_sch+
     (-0.005905) * df$col4_sch
 
-
+##??
+df_tec=df
 boxplot(tec_beta_comb ~ df_tec$CNT, col=fun_colori(length(unique(df$CNT))),
         las=2,main = "tec combined with betas")
 boxplot(psi_beta_comb ~ df_tec$CNT, col=fun_colori(length(unique(df$CNT))),
