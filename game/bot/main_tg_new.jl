@@ -88,7 +88,8 @@ function handle_command(msg)
     if chat_id=="" || msg_text==""
         return
     end
-        
+    println("$chat_id -> $msg_text")
+
     who = "$chat_id"
     if name != ""
         who=name
@@ -127,14 +128,13 @@ function handle_command(msg)
                 chat_id=chat_id)
         else
             sendMessage(tg,
-                text="Game parameters confirmed! Now you can't change them anymore.\nWe are now normalizing into [0,100] your parameters, and then computing your score. Type /results to see your ranking in the scoreboard!",
+                text="Game parameters confirmed! Now you can't change them anymore.\nWe are now normalizing your parameters, so that they sum up to 100, and then computing your score. Type /results to see your ranking in the scoreboard!",
                 chat_id=chat_id)
         
             set_player_data(player_id, :zdone, 1)
             # normalize_player_data(player_id) # normalizza già nella compute_score
             compute_score(player_id)
             include("visualize_score.jl")
-            include("project_game_scoreboard\\update_all.jl")
         end
 
 
@@ -291,7 +291,7 @@ end
 
 function main()
     run_bot() do msg
-        @show msg
+        # @show msg
         # @show typeof(msg)
             handle_command(msg)
         @show df

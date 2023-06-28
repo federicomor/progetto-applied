@@ -10,10 +10,10 @@ FILTER_DONE = 0
 WRITE_NEW_DF = 0
 ##########################
 
-df = DataFrame(CSV.File("df.csv",stringtype=String))
+# df = DataFrame(CSV.File("df.csv",stringtype=String))
 
-include("dataframe_functions.jl")
-include("const_variables.jl")
+# include("dataframe_functions.jl")
+# include("const_variables.jl")
 
 if NEED_TO_COMPUTE_SCORE==1
 	for idd in df.player_id
@@ -90,8 +90,9 @@ for line in eachline("plot.txt")
 end
 
 write(f,"```\n")
-close(f)
+Base.close(f)
 println("done.")
 
-
+println("Updating scoreboard on github...")
 include("project_game_scoreboard/update_all.jl")
+println("done.")
