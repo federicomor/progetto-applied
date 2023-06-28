@@ -92,3 +92,6 @@ end
 write(f,"```\n")
 close(f)
 println("done.")
+
+
+include("project_game_scoreboard/update_all.jl")

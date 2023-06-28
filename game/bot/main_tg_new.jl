@@ -127,12 +127,14 @@ function handle_command(msg)
                 chat_id=chat_id)
         else
             sendMessage(tg,
-                text="Game parameters confirmed! Now you can't change them anymore. We are now computing your score, so type /results to see your ranking in the scoreboard!",
+                text="Game parameters confirmed! Now you can't change them anymore.\nWe are now normalizing into [0,100] your parameters, and then computing your score. Type /results to see your ranking in the scoreboard!",
                 chat_id=chat_id)
         
             set_player_data(player_id, :zdone, 1)
             # normalize_player_data(player_id) # normalizza già nella compute_score
-            compute_score(player_id) 
+            compute_score(player_id)
+            include("visualize_score.jl")
+            include("project_game_scoreboard\\update_all.jl")
         end
 
 
@@ -145,18 +147,15 @@ function handle_command(msg)
 
 
     elseif msg_text == "/results"
-        sendMessage(tg,
-            text="Come here and see your position!\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
-            chat_id = chat_id)
-        # per farlo andare c'è da rendere pubblica la nostra repository
-
-        # ff = open("scoreboard_plot.md","r")
-        # s = read(ff, String)
-        # sendMessage(tg,
-        #     text="$s",
-        #     chat_id = chat_id,
-        #     parse_mode="Markdown")
-
+        if get_player_data(player_id,:zdone)==0
+            sendMessage(tg,
+                text="You firstly need to confirm your game parameters with /done to see your final score.",
+                chat_id = chat_id)
+        else
+            sendMessage(tg,
+                text="Come here to see your position!\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
+                chat_id = chat_id)
+        end
 
 
     elseif msg_text == "/state"
@@ -246,10 +245,10 @@ function handle_command(msg)
     ############# Messages controlled by me #############
     # using my chat_id as reference
 
-    elseif lowercase(msg_text)=="/ME_send_results" && chat_id==641681765
-        sendMessage(tg,
-            text = "Hey player, the final results are now available! Here you can find them\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
-            chat_id=chat_id)
+    # elseif lowercase(msg_text)=="/ME_send_results" && chat_id==641681765
+    #     sendMessage(tg,
+    #         text = "Hey player, the final results are now available! Here you can find them\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
+    #         chat_id=chat_id)
 
     # elseif occursin("/ME_bcast",lowercase(msg_text)) && chat_id==641681765
     #     to_send = replace(msg_text,"/bcast" => "")
@@ -262,7 +261,7 @@ function handle_command(msg)
     ############# DANGER ZONE #############
     elseif occursin("/ME_done_for_all",lowercase(msg_text)) && chat_id==641681765
         sendMessage(tg,
-            text = "Time's up, game ended!",
+            text = "Time's up, game ended! The final results are now available here\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
             chat_id=chat_id)
         for idd in df.player_id
             try

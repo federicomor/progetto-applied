@@ -87,14 +87,14 @@ function process_keyword_value(text, player_id)
             return "Error: name already taken."
         else
             set_player_data(player_id, :player_name, val)
-            return "Game parameters updated."
+            return "Game parameters updated.\nSee them with /summary."
         end
     elseif key == "play" && done==0
         if uppercase(val) in STATES || val in STATES
             set_player_data(player_id, :state, uppercase(val))
-            return "Game parameters updated."
+            return "Game parameters updated.\nSee them with /summary."
         else
-            return "Error: give a correct state acronym (see /state for the possibilities)."
+            return "Error: give a correct state acronym.\nSee /state for the possibilities."
         end
     elseif key != "play" && key != "callme" && done==0
         val_num = 0
@@ -107,7 +107,7 @@ function process_keyword_value(text, player_id)
         if 0<=val_num<=100
             set_player_data(player_id, Symbol(key), val_num)
             # normalize_player_data(player_id)
-            return "Game parameters updated."
+            return "Game parameters updated.\nSee them with /summary."
         else
             return "Error: give a value in [0,100]."
         end
