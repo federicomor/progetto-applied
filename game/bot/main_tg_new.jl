@@ -74,15 +74,16 @@ function handle_command(msg)
             username = msg.edited_message.from.username 
         end
     catch e
+        @show e
+        if isa(e,ErrorException)
+            sendMessage(tg,
+                text="$(e.msg)",
+                chat_id = chat_id)
+            return
+        end
     end
 
-    @show e
-    if isa(e,ErrorException)
-        sendMessage(tg,
-            text="$(e.msg)",
-            chat_id = chat_id)
-        return
-    end
+
 
     if chat_id=="" || msg_text==""
         return
@@ -104,7 +105,7 @@ function handle_command(msg)
 
 
     if msg_text == "/start"
-        @show chat_id
+        # @show chat_id
         sendMessage(tg,
             text="Hello $(who)!\nTechnically, you for me are $chat_id",
             # text="Hello $(who)!\nTechnically, you for me are $(who==chat_id ? "still $chat_id" : "$chat_id")",
@@ -130,8 +131,8 @@ function handle_command(msg)
                 chat_id=chat_id)
         
             set_player_data(player_id, :zdone, 1)
-            normalize_player_data(player_id)
-            compute_score(player_id)
+            # normalize_player_data(player_id) # normalizza già nella compute_score
+            compute_score(player_id) 
         end
 
 

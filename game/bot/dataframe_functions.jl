@@ -19,38 +19,40 @@ function set_player_data(player_id, field::Symbol, value)
 end
 
 function get_player_data(player_id, field::Symbol)
-    try
+    # get_player_data(id,:state)
+    if is_player_registered(player_id)
         return df[findfirst(isequal.(df.player_id,player_id)),field]
-    catch e
     end
     return NaN
 end
-# get_player_data(id,:state)
 function get_player_data(player_id, field::String)
-    try
+    # get_player_data(id,"state")
+    if is_player_registered(player_id)
         return df[findfirst(isequal.(df.player_id,player_id)),Symbol(field)]
-    catch e
     end
     return NaN
 end
-# get_player_data(id,"state")
 
 
 function normalize_player_data(player_id)
+    if !is_player_registered(player_id)
+        register_player(player_id)
+    end
     tot = 0
+    position = findfirst(isequal.(df.player_id,player_id))
+
     for categ in CATEGORIES
-        tot += df[findfirst(isequal.(df.player_id,player_id)),Symbol(categ)]
+        tot += df[position,Symbol(categ)]
     end
     if tot != 0
         for categ in CATEGORIES
-            df[findfirst(isequal.(df.player_id,player_id)),Symbol(categ)] /= (tot/100)
+            df[position,Symbol(categ)] /= (tot/100)
         end
     end
 end
 
 function score_fun(proposto,giusto,method::String)
-    if lowercase(method)=="canberra"
-        # circa la canberra distance?
+    if method=="canberra"
         return 1 - abs((proposto-giusto)/(proposto+giusto))
         # max punteggio 6, min punteggio dipende
     end
@@ -59,16 +61,22 @@ end
 function compute_score(player_id)
     normalize_player_data(player_id)
     include("get_sol.jl") # this let the dictionary sol available here
-    
+
     score = 0
     position = findfirst(isequal.(df.player_id,player_id))
     state = df[position, :state]
+    method = "canberra"
+
     for categ in CATEGORIES
         proposto = df[position,"$categ"]
         giusto = sol["$state"]["$categ"]
-        score += score_fun(proposto,giusto,"canberra")
+        score += score_fun(proposto,giusto,method)
     end
-    score = score/6*100
+
+    if method=="canberra"
+        score = score/6*100
+    end
+
     set_player_data(player_id,:score,score)
 end
 

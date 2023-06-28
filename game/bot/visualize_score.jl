@@ -4,24 +4,35 @@ using UnicodePlots
 # using Plots
 using Dates
 
+############# parameters #############
+NEED_TO_COMPUTE_SCORE = 1
+FILTER_DONE = 0
+WRITE_NEW_DF = 0
+##########################
+
 df = DataFrame(CSV.File("df.csv",stringtype=String))
 
 include("dataframe_functions.jl")
 include("const_variables.jl")
 
-for idd in df.player_id
-	compute_score(idd)
+if NEED_TO_COMPUTE_SCORE==1
+	for idd in df.player_id
+		compute_score(idd)
+	end
 end
 
-# CSV.write("df.csv", df)
+if WRITE_NEW_DF==1
+	CSV.write("df.csv", df)
+end
 
 
-# df = df[isequal.(df.zdone,1),:]
-# select the done=1 players
+if FILTER_DONE==1
+	df = df[isequal.(df.zdone,1),:]
+	# select the done=1 players
+end
 
 sort!(df,:score,rev=true)
 # ora il dataset è ordinato
-
 
 ############# Scoreboard 1 #############
 # println("Writing scoreboard 1...")
