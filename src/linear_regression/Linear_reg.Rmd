@@ -140,8 +140,7 @@ vif(linear_model)
 
 ## Combination of variables with beta coefficients
 ```{r}
-##??
-df=data
+df = read.csv(file=dataset_path)
 
 # coefficienti tratti dal summary
 coeff = coefficients(linear_model)$CNT[1,2:20]
@@ -190,21 +189,28 @@ for (col in clt){
   sch_beta_comb = sch_beta_comb + coeff[,col]*df[,col]
   
 }
+```
 
 
-##??
-df_tec=df
-boxplot(tec_beta_comb ~ df_tec$CNT, col=fun_colori(length(unique(df$CNT))),
+Questi boxplot sono ottenuti moltiplicando i coefficienti beta per i valori delle
+variabili nelle varie categorie.
+
+Quindi in teoria più un boxplot tende a spostarsi in alto
+più quella categoria è forte in quello stato, perché vuol dire che contribuisce
+di più a far salire il valore dela target well being.
+
+```{r}
+boxplot(tec_beta_comb ~ df$CNT, col=fun_colori(length(unique(df$CNT))),
         las=2,main = "tec combined with betas")
-boxplot(psi_beta_comb ~ df_tec$CNT, col=fun_colori(length(unique(df$CNT))),
+boxplot(psi_beta_comb ~ df$CNT, col=fun_colori(length(unique(df$CNT))),
         las=2,main = "psi combined with betas")
-boxplot(clt_beta_comb ~ df_tec$CNT, col=fun_colori(length(unique(df$CNT))),
+boxplot(clt_beta_comb ~ df$CNT, col=fun_colori(length(unique(df$CNT))),
         las=2,main = "clt combined with betas")
-boxplot(fam_beta_comb ~ df_tec$CNT, col=fun_colori(length(unique(df$CNT))),
+boxplot(fam_beta_comb ~ df$CNT, col=fun_colori(length(unique(df$CNT))),
         las=2,main = "fam combined with betas")
-boxplot(tch_beta_comb ~ df_tec$CNT, col=fun_colori(length(unique(df$CNT))),
+boxplot(tch_beta_comb ~ df$CNT, col=fun_colori(length(unique(df$CNT))),
         las=2,main = "tch combined with betas")
-boxplot(sch_beta_comb ~ df_tec$CNT, col=fun_colori(length(unique(df$CNT))),
+boxplot(sch_beta_comb ~ df$CNT, col=fun_colori(length(unique(df$CNT))),
         las=2,main = "sch combined with betas")
 
 ```
@@ -216,7 +222,7 @@ scuole dei vari stati, non tra i singoli stati uno contro l'altro.
 
 ```{r}
 cols=colori_fun(14,52)
-breaks=c(0,which((df$CNT[1:length(df$CNT)-1]==df$CNT[2:length(df$CNT)])==FALSE))+181
+breaks=c(0,which((df$CNT[1:length(df$CNT)-1]==df$CNT[2:length(df$CNT)])==FALSE))
 ```
 
 
