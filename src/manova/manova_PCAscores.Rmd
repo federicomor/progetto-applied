@@ -14,8 +14,9 @@ include_dir = "../include/Utilities.R"
 #including utilities
 #including utilities
 source(include_dir)
-#importing the dataset
-pisa_data <- read.csv(file=paste(dataset_dir,"pisa-woNA_school_final_wo_Outl_ClassicData_PCA_SCORES.csv",sep=""))
+# importing the dataset
+# pisa_data <- read.csv(file=paste(dataset_dir,"pisa-woNA_school_final_wo_Outl_ClassicData_PCA_SCORES.csv",sep=""))
+pisa_data <- read.csv(file=paste(dataset_dir,"df_pca_scores.csv",sep=""))
 data<-pisa_data
 head(data)
 dim(data)
@@ -28,9 +29,16 @@ library(mvnormtest)
 
 ```{r}
 #select only ICT moments fot the moment
-categories_variables = list(tec,psi,clt,fam,tch,sch)
+categories_variables = grouped_variables_dfscores
+categories_variables
 library(dplyr)
-data <- data %>% dplyr::select(all_of(c("CNT",psi)))
+
+data <- data %>% dplyr::select(all_of(c(categories_variables[["psi"]])))
+# data <- data %>% dplyr::select(all_of(c(categories_variables[["tec"]])))
+# data <- data %>% dplyr::select(all_of(c(categories_variables[["clt"]])))
+# data <- data %>% dplyr::select(all_of(c(categories_variables[["fam"]])))
+# data <- data %>% dplyr::select(all_of(c(categories_variables[["tch"]])))
+# data <- data %>% dplyr::select(all_of(c(categories_variables[["sch"]])))
 ```
 
 # **1.** Data
@@ -81,22 +89,27 @@ for(j in 1:g) {
 ```{r, warning=FALSE, message=FALSE}
 # Plot: different panels -> different group
 #x11()
-par(mfrow=c(2,g/4))
-for (j in 1:(g/2)){
-  boxplot(data.feats[as.numeric(indeces[[j]]),], main=paste('group ',j),  ylim=c(round(min(data.feats)),
+# par(mfrow=c(2,g/2))
+for (j in 1:g){
+  boxplot(data.feats[as.numeric(indeces[[j]]),], main=paste('group',j,":",STATES[j]),  ylim=c(round(min(data.feats)),
           round(max(data.feats))), col = rainbow(g)[j])
 }
+```
+
+
+```{r, warning=FALSE, message=FALSE}
 #x11()
-par(mfrow=c(4,g/8))
-for (j in (g/2+1):g){
-  boxplot(data.feats[as.numeric(indeces[[j]]),], main=paste('group ',j),  ylim=c(round(min(data.feats)),
-          round(max(data.feats))), col = rainbow(g)[j])
-}
+# par(mfrow=c(4,g/8))
+# for (j in (g/2+1):g){
+#   boxplot(data.feats[as.numeric(indeces[[j]]),], main=paste('group ',j),  ylim=c(round(min(data.feats)),
+#           round(max(data.feats))), col = rainbow(g)[j])
+# }
 
 ## Plot: different panels -> different feature
 
 for (j in 1:p){
-  boxplot(data.feats[,j]~data$label, main=paste('X',j), col = rainbow(p)[j])
+  boxplot(data.feats[,j]~data$label, main=paste(colnames(data.feats)[j]),
+          col = rainbow(p)[j],las=2)
 }
 
 ```

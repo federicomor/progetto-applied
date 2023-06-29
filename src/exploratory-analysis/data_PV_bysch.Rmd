@@ -42,6 +42,7 @@ pisa_data$CNT <- as.factor(pisa_data$CNT)
 pisa_data$CNTSCHID <- as.factor(pisa_data$CNTSCHID)
 pisa_data$CNTSTUID <- as.factor(pisa_data$CNTSTUID)
 pisa_data <- pisa_data %>% select(-(starts_with("PV") & !ends_with("1")))
+head(pisa_data)
 ```
 
 ```{r}

@@ -22,13 +22,17 @@ include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 source(include_dir)
 #IMPORTING THE DATASET
 pisa_data <- read.csv(file=dataset_dir)
+head(pisa_data)
+dim(pisa_data)
 ```
 
 ```{r}
 #some adjustments on the data
 pisa_data$X <- NULL
-pisa_data$schID <- as.factor(pisa_data$schID)
+rownames(pisa_data)<- pisa_data$schID
+pisa_data$schID <- NULL
 pisa_data$CNT <- as.factor(pisa_data$CNT)
+head(pisa_data)
 ```
 
 # TESTING NORMALITY
@@ -48,6 +52,7 @@ Normality in the full dataset highly improbable (almost 5000 obs, -\>see the sta
 ```{r}
 library(MVN)
 library(dplyr)
+library(mvnormtest)
 #Heinze-Zikler: in result we can see also the results of the univariate tests on gaussianity
 result_hz <- mvn(data = select_if(pisa_data,is.numeric), mvnTest = "hz",univariateTest = "SW")
 #multivariate shapiro on the whole dataset
@@ -58,10 +63,9 @@ Normality in the groups (MANOVA assumption)
 
 ```{r}
 #Heinze-Zikler: in result we can see also the results of the univariate tests on gaussianity
-result_hz_cntry <- mvn(data = subset(pisa_data,select = -schID), subset = "CNT", mvnTest = "hz",univariateTest = "SW")
+result_hz_cntry <- mvn(data = pisa_data, subset = "CNT", mvnTest = "hz",univariateTest = "SW")
 
 #Multivariate Shapiro-test
-library(mvnormtest)
 result_shapiro_cntry <- list()
 
 for(cntry in unique(pisa_data$CNT)){
@@ -146,7 +150,7 @@ pisa_wo_outliers<- pisa_data[which(d2 <= threshold_dist), ]
 
 ```{r}
 #testing again on the dataset wo outliers
-result_wo_ouliers <- mvn(data = subset(pisa_wo_outliers,select = -schID), subset = "CNT", mvnTest = "hz",univariateTest = "SW")
+result_wo_ouliers <- mvn(data = pisa_wo_outliers, subset = "CNT", mvnTest = "hz",univariateTest = "SW")
 ```
 
 # TRANSFORMING
@@ -162,14 +166,13 @@ for(i in length(lambda$lambda)){
    transformed_data[,i]<- bcPower(U=transformed_data[,i],lambda=lambda$lambda[i])
 }
 
-#add the CNT and schID columns
+#add CNT 
 transformed_data["CNT"] <- pisa_wo_outliers$CNT
-transformed_data["schID"] <- pisa_wo_outliers$schID
 ```
 
 ```{r}
 #testing again on transformed data
-result_trans_wo_ouliers <- mvn(data = subset(transformed_data,select = -schID), subset = "CNT", mvnTest = "hz",univariateTest = "SW")
+result_trans_wo_ouliers <- mvn(data = transformed_data, subset = "CNT", mvnTest = "hz",univariateTest = "SW")
 ```
 
 # ISSUES LOGBOOK

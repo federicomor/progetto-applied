@@ -10,7 +10,7 @@ editor_options:
 ```{r, setup}
 #DIRECTORIES
 root_proj_dir = "../../"
-dataset_path = paste(root_proj_dir,"data/pisa_school_final_wo_Outl_PCA_SCORES.csv",sep="")
+dataset_path = paste(root_proj_dir,"data/df_pca_scores.csv",sep="")
 include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_path)
@@ -18,12 +18,11 @@ source(include_path)
 pisa_data <- read.csv(file=dataset_path)
 head(pisa_data)
 library(rgl)
-library(tsne)
 library(Rtsne)
 ```
 ```{r}
 countrys = as.factor(pisa_data$CNT)
-pisa_data_cut = pisa_data[,3:dim(pisa_data)[2]]
+pisa_data_cut = pisa_data[,3:(dim(pisa_data)[2]-1)]
 
 perplex = c(1,30,50)
 
@@ -33,22 +32,22 @@ for(k in perplex){
   
   tsne_results <- Rtsne(pisa_data_cut, perplexity=k, check_duplicates = FALSE, pca=FALSE)
   title = paste("Perplexity = ", k)
-  plot(tsne_results$Y, col = "black", bg= countrys, pch = 21, cex = 1, main = title)
+  plot(tsne_results$Y[,1],tsne_results$Y[,2], col = "black", bg= countrys, pch = 21, cex = 1, main = title)
   
 }
 dev.off()
 ```
 ```{r}
-countrys = as.factor(pisa_data$CNT)
-pisa_data_cut = pisa_data[,3:dim(pisa_data)[2]]
-
-tsne_results <- Rtsne(pisa_data_cut,dim=3, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+tsne_results <- Rtsne(pisa_data_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+countrys_num <- as.numeric(countrys)
+plot(tsne_results$Y,col=countrys_num, main = "Perplexity = 30")
 ```
 
 
 ```{r}
-countrys <- as.numeric(as.factor(pisa_data$CNT))
-plot3d(tsne_results$Y, pch = 19, cex = 2, col = countrys, main = "Perplexity = 30")
+tsne_results_3d <- Rtsne(pisa_data_cut,dim=3, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+
+plot3d(tsne_results_3d$Y, pch = 19, cex = 2, col = countrys_num, main = "Perplexity = 30")
 
 ```
 

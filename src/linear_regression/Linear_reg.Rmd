@@ -51,7 +51,7 @@ head(data)
 ```
 
 # choice of the model
-```{r}
+
 total_model = c("ATTLNACT","EMOSUPS","COMPETE","GFOFAIL","EUDMO","RESILIENCE","BELONG","BEINGBULLIED",
                 "PERFEED","CREACTIV","STRATIO","SCHSIZE","CLSIZE","EDUSHORT","STAFFSHORT","STUBEHA","TMINS",
                 "JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","COMPICT","ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES",
@@ -80,7 +80,7 @@ response_variable_school = "CREACTIV"
 school_prof_2 = c("SCHSIZE","CLSIZE","STAFFSHORT")
 response_variable_school_2 = "STRATIO"
 ########################
-```
+
 
 ```{r}
 all_vars = colnames(data)
@@ -135,7 +135,148 @@ linear_model <- lmer(formula,data)
 summary(linear_model)
 print("######################### VIF ##########################")
 vif(linear_model)
+# save.image("from_lmm.RData")
 ```
+
+## Combination of variables with beta coefficients
+```{r}
+df = read.csv(file=dataset_path)
+
+# coefficienti tratti dal summary
+coeff = coefficients(linear_model)$CNT[1,2:20]
+
+tec_beta_comb = 0
+tech <- colnames(coeff[grep("tec", vars)])
+for (col in tech){
+  tec_beta_comb = tec_beta_comb + coeff[,col]*df[,col]
+  
+}
+
+psi_beta_comb = 0
+psi <- colnames(coeff[grep("psi", vars)])
+for (col in psi){
+  psi_beta_comb = psi_beta_comb + coeff[,col]*df[,col]
+  
+}
+
+
+clt_beta_comb = 0
+clt <- colnames(coeff[grep("clt", vars)])
+for (col in clt){
+  clt_beta_comb = clt_beta_comb + coeff[,col]*df[,col]
+  
+}
+
+fam_beta_comb = 0
+fam <- colnames(coeff[grep("fam", vars)])
+for (col in clt){
+  fam_beta_comb = fam_beta_comb + coeff[,col]*df[,col]
+  
+}
+
+
+tch_beta_comb = 0
+tch <- colnames(coeff[grep("tch", vars)])
+for (col in clt){
+  tch_beta_comb = tch_beta_comb + coeff[,col]*df[,col]
+  
+}
+
+
+sch_beta_comb = 0
+sch <- colnames(coeff[grep("sch", vars)])
+for (col in clt){
+  sch_beta_comb = sch_beta_comb + coeff[,col]*df[,col]
+  
+}
+```
+
+
+Questi boxplot sono ottenuti moltiplicando i coefficienti beta per i valori delle
+variabili nelle varie categorie.
+
+Quindi in teoria più un boxplot tende a spostarsi in alto
+più quella categoria è forte in quello stato, perché vuol dire che contribuisce
+di più a far salire il valore dela target well being.
+
+```{r}
+boxplot(tec_beta_comb ~ df$CNT, col=fun_colori(length(unique(df$CNT))),
+        las=2,main = "tec combined with betas")
+boxplot(psi_beta_comb ~ df$CNT, col=fun_colori(length(unique(df$CNT))),
+        las=2,main = "psi combined with betas")
+boxplot(clt_beta_comb ~ df$CNT, col=fun_colori(length(unique(df$CNT))),
+        las=2,main = "clt combined with betas")
+boxplot(fam_beta_comb ~ df$CNT, col=fun_colori(length(unique(df$CNT))),
+        las=2,main = "fam combined with betas")
+boxplot(tch_beta_comb ~ df$CNT, col=fun_colori(length(unique(df$CNT))),
+        las=2,main = "tch combined with betas")
+boxplot(sch_beta_comb ~ df$CNT, col=fun_colori(length(unique(df$CNT))),
+        las=2,main = "sch combined with betas")
+
+```
+
+## Clustering sulle combination?
+Sembra ci siano divisioni per contributi migliori/peggiori, ma all'interno delle
+scuole dei vari stati, non tra i singoli stati uno contro l'altro.
+
+
+```{r}
+cols=colori_fun(14,52)
+breaks=c(0,which((df$CNT[1:length(df$CNT)-1]==df$CNT[2:length(df$CNT)])==FALSE))
+```
+
+
+```{r}
+val_cur = tec_beta_comb
+
+plot(val_cur, col=cols[as.numeric(as.factor(df$CNT))])
+abline(v=breaks, lty=2,col="gray")
+text(unique(df$CNT),x=breaks,y=1,cex=0.5)
+
+val_clust = hclust(dist(val_cur,method="euclidean"),method="complete")
+plot(val_clust,hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+clusts = cutree(val_clust,k=3)
+
+plot(val_cur, col=cols[as.numeric(as.factor(df$CNT))],pch=clusts)
+abline(v=breaks, lty=2,col="gray")
+text(unique(df$CNT),x=breaks,y=-0.2,cex=0.5)
+```
+
+```{r}
+val_cur = psi_beta_comb
+
+plot(val_cur, col=cols[as.numeric(as.factor(df$CNT))])
+abline(v=breaks, lty=2,col="gray")
+text(unique(df$CNT),x=breaks,y=1,cex=0.5)
+
+val_clust = hclust(dist(val_cur,method="euclidean"),method="complete")
+plot(val_clust,hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+clusts = cutree(val_clust,k=3)
+
+plot(val_cur, col=cols[as.numeric(as.factor(df$CNT))],pch=clusts)
+abline(v=breaks, lty=2,col="gray")
+text(unique(df$CNT),x=breaks,y=1,cex=0.5)
+```
+
+```{r}
+val_cur = clt_beta_comb
+
+plot(val_cur, col=cols[as.numeric(as.factor(df$CNT))])
+abline(v=breaks, lty=2,col="gray")
+text(unique(df$CNT),x=breaks,y=1,cex=0.5)
+
+val_clust = hclust(dist(val_cur,method="euclidean"),method="complete")
+plot(val_clust,hang=-0.1, xlab='', labels=F, cex=0.6, sub='')
+clusts = cutree(val_clust,k=3)
+
+plot(val_cur, col=cols[as.numeric(as.factor(df$CNT))],pch=clusts)
+abline(v=breaks, lty=2,col="gray")
+text(unique(df$CNT),x=breaks,y=-0.15,cex=0.5)
+```
+
+
+
+
 # RANDOM EFFECTS
 
 questo pu? darci un'idea del contributo del paese per il well being
