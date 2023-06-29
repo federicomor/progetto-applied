@@ -12,10 +12,10 @@ end
 
 # set_player_data(1234,:player_name,"Gio")
 function set_player_data(player_id, field::Symbol, value)
-    if !is_player_registered(player_id)
-        register_player(player_id)
-    end
-        df[findfirst(isequal.(df.player_id,player_id)),field] = value
+    # if !is_player_registered(player_id)
+    #     register_player(player_id)
+    # end
+    df[findfirst(isequal.(df.player_id,player_id)),field] = value
 end
 
 function get_player_data(player_id, field::Symbol)
@@ -35,9 +35,9 @@ end
 
 
 function normalize_player_data(player_id)
-    if !is_player_registered(player_id)
-        register_player(player_id)
-    end
+    # if !is_player_registered(player_id)
+        # register_player(player_id)
+    # end
     tot = 0
     position = findfirst(isequal.(df.player_id,player_id))
 

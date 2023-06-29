@@ -12,15 +12,20 @@ function print_help(chat_id)
     (2) Type /state to choose the state to play with.
     (3) Type /budget to implement your strategy.
     (4) Type /summary to see your game parameters.
-    (5) Type /done to confirm your parameters choice.
+    (5) Type "/done yes" to confirm your parameters choice.
     (6) Type /results to see your position in the ranking!"""
 
     str3 = """
-    *Command execution*
-    Each interactive command expects that you send a message in the form "*keyword value*", a syntax which let us set a certain parameter game to the value you want to assign. 
-    For example "play ESP" selects ESP as the state to play with, "tec 60" selects to invest 60% of your budget on category technology, "callme Jhonny" selects your username to be Jhonny, etc.
+    *Game parameters*
+    To set your game parameters send a message in the form "*keyword value*": keyword identifies the parameter, and value sets it according to your choice.
+    For example:
+    - "play ESP" selects ESP as the state to play with
+    - "tec 40" selects to invest 40% of your budget on category technology
+    - "callme Jhonny" selects your username to be Jhonny
 
-    Keywords are: _callme, play, tec, psi, clt, fam, tch, sch_. Values should be: a string (for the state and callme) or a number (for the budget). All is case-insensitive, so callme or Callme or CallMe won't get the bot crash, for example.
+    Keywords are: _callme, play, tec, psi, clt, fam, tch, sch_.
+    Values should be: a string (for the state and callme) or a number (for the budget).
+    All is case-insensitive, so callme or Callme or CallMe will all work.
     """
     # useremo la funzione lowercase(input) ovunque
     sendMessage(tg,
@@ -62,7 +67,7 @@ end
 # end
 
 function is_valid_keyword(text)
-    if (lowercase(text) in KEYWORDS) || (lowercase(text[2:end]) in KEYWORDS)
+    if (lowercase(text) in KEYWORDS)# || (lowercase(text[2:end]) in KEYWORDS)
         return true
     end
     return false
@@ -70,9 +75,9 @@ end
 
 function which_keyword(text)
     key = split(text," ")[1]
-    if key[1]=="/"
-        key = key[2:end]
-    end
+    # if key[1]=="/"
+    #     key = key[2:end]
+    # end
     return KEYWORDS[findfirst(isequal.(KEYWORDS,lowercase(key)))[2]]
 end
 
@@ -81,8 +86,9 @@ function process_keyword_value(text, player_id)
     val = split(text," ")[2]
     done = df[findfirst(isequal.(df.player_id,player_id)),:zdone]
 
-    if key == "callme" # && done==0
+    if key == "callme" && done==0
         # maybe one can still change his/her player_name even after /done
+        # no, meglio non permetterlo
         if in(val,df[:,:player_name])
             return "Error: name already taken."
         else
@@ -116,4 +122,17 @@ function process_keyword_value(text, player_id)
     end
 
     return "Something went wrong here."
+end
+
+
+function bcast(msg_text)
+    for idd in df.player_id
+        try
+            sendMessage(tg,
+                text = msg_text,
+                chat_id=idd)
+        catch e
+            @show e
+        end
+    end
 end
