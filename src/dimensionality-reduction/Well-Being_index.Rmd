@@ -1,0 +1,295 @@
+# Indeces to measure Well-Being
+
+## References
+
+-   notebook on Factor Analysis in this folder
+
+-   classification of variables <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7312700/>
+
+-   more on the definition of well-being in PISA <https://files.eric.ed.gov/fulltext/ED612544.pdf>
+
+## Settings
+
+```{r}
+#loaded librarires
+library(dplyr)
+library(psych) #for KMO test and principal()
+library(car) #to apply transformations
+library(MVN) #to perform multivariate gaussianity check
+library(GGally) #for ggcorr
+library(ggplot2)
+```
+
+```{r}
+#DIRECTORIES
+root_proj_dir = "../../"
+dataset_dir = paste(root_proj_dir,"/data/pisa_wPV_grouped_bysch.csv",sep="")
+include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_dir)
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_dir)
+```
+
+```{r}
+#some adjustments on the data
+pisa_data$X <- NULL
+pisa_data$schID <- NULL
+pisa_data$CNT <- as.factor(pisa_data$CNT)
+pisa_data$CNTSCHID <- as.factor(pisa_data$CNTSCHID)
+pisa_data$CNTSTUID <- as.factor(pisa_data$CNTSTUID)
+```
+
+# Data preprocessing
+
+```{r}
+#paluesible values dataset
+plausible_values <- pisa_data %>% select(starts_with("PV"))
+#excluding PV frmo the dataset to compute the factor analysis
+pisa_data <- pisa_data %>% select(-starts_with("PV")) #excluding target variables
+```
+
+```{r}
+#standardize the variables
+transformed_data <- as.data.frame(scale(select_if(pisa_data,is.numeric)))
+transformed_data$CNT <- pisa_data$CNT #adding CNT column
+
+pisa_data <- transformed_data
+rm(transformed_data)
+
+boxplot(select_if(pisa_data,is.numeric),las=2)
+```
+
+# Well-being variables
+
+```{r}
+grouped_variables <- list()
+
+#Psychological well-being: c("EUDMO","SWBP","GFOFAIL", "RESILIENCE", "COMPETE")
+grouped_variables[["Psychological Well-being"]] <- c("EUDMO","SWBP", "RESILIENCE")
+
+#Social well-being: c("EMOSUPS","BELONG","BEINGBULLIED","PERCOOP","PERCOMP")
+grouped_variables[["Social Well-Being"]] <- c("EMOSUPS","BELONG","BEINGBULLIED")
+
+#all together
+grouped_variables[["Overall Well-Being"]] <- c("EUDMO","SWBP", "RESILIENCE", "COMPETE","EMOSUPS","BELONG","BEINGBULLIED","PERCOOP")
+
+#groups
+group_list <- names(grouped_variables)
+```
+
+```{r}
+p_ <- GGally::print_if_interactive
+
+for(group_name in group_list){
+  
+  p_(ggcorr(pisa_data[,grouped_variables[[group_name]]],
+         label=TRUE,label_size = 2) +
+    ggtitle(group_name))
+}
+```
+
+# Estimating the model
+
+## KMO ratios
+
+```{r}
+for(group in names(grouped_variables)){
+  cat("\nGroup: ", group,"\n\n")
+  print(KMO(pisa_data[,grouped_variables[[group]]]))
+}
+```
+
+## Selecting number of factors
+
+```{r}
+nfactors <- list()
+
+for(group in group_list){
+  #parallel analysis
+  parallel.an <- fa.parallel(pisa_data[,grouped_variables[[group]]], 
+              main = paste("Parallel Analysis Scree Plots:",group))
+  
+  nfactors[[group]]$FA <- parallel.an$nfact
+  nfactors[[group]]$PC <- parallel.an$ncomp
+}
+```
+
+Fixes
+
+```{r}
+#Psychological well-being
+nfactors$`Psychological Well-being`$FA <- 1
+nfactors$`Psychological Well-being`$PC <- 1
+
+#Social well-being
+nfactors$`Social Well-Being`$FA <- 1
+nfactors$`Social Well-Being`$PC <- 1
+
+#Overall well-being
+nfactors$`Overall Well-Being`$FA <- 2
+nfactors$`Overall Well-Being`$PC <- 2
+```
+
+## Fitting
+
+```{r}
+# FA with principal factor method
+fit_FA_MinRes <- list() 
+# rotated PCA
+fit_PCA_rotated <- list()
+
+#fitting the models
+for(group in group_list){
+  
+  #FA with MinRes
+  fit_FA_MinRes[[group]] <- fa(r = cor(pisa_data[,grouped_variables[[group]]]),
+                            nfactors = nfactors[[group]]$FA,
+                            rotate = "oblimin")
+  #advanced PCA
+  fit_PCA_rotated[[group]] <- principal(r = cor(pisa_data[,grouped_variables[[group]]]),
+                               nfactors = nfactors[[group]]$PC, 
+                               rotate = "oblimin")
+}
+```
+
+# Interpretation
+
+## Loadings
+
+```{r}
+for(group in group_list){
+  
+  #EFA
+  for(i in 1:nfactors[[group]]$FA){
+    barplot(fit_FA_MinRes[[group]]$loadings[,i], 
+            main = paste(group,"- EFA: Factor",i),las=2,cex.names=0.7)
+  }
+  #rotated PCA
+  for(i in 1:nfactors[[group]]$PC){
+    barplot(fit_PCA_rotated[[group]]$loadings[,i], 
+            main = paste(group,"- PCA: Rotated Component",i),las=2,cex.names=0.7)
+  }
+}
+```
+
+Thresholdings the loadings to compute alpha
+
+```{r}
+threshold <- 0.35
+
+significant_vars <- list()
+
+for(group in group_list) {
+  #EFA
+  significant_vars[[group]]$FA <- list()
+  for(i in 1:nfactors[[group]]$FA) {
+    selected_indeces <- ifelse(abs(fit_FA_MinRes[[group]]$loadings[,i]) < threshold, FALSE, TRUE)
+    significant_vars[[group]]$FA[[i]] <- grouped_variables[[group]][selected_indeces]
+  }
+  #rotated PCA
+  significant_vars[[group]]$PC <- list()
+  for(i in 1:nfactors[[group]]$PC) {
+    selected_indeces <- ifelse(abs(fit_PCA_rotated[[group]]$loadings[,i]) < threshold, FALSE, TRUE)
+    significant_vars[[group]]$PC[[i]] <- grouped_variables[[group]][selected_indeces]
+  }
+}
+```
+
+## GOF
+
+```{r}
+for(group in group_list){
+  cat("\n-----------Group:", group, "-----------\n")
+  
+  #alpha score
+  #cat("\nalpha:\n")
+  #alpha <- psych::alpha(pisa_data[,grouped_variables[[group]]], check.keys = T)
+  #cat(alpha$total[1]$raw_alpha)
+  
+  #number of factors and components
+  cat("\n\nNumber of factors: ", nfactors[[group]]$FA)
+  cat("\nNumber of components: ", nfactors[[group]]$PC)
+  
+  #MinRes factor analysis
+  cat("\n\n### MinRes Factor Analysis ###\n")
+  
+  #communalities
+  cat("-> Communalities:\n")
+  print(fit_FA_MinRes[[group]]$communality)
+  
+  #fit score
+  cat("-> Fit of the model\n", 
+      factor.fit(r = cor(select_if(pisa_data[,grouped_variables[[group]]],is.numeric)),
+             fit_FA_MinRes[[group]]), "\n")
+  
+  #variance explained
+  cat("-> Variance explained:\n")
+  print(fit_FA_MinRes[[group]]$Vaccounted)
+  
+  #factors internal consistency
+  cat("-> Factor internal consistency:\n")
+  
+  for(i in 1:nfactors[[group]]$FA){
+    alpha <- psych::alpha(pisa_data[,significant_vars[[group]]$FA[[i]]], 
+                          check.keys = T)$total[1]
+    cat("\nFactor ", i, "\n")
+    print(alpha$raw_alpha)
+  }
+  
+  #rotated PCA
+  cat("\n\n### Rotated PCA ###\n")
+  
+  #communalities
+  cat("-> Communalities:\n")
+  print(fit_PCA_rotated[[group]]$communality)
+  
+  #fit score
+  cat("-> Fit of the model: ", fit_PCA_rotated[[group]]$fit,"\n")
+  cat("-> Variance explained:\n")
+  print(fit_PCA_rotated[[group]]$Vaccounted)
+  
+  #Component internal consistency
+  cat("-> Component internal consistency:\n")
+  
+  for(i in 1:nfactors[[group]]$PC){
+    alpha <- psych::alpha(pisa_data[,significant_vars[[group]]$PC[[i]]], 
+                          check.keys = T)$total[1]
+    cat("\nComponent ", i, "\n")
+    print(alpha$raw_alpha)
+  }
+}
+```
+
+### Alpha score
+
+```{r}
+#Psychological well-being c("EUDMO","SWBP","GFOFAIL", "RESILIENCE", "COMPETE")
+#Social well-being c("EMOSUPS","BELONG","BEINGBULLIED","PERCOOP","PERCOMP")
+
+#Psychological Well-Being
+psych::alpha(pisa_data[, c("EUDMO","SWBP","RESILIENCE","COMPETE")], check.keys = T)$total
+psych::alpha(pisa_data[, c("EUDMO","SWBP","RESILIENCE","COMPETE")], check.keys = T)$alpha.drop
+
+#Social Well-Being
+psych::alpha(pisa_data[, c("EMOSUPS","BELONG","BEINGBULLIED","PERCOOP")], 
+             check.keys = T)$total
+psych::alpha(pisa_data[, c("EMOSUPS","BELONG","BEINGBULLIED","PERCOOP")], 
+             check.keys = T)$alpha.drop
+
+#Overall Well-being
+psych::alpha(pisa_data[, c("EUDMO","SWBP", "RESILIENCE", "COMPETE","EMOSUPS","BELONG","BEINGBULLIED","PERCOOP")], 
+             check.keys = T)$total
+psych::alpha(pisa_data[, c("EUDMO","SWBP", "RESILIENCE", "COMPETE","EMOSUPS","BELONG","BEINGBULLIED","PERCOOP")], 
+             check.keys = T)$alpha.drop
+```
+
+# Computation of the indeces
+
+```{r eval=FALSE, include=FALSE}
+SocialWB <- fit_PCA_rotated[["Social Well-Being"]]$loadings
+PsychologicalWB <- fit_PCA_rotated[["Psychological Well-being"]]$loadings
+
+save(SocialWB, file = "SocialWB_loadings.RData")
+save(PsychologicalWB, file = "PsychologicalWB_loadings.RData")
+```

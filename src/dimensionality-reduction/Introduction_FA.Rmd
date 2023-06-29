@@ -87,17 +87,15 @@ grouped_variables[["Relationship with ICT"]] <- c("AUTICT","COMPICT","INTICT","E
 grouped_variables[["ICT at school"]] <- c("ICTCLASS","ICTOUTSIDE","USESCH", "ICTSCH","RATCMP1")
 
 ##Psichology
-grouped_variables[["Well-being"]] <- c("EUDMO","SWBP","EMOSUPS")
-grouped_variables[["Attitude towards the others"]] <- c("COMPETE","RESILIENCE", "GFOFAIL")
-grouped_variables[["Relationship with school environment"]] <- c("PERCOOP","PERCOMP","PERFEED","BELONG","BEINGBULLIED")
-
+grouped_variables[["Psychological Well-being"]] <- c("EUDMO","SWBP","GFOFAIL", "RESILIENCE", "COMPETE")
+grouped_variables[["Social Well-Being"]] <- c("PERCOOP","PERCOMP","EMOSUPS","BELONG","BEINGBULLIED")
 
 ##Culture
 grouped_variables[["Cultural possesion"]] <- c("CULTPOSS","HEDRES")
 grouped_variables[["Attitude towards school"]] <- c("LMINS","MMINS","STUBEHA","ATTLNACT")
 grouped_variables[["Reading"]] <- c("JOYREAD", "SCREADCOMP")
 
-##Familty
+##Family
 grouped_variables[["Family economic status"]] <- c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
 
 ##Teaching
@@ -117,6 +115,11 @@ Some graphs to validate the choice made while grouping the variables
 ```{r}
 p_ <- GGally::print_if_interactive
 
+#overall correlation overview
+ggcorr(select_if(pisa_data, is.numeric),
+       label = TRUE,
+       label_size = 0.5)
+
 for(group_name in group_list){
   
   p_(ggcorr(pisa_data[,grouped_variables[[group_name]]],
@@ -131,13 +134,24 @@ for(group_name in group_list){
 
 -   cortest.bartlett(): test to see if the variables in the dataframe are uncorrellated. H0: correlation matrix sigma = Identity matrix (i.e. uncorrelated variables)
 
--   KMO: another check on uncorrelation
+-   KMO: ratio of correlations and partial correlations that reflects the extent to which correlations are a function of the variance shared across all variables rather than the variance shared by particular pairs of variables
 
 -   multivariate normality to perform factor analysis with the maximum likelihood estimation method
+
+```{r}
+for(group in names(grouped_variables)){
+  cat("\nGroup: ", group,"\n\n")
+  print(KMO(pisa_data[,grouped_variables[[group]]]))
+}
+```
+
+A desirable value for KMO is \>=0.70, below 0.5 unacceptable and we cannot apply EFA
 
 ## Selecting the number of factors
 
 the following methods are useful to select the initial number of factors. The final choice should be made based on the portion of variance explained
+
+(Note that scree plots are contained in parallel analysis)
 
 ```{r}
 nfactors <- list()
@@ -162,52 +176,39 @@ for(group in group_list){
 }
 ```
 
+Fix on number of factors/components
+
+```{r}
+
+```
+
 ## Fitting the models
 
 Options:
 
--   factanal(): performs a EFA by maximum likelihood estimation [package stats]
+-   fa(): performs various types of EFA, we'll use the MinRes method which make no normal assumpition (as opposed to ML method) [package psych]
 
--   princomp(): perform PCA in the stadard way, as seen in lecture [package stats]
-
--   fa(): performs various types of EFA, we can decided the most suited one [package psych]
-
--   principal(): performs PCA in a more sophisticated way, see the documentation in this folder [package psych]
+-   principal(): performs PCA in a more sophisticated way, using rotations to inrease the interpretability of the components. See the documentation in this folder [package psych]
 
 ```{r}
 #TRIED methods:
-# FA with ML
-fit_FA_ML <- list() #factanal() 
-
-# classical PCA 
-fit_PCA_classic <- list() #princomp()
 
 # FA with principal factor method
-fit_FA_PF <- list() #fa() 
-
-# advanced PCA
-fit_PCA_advanced <- list()
+fit_FA_MinRes <- list() 
+# rotated PCA
+fit_PCA_rotated <- list()
 
 #fitting the models
 for(group in group_list){
-  #FA with ML
-  fit_FA_ML[[group]] <- fa(r = select_if(pisa_data[,grouped_variables[[group]]],is.numeric),
-                             factors = nfactors[[group]]$FA,
-                             rotation = "promax",
-                             fm = "mle")
   
-  #classic PCA
-  fit_PCA_classic[[group]] <- princomp(pisa_data[,grouped_variables[[group]]])
-  #FA with PF
-  fit_FA_PF[[group]] <- fa(r = cor(pisa_data[,grouped_variables[[group]]]),
+  #FA with MinRes
+  fit_FA_MinRes[[group]] <- fa(r = cor(pisa_data[,grouped_variables[[group]]]),
                             nfactors = nfactors[[group]]$FA,
                             rotate = "promax")
   #advanced PCA
-  fit_PCA_advanced[[group]] <- principal(r = cor(pisa_data[,grouped_variables[[group]]]),
+  fit_PCA_rotated[[group]] <- principal(r = cor(pisa_data[,grouped_variables[[group]]]),
                                nfactors = nfactors[[group]]$PC, 
-                               rotate = "promax", 
-                               scores = TRUE)
-  
+                               rotate = "promax")
 }
 ```
 
@@ -229,92 +230,80 @@ for(group in group_list){
 
 [reference: <https://rpubs.com/pjmurphy/758265> for]
 
-# Loadings and GOF
+# GOF
 
-## FA with Principal Factor solution method
+Overall overview of all the methods
 
-Goodness of the model:
+Metrics used:
+
+-   alpha: I did not include this in the end. It should be used to evaluate the internal consistency of the factors. To do this, we should use the variables significantly (loading \> threshold) associated with a factor and evaluate their correlation.
 
 -   communalities: percentage of the variability of a single variable in the original dataframe explained by the common factors
 
--   factor.fit() compute the following quantity to asses the GOF of the model:
+-   fit: $\Psi$ residual matrix $$
+    1 - \frac{\sum_{i,j}{(\Psi\Psi^T)_{i,j}}}{\sum_{i,j}{(\text{R}\text{R}^T)_{i,j}}}
+    $$
 
-    -\> 1 - sum(residual_mat\*residual_mat')/sum(R\*R')
-
-    where the sum is performed over each el. of the matrix
+-   variance explained (it is the average of the communalities)
 
 ```{r}
 for(group in group_list){
-  cat("\nGroup", group, "\n")
-  #communalities
-  cat("->Communalities\n")
-  print(fit_FA_PF[[group]]$communality)
+  cat("\n-----------Group:", group, "-----------\n")
   
-  #fit of the model
-  cat("->Fit of the model\n")
+  #alpha score
+  #cat("\nalpha:\n")
+  #alpha <- psych::alpha(pisa_data[,grouped_variables[[group]]], check.keys = T)
+  #cat(alpha$total[1]$raw_alpha)
+  
+  #number of factors and components
+  cat("\n\nNumbr of factors: ", nfactors[[group]]$FA)
+  cat("\nNumbr of components: ", nfactors[[group]]$PC)
+  
+  #MinRes factor analysis
+  cat("\n\n### MinRes Factor Analysis ###\n")
+  #communalities
+  cat("-> Communalities:\n")
+  print(fit_FA_MinRes[[group]]$communality)
+  cat("-> Unique variance:\n")
+  print(fit_FA_MinRes[[group]]$uniquenesses)
+  
+  #fit score
+  cat("-> Fit of the model\n")
   print(factor.fit(r = cor(select_if(pisa_data[,grouped_variables[[group]]],is.numeric)),
-             fit_FA_PF[[group]]))
+             fit_FA_MinRes[[group]]))
+  
+  #variance explained
+  cat("-> summary:\n")
+  print(fit_FA_MinRes[[group]]$Vaccounted)
+  
+  
+  #rotated PCA
+  cat("\n\n### PCA ###\n")
+  cat("-> fit: ", fit_PCA_rotated[[group]]$fit,"\n")
+  cat("-> summary:\n")
+  print(fit_PCA_rotated[[group]]$Vaccounted)
+  
+  
 }
 ```
+
+# Loadings
+
+## MinRes FA 
 
 Visualizing the loadings:
 
 ```{r}
-#Factor Analysis with method "pa"
+#Factor Analysis with method "MinRes"
 for(group in group_list){
-  fa.diagram(fit_FA_PF[[group]])
-  for(i in 1:dim(fit_FA_PF[[group]]$loadings)[2]){
-    barplot(fit_FA_PF[[group]]$loadings[,i], main = paste("factor",group,i),las=2,cex.names=0.7)
+  fa.diagram(fit_FA_MinRes[[group]])
+  for(i in 1:dim(fit_FA_MinRes[[group]]$loadings)[2]){
+    barplot(fit_FA_MinRes[[group]]$loadings[,i], main = paste("factor",group,i),las=2,cex.names=0.7)
   }
 }
 ```
 
-## FA with ML method
-
-Variance explained and GOF of the model (test to evaluate H0: sigma = LL' + phi)
-
-```{r}
-#variance explained
-for(group in group_list){
-  cat("GROUP", group, "\n\n")
-  #communalities
-  cat("-> Communalities\n")
-  print(fit_FA_ML[[group]]$communality)
-  
-  #fit of the model
-  cat("-> Fit coefficient:\n")
-  print(factor.fit(r = cor(select_if(pisa_data[,grouped_variables[[group]]],is.numeric)),
-             fit_FA_ML[[group]]))
-  #GOF test
-  cat("-> p-value for the GOF test\n")
-  print(fit_FA_ML[[group]]$PVAL)
-  
-  cat("\n")
-}
-```
-
-Visualize the loadings:
-
-```{r}
-#Factor Analysis with ML method 
-for(group in group_list){
-  fa.diagram(fit_FA_ML[[group]]$loadings)
-  
-}
-```
-
-## PCA
-
-Evaluate the GOF of the model:
-
-```{r}
-for(group in group_list){
-  cat("Group", group, ":", 
-      fit_PCA_advanced[[group]]$fit,"\n")
-  #fit of the model for group wrt off-diag elements for group
-  cat("-> fit: ", fit_PCA_advanced[[group]]$fit,"\n")
-}
-```
+## Rotated PCA
 
 Visualize the loadings:
 
@@ -322,63 +311,29 @@ Visualize the loadings:
 #Principal Component method
 for(group in group_list){
   for(i in 1:nfactors[[group]]$PC){
-    barplot(fit_PCA_advanced[[group]]$loadings[,i], main = paste("factor",group,i),las=2,cex.names=0.7)
+    barplot(fit_PCA_rotated[[group]]$loadings[,i], main = paste("factor",group,i),las=2,cex.names=0.7)
   }
 }
 ```
 
-## Classic PCA
+# Thoughts
+
+-   Family Economic status: all the variables are highly correlated with ESCS (some of them are even used to compute ESCS), we can keep only ESCS and discard all the others, since they are not carrying additional information
+
+-   Is it really necessary to reduce dimensionality for all the ICT variables? Are they possibly generated by a latent factor? Maybe it can be useful too have many measurements of different aspects and then perform variable selection later on, while constructing a predictive model
+
+-   The same goes for the school variables. Note that school variables and some of the ICT variables are the only ones that a policy maker can control (e.g. we cannot control the economic status of a student, that is given, but we can implement policies at school level. For example we can decide how much schools should invest in technology). Thus, if we want to make an analysis useful for policy making we should keep as many variables of this type as possible.
+
+-   For the psychological variables a synthetic score is much needed, especially if we want to use it as a target of our analysis
+
+-   Also if we want to use other targets, we may use PCA or FA to synthetized a suitable score
+
+# Writing the dataset of scores
+
+Utility to compite the scores
 
 ```{r}
-for(group in group_list){
-  print(summary(fit_PCA_classic[[group]]))
-}
-```
-
-```{r}
-#Principal Component method
-for(group in group_list){
-  for(i in 1:nfactors[[group]]$PC){
-    barplot(fit_PCA_classic[[group]]$loadings[,i], main = paste("factor",group,i),las=2,cex.names=0.7)
-  }
-}
-```
-
-# Computing the scores
-
-```{r}
-#little utility to compute the scores from a fit of principal() and the dataframe on which the fit is computed
 scores <- function(fit,data){
   return(as.data.frame(as.matrix(data)%*%fit$loadings))
 }
-
-#utiliy to name the dataframe
-add_prefix <- function(prefix,x){
-  return(paste(prefix,x,sep="_"))
-}
-
-FA_PC_scores <- data.frame(matrix(nrow = dim(pisa_data)[1], ncol = 0))
-for(group in group_list){
-  #score names
-  PC_names <- as.character(1:nfactors[[group]])
-  PC_names <- sapply(PC_names, add_prefix, prefix = group)
-  PC_names <- sapply(PC_names, add_prefix, prefix = "PC")
-  
-  #computing the scores
-  FA_PC_scores[,PC_names] <- scores(fit_FA_PC[[group]],select_if(pisa_data[,grouped_variables[[group]]],is.numeric))
-}
-```
-
-Building and writing the score dataset:
-
-```{r}
-#add CNT column
-FA_PC_scores$CNT <- pisa_data$CNT
-#adding PVs
-FA_PC_scores[,names(plausible_values)] <- plausible_values
-```
-
-```{r eval=FALSE, include=FALSE}
-saving_dir <- "../../data"
-# write.csv(FA_PC_scores, file=paste(saving_dir,"pisa_wPV_PCscores.csv",sep="/"))
 ```
