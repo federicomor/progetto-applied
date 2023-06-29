@@ -22,7 +22,7 @@ library(ggplot2)
 
 ```{r}
 #DIRECTORIES
-root_proj_dir = "../../"
+root_proj_dir = "../../.."
 dataset_dir = paste(root_proj_dir,"/data/pisa_wPV_grouped_bysch.csv",sep="")
 include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
