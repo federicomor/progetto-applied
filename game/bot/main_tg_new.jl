@@ -39,6 +39,7 @@ if ("rec" in ARGS || 1==1)
     @show df
 end
 
+# println("We are online.")
 
 ############# Include dataframe functions #############
 include("dataframe_functions.jl")
@@ -88,7 +89,6 @@ function handle_command(msg)
     if chat_id=="" || msg_text==""
         return
     end
-    println("$chat_id -> $msg_text")
 
     who = "$chat_id"
     if name != ""
@@ -98,11 +98,12 @@ function handle_command(msg)
         who=username
     end
 
+    println("$chat_id = $who -> $msg_text")
+
     player_id = chat_id
     if !is_player_registered(player_id)
         register_player(player_id, who)
     end
-
 
 
     if msg_text == "/start"
@@ -122,19 +123,38 @@ function handle_command(msg)
 
 
     elseif msg_text == "/done"
+        if get_player_data(player_id,:zdone) == 1
+                sendMessage(tg,
+                    text="Game parameters already confirmed! Type /results to see your ranking in the scoreboard!",
+                    chat_id=chat_id)
+        else
+            sendMessage(tg,
+                    text="*Danger zone!* You are about to confirm your game parameters, and so you won't be able to change them after that.\nIf your are sure, type \"/done yes\" to actually confirm them.",
+                    chat_id=chat_id,
+                    parse_mode="Markdown")
+        end
+
+
+    elseif msg_text == "/done yes"
         if get_player_data(player_id,:state) == "missing"
             sendMessage(tg,
                 text="Please choose the state before confirming your parameters.",
                 chat_id=chat_id)
         else
-            sendMessage(tg,
-                text="Game parameters confirmed! Now you can't change them anymore.\nWe are now normalizing your parameters, so that they sum up to 100, and then computing your score. Type /results to see your ranking in the scoreboard!",
-                chat_id=chat_id)
-        
-            set_player_data(player_id, :zdone, 1)
-            # normalize_player_data(player_id) # normalizza già nella compute_score
-            compute_score(player_id)
-            include("visualize_score.jl")
+            if get_player_data(player_id,:zdone) == 1
+                sendMessage(tg,
+                    text="Game parameters already confirmed! Type /results to see your ranking in the scoreboard!",
+                    chat_id=chat_id)
+            else
+                sendMessage(tg,
+                    text="Game parameters confirmed! Now you can't change them anymore.\nWe are now normalizing your parameters (so that they sum up to 100), and then computing your score. Type /results to see your ranking in the scoreboard!",
+                    chat_id=chat_id)
+            
+                set_player_data(player_id, :zdone, 1)
+                # normalize_player_data(player_id) # normalizza già nella compute_score
+                compute_score(player_id)
+                include("visualize_score.jl")
+            end
         end
 
 
@@ -204,32 +224,75 @@ function handle_command(msg)
             chat_id = chat_id,
             parse_mode="Markdown")
         sendMessage(tg,
-            text="Give a value between 0 and 100 for each category, the values should add up to 100 but don't worry for possile mistakes, we will fix them (if any) normalizing everything to 1.",
+            text="Give a value between 0 and 100 for each category, the values should add up to 100 but don't worry for possile mistakes, we will fix them (if any) normalizing everything to 100.",
             chat_id = chat_id,
             parse_mode="Markdown")
 
 
     # just a random test with numbers
-    elseif match(r"^[0-9 \.]+$", msg_text) !== nothing
-        x = []
-        e=Any
-        try 
-            x = parse.(Float64, split(msg_text, " "))
-        catch e
-        end
-        if isa(e,ArgumentError)
-            sendMessage(tg,
-                text = "Error: $(e.msg)",
-                chat_id=chat_id)
-        else
-            sendMessage(tg,
-                text = "Your number squared is $(x.^2)",
-                chat_id=chat_id)
-        end
-        
+    # elseif match(r"^[0-9 \.]+$", msg_text) !== nothing
+    #     x = []
+    #     e=Any
+    #     try 
+    #         x = parse.(Float64, split(msg_text, " "))
+    #     catch e
+    #     end
+    #     if isa(e,ArgumentError)
+    #         sendMessage(tg,
+    #             text = "Error: $(e.msg)",
+    #             chat_id=chat_id)
+    #     else
+    #         sendMessage(tg,
+    #             text = "Your number squared is $(x.^2)",
+    #             chat_id=chat_id)
+    #     end
+    
 
+    ############# Messages controlled by me #############
+    # using my chat_id as reference
+
+    elseif lowercase(msg_text)=="/show df" && chat_id==641681765
+        @show df
+
+    # elseif lowercase(msg_text)=="/ME_send_results" && chat_id==641681765
+    #     sendMessage(tg,
+    #         text = "Hey player, the final results are now available! Here you can find them\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
+    #         chat_id=chat_id)
+
+
+    ############# DANGER ZONE #############
+    # elseif occursin("/bcast",lowercase(msg_text)) && chat_id==641681765
+    #     to_send = replace(msg_text,"/bcast" => "")
+    #     if to_send != ""
+    #         bcast(msg_text)
+    #     end
+
+
+    elseif lowercase(msg_text)=="/done for all" && chat_id==641681765
+        try
+            bcast("Time's up, game ended! The final results are now available here\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md")
+        catch e
+            @show e
+        end
+        for idd in df.player_id
+            try
+                if get_player_data(idd,:zdone)==0
+                    if get_player_data(idd,:state) == "nothing"
+                        set_player_data(idd,:state,rand(STATES)) # default random one
+                    end
+                    set_player_data(idd, :zdone, 1)
+                    # normalize_player_data(idd)
+                    compute_score(idd)
+                end
+            catch e
+                @show e
+            end
+        end    
+
+    ############# end #############
 
     ## we are in the "keyword value" case
+    ## moved to last to not interfere with other commands long 2 strings
     elseif length(split(msg_text," "))==2
         if is_valid_keyword(split(msg_text," ")[1])
             sendMessage(tg,
@@ -241,44 +304,6 @@ function handle_command(msg)
                 chat_id=chat_id)
         end
 
-
-    ############# Messages controlled by me #############
-    # using my chat_id as reference
-
-    # elseif lowercase(msg_text)=="/ME_send_results" && chat_id==641681765
-    #     sendMessage(tg,
-    #         text = "Hey player, the final results are now available! Here you can find them\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
-    #         chat_id=chat_id)
-
-    # elseif occursin("/ME_bcast",lowercase(msg_text)) && chat_id==641681765
-    #     to_send = replace(msg_text,"/bcast" => "")
-    #     if to_send != ""
-    #         sendMessage(tg,
-    #             text = to_send,
-    #             chat_id=chat_id)
-    #     end
-
-    ############# DANGER ZONE #############
-    elseif occursin("/ME_done_for_all",lowercase(msg_text)) && chat_id==641681765
-        sendMessage(tg,
-            text = "Time's up, game ended! The final results are now available here\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
-            chat_id=chat_id)
-        for idd in df.player_id
-            try
-                if get_player_data(idd,:zdone)==0
-                    if get_player_data(idd,:state) == "nothing"
-                        set_player_data(idd,:state,rand(STATES)) # default random one
-                    end
-                    set_player_data(idd, :zdone, 1)
-                    normalize_player_data(idd)
-                    compute_score(idd)
-                end
-            catch e
-                @show e
-            end
-        end    
-
-    ############# end #############
 
     else
         sendMessage(tg,
@@ -294,7 +319,7 @@ function main()
         # @show msg
         # @show typeof(msg)
             handle_command(msg)
-        @show df
+        # @show df
         CSV.write("df.csv", df)
 
         ## Backup
