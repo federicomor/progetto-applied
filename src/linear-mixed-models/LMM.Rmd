@@ -1,9 +1,14 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
 # Linear Mixed Models
 
 ## Settings
 
 ```{r, setup}
-root_proj_dir = "../../"
+root_proj_dir = "../../../"
 dataset_path = paste(root_proj_dir,"data/pisa_wPV_grouped_bysch.csv",sep="")
 include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
@@ -107,6 +112,7 @@ summary(fit.mixed)
 ### Random effects
 
 ```{r}
+linear_model = fit.mixed
 rand_eff<-ranef(linear_model)
 dotplot(rand_eff)
 ```
@@ -128,6 +134,7 @@ qqline(unlist(ranef(linear_model)$CNT))
 
 ```{r, warning=FALSE, message=FALSE}
 #Homoschedasticity
+linear_model_classic = fit.linear
 plot(linear_model,col=data$CNT)
 boxplot(linear_model_classic$residuals ~ data$CNT, col=unique(data$CNT),
         xlab='countrys', ylab='Residuals') 

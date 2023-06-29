@@ -1,3 +1,8 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
 # Factor Analysis
 
 ## Notes and references
@@ -23,6 +28,7 @@ library(MVN) #to perform multivariate gaussianity check
 library(GGally) #for ggcorr
 library(ggplot2)
 library(elasticnet) #trying out sparse principal component analysis [spca()]
+library(tidyverse)
 ```
 
 ```{r, setup}
@@ -336,4 +342,13 @@ Utility to compite the scores
 scores <- function(fit,data){
   return(as.data.frame(as.matrix(data)%*%fit$loadings))
 }
+
+colnames(pisa_data)
+
+scores_data = list()
+for(group in group_list){
+    scores_data[group] = list(scores(fit_PCA_rotated[[group]],pisa_data[,grouped_variables[[group]]]))
+}
+
+scores_data=data.frame(scores_data)
 ```

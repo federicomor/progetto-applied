@@ -1,0 +1,50 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+```{r}
+computing_scoresWB <- function(pisa_data){
+  library(dplyr)
+  
+  cat("***Recall to standardize your data***\n")
+  pisa_data <- as.data.frame(scale(select_if(pisa_data,is.numeric)))
+  
+  psychologicalWB_var <- c("EUDMO","SWBP", "RESILIENCE")
+  socialWB_var <- c("EMOSUPS","BELONG","BEINGBULLIED")
+  
+  load("../../src/include/SocialWB_loadings.RData")
+  load("../../src/include/PsychologicalWB_loadings.RData")
+  
+  scores <- list()
+  
+  scores[["Social well-being"]] <- as.matrix(pisa_data[,socialWB_var]) %*% SocialWB 
+  scores[["Psychological well-being"]] <- as.matrix(pisa_data[,psychologicalWB_var]) %*% PsychologicalWB
+  
+  return(scores)
+}
+
+
+```
+
+
+```{r, setup}
+#DIRECTORIES
+rm(list=ls())
+graphics.off()
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/pisa_wPV_grouped_bysch.csv",sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+data <- read.csv(file=dataset_path)
+head(data)
+colnames(data)
+
+scores_wb = computing_scoresWB(data)$`Social well-being`
+head(scores_wb)
+dim(data)
+dim(scores_wb)
+```
