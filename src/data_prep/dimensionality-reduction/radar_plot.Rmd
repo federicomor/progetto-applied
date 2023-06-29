@@ -15,6 +15,8 @@ library(fmsb)
 #	Data for cases or individuals should be given starting from row 3
 #	The number of columns or variables must be more than 2.
 
+source("../../include/Utilities.R")
+states = STATES
 avg_vals = matrix(data=NA, length(states)+2,6)
 rownames(avg_vals) = c("max","min",states)
 colnames(avg_vals) = c("tec","psi","clt","fam","tch","sch")
@@ -30,19 +32,23 @@ avg_vals
 # sch
 
 # forse usando gli score delle PCs?
-df_scores = read.csv("../../data/pisa-woNA_school_final_wo_Outl_ClassicData_PCA_SCORES.csv")
+df_scores = read.csv("../../../data/df_pca_scores.csv")
+head(df_scores)
+df_scores = df_scores[,-c(1)]
+head(df_scores)
 dim(df_scores)
+# 24 cols + CNT
 
 colnames(df_scores)
 # PCs selected
-17 == 5   +5   +3   +1   +1   +2
+24 == 5   +7   +3   +1   +4   +4
 #     tec +psi +clt +fam +tch +sch
-col_tec=c(1:5)
-col_psi=c(6:10)
-col_clt=c(11:13)
-col_fam=c(14:14)
-col_tch=c(15:15)
-col_sch=c(16:17)
+col_tec=c(2:6)
+col_psi=c(7:13)
+col_clt=c(14:16)
+col_fam=c(17:17)
+col_tch=c(18:21)
+col_sch=c(22:25)
 
 ```
 
@@ -51,17 +57,20 @@ col_sch=c(16:17)
 for(i in 1:length(states)){
 	df_state = df_scores[which(df_scores$CNT==states[i]),]
 
-	avg_vals[i+2,1] = mean(colMeans(df_state[,2+col_tec]))
-	avg_vals[i+2,2] = mean(colMeans(df_state[,2+col_psi]))
-	avg_vals[i+2,3] = mean(colMeans(df_state[,2+col_clt]))
-	avg_vals[i+2,4] = mean(df_state[,2+col_fam])
-	avg_vals[i+2,5] = mean(df_state[,2+col_tch])
-	avg_vals[i+2,6] = mean(colMeans(df_state[,2+col_sch]))
+	avg_vals[i+2,1] = mean(colMeans(df_state[,col_tec]))
+	avg_vals[i+2,2] = mean(colMeans(df_state[,col_psi]))
+	avg_vals[i+2,3] = mean(colMeans(df_state[,col_clt]))
+	avg_vals[i+2,4] = mean(df_state[,col_fam])
+	avg_vals[i+2,5] = mean(colMeans(df_state[,col_tch]))
+	avg_vals[i+2,6] = mean(colMeans(df_state[,col_sch]))
 
 }
+```
 
+
+```{r}
 avg_vals
-avg_vals[3:18,]=avg_vals[3:18,]+abs(min(avg_vals[3:18,]))
+avg_vals[3:16,]=avg_vals[3:16,]+abs(min(avg_vals[3:16,]))
 avg_vals
 
 for(j in 1:6){
@@ -75,8 +84,9 @@ avg_vals_df
 ```
 
 
+
 ```{r}
-# avg_vals
+avg_vals
 for(i in 1:length(states)){
 	# show(avg_vals_df[c(1,2,i+2),])
 	radarchart(avg_vals_df[c(1,2,i+2),],title=states[i])
