@@ -98,6 +98,7 @@ function handle_command(msg)
         who=username
     end
 
+    msg_text = replace("$msg_text", "\\" => "/")
     println("$chat_id = $who -> $msg_text")
 
     player_id = chat_id
@@ -254,11 +255,8 @@ function handle_command(msg)
     elseif lowercase(msg_text)=="/show df" && chat_id==641681765
         @show df
 
-    # elseif lowercase(msg_text)=="/ME_send_results" && chat_id==641681765
-    #     sendMessage(tg,
-    #         text = "Hey player, the final results are now available! Here you can find them\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
-    #         chat_id=chat_id)
-
+    elseif lowercase(msg_text)=="/update scoreboard" && chat_id==641681765
+        include("visualize_score.jl")
 
     ############# DANGER ZONE #############
     # elseif occursin("/bcast",lowercase(msg_text)) && chat_id==641681765
@@ -266,7 +264,6 @@ function handle_command(msg)
     #     if to_send != ""
     #         bcast(msg_text)
     #     end
-
 
     elseif lowercase(msg_text)=="/done for all" && chat_id==641681765
         try
@@ -323,8 +320,10 @@ function main()
         CSV.write("df.csv", df)
 
         ## Backup
-        # csv_name = "df_backup_$(string(now())[1:13]).csv"
-        # CSV.write("$csv_name", df)
+        t0 = string(now())
+        # csv_backup = "df_backup_h$(t0[12:13]).csv"
+        csv_backup = "df_backup_h$(t0[12:13])m$(t0[15:16]).csv"
+        CSV.write("$csv_backup", df)
     end
 end
 

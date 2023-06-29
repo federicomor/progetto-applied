@@ -67,7 +67,7 @@ end
 # end
 
 function is_valid_keyword(text)
-    if (lowercase(text) in KEYWORDS)# || (lowercase(text[2:end]) in KEYWORDS)
+    if (lowercase(text) in KEYWORDS) || (lowercase(text[2:end]) in KEYWORDS)
         return true
     end
     return false
@@ -75,9 +75,9 @@ end
 
 function which_keyword(text)
     key = split(text," ")[1]
-    # if key[1]=="/"
-    #     key = key[2:end]
-    # end
+    if key[1]=='/'
+        key = key[2:end]
+    end
     return KEYWORDS[findfirst(isequal.(KEYWORDS,lowercase(key)))[2]]
 end
 
