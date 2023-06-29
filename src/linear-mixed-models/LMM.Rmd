@@ -1,0 +1,335 @@
+# Linear Mixed Models
+
+## Settings
+
+```{r, setup}
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/pisa_wPV_grouped_bysch.csv",sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+data <- read.csv(file=dataset_path)
+```
+
+```{r}
+library(mvtnorm)
+library(MASS)
+library(car)
+library(rgl)
+library(leaps)
+library(ISLR)
+library(glmnet)
+library(lme4)
+library(nlmeU) ## --> for the dataset
+library(nlme)  ## --> for models implementation
+
+library(corrplot)
+library(lattice)
+library(plot.matrix)
+
+library(insight)
+```
+
+```{r}
+data$X <- NULL
+data$CNT <- as.factor(data$CNT)
+```
+
+```{r}
+grouped_variables <-list()
+#list of grouped variables
+
+##Technology
+#c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH", "ICTSCH","RATCMP1")
+
+grouped_variables[["ICT at home"]] <- c("ICTHOME","ICTRES","ENTUSE","HOMESCH")
+grouped_variables[["Relationship with ICT"]] <- c("AUTICT","COMPICT","INTICT","ENTUSE", "HOMESCH", "USESCH")
+grouped_variables[["ICT at school"]] <- c("ICTCLASS","ICTOUTSIDE","USESCH", "ICTSCH","RATCMP1")
+
+##Psichology
+grouped_variables[["Well-being"]] <- c("EUDMO","SWBP","EMOSUPS")
+grouped_variables[["Attitude towards the others"]] <- c("COMPETE","RESILIENCE", "GFOFAIL")
+grouped_variables[["Relationship with school environment"]] <- c("PERCOOP","PERCOMP","PERFEED","BELONG","BEINGBULLIED")
+
+
+##Culture
+grouped_variables[["Cultural possesion"]] <- c("CULTPOSS","HEDRES")
+grouped_variables[["Attitude towards school"]] <- c("LMINS","MMINS","STUBEHA","ATTLNACT")
+grouped_variables[["Reading"]] <- c("JOYREAD", "SCREADCOMP")
+
+##Familty
+grouped_variables[["Family economic status"]] <- c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
+
+##Teaching
+grouped_variables[["Teachers' degree"]] <- c("PROAT5AB","PROAT5AM","PROAT6")
+grouped_variables[["Teacher support"]] <- c("TEACHINT","TEACHSUP","STIMREAD","TEACHBEHA")
+
+##School
+grouped_variables[["School size"]] <- c("STRATIO","SCHSIZE","CLSIZE")
+grouped_variables[["Equipment of the school"]] <- c("EDUSHORT","STAFFSHORT")
+
+#groups
+group_list <- names(grouped_variables)
+```
+
+# Mixed Models
+
+## Selecting the variables
+
+Ideas:
+
+-   predicting performances of the students using the variables related to technology
+
+```{r}
+target_var <- "PV1MATH"
+
+regressors <- c("AUTICT","COMPICT","INTICT","ENTUSE", "HOMESCH", "USESCH","ICTHOME","ICTCLASS","ICTOUTSIDE","USESCH", "ICTSCH","RATCMP1")
+
+formula.mixed <- paste(paste(target_var,"~"), paste(regressors, collapse = "+"),paste("+(1|CNT)"))
+formula.linear <- paste(paste(target_var,"~"), paste(regressors, collapse = "+"))
+```
+
+## Fitting the model
+
+```{r}
+fit.linear <- lm(formula.linear,data)
+summary(fit.linear)
+```
+
+```{r}
+fit.mixed <- lmer(formula.mixed,data)
+summary(fit.mixed)
+```
+
+## Interpretations
+
+### Random effects
+
+```{r}
+rand_eff<-ranef(linear_model)
+dotplot(rand_eff)
+```
+
+## Assumptions
+
+```{r}
+#Gaussianity
+#fixed-effect
+qqnorm(resid(linear_model))
+qqline(resid(linear_model))
+
+hist(resid(linear_model))
+
+#random-effect
+qqnorm(unlist(ranef(linear_model)$CNT))
+qqline(unlist(ranef(linear_model)$CNT))
+```
+
+```{r, warning=FALSE, message=FALSE}
+#Homoschedasticity
+plot(linear_model,col=data$CNT)
+boxplot(linear_model_classic$residuals ~ data$CNT, col=unique(data$CNT),
+        xlab='countrys', ylab='Residuals') 
+abline(h=0)
+
+
+# Comment
+#   1. We want to see no pattern: a cloud around the zero
+#   2. We want to see a good fit on the line
+#   3. Again, we want to see no pattern
+#   4. We have the iso-lines of the Cook distance: we can identify the outliers
+```
+
+## Variable selection
+
+### **1.** Best Subset Selection (exhaustive search)
+
+```{r, warning=FALSE, message=FALSE}
+# Best Subset Selection
+formula_reg = formula(paste(response_variable,"~."))
+regfit.full = regsubsets(formula_reg, data=data[,!(colnames(data)=="CNT")],really.big = T)
+summary(regfit.full)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Best Subset Selection: we say when we stop
+nv_max = number_of_covariates
+regfit.full = regsubsets(formula_reg, data=data, nvmax=nv_max,really.big = T)
+summary(regfit.full)
+
+reg.summary = summary(regfit.full)
+
+# Which one we choose:
+reg.summary$which
+
+# R-squared
+reg.summary$rsq
+
+# R.adj^2
+reg.summary$adjr2
+
+# SSres (residual sum of squares)
+reg.summary$rss
+
+# Plots
+par(mfrow=c(1,3))
+plot(reg.summary$rsq, xlab="Number of Variables", ylab="R-squared", type="b")
+plot(reg.summary$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
+plot(reg.summary$rss, xlab="Number of Variables", ylab="RSS", type="b")
+
+# We want the model with max r.adj^2 so we extract the coefficients of that model
+# Note: ind = how many coefficients has the model
+ind = which.max(reg.summary$adjr2)
+coef(regfit.full, ind)
+
+# Graphical table of best results
+par(mfrow=c(1,2))
+plot(regfit.full, scale="r2", main="Exhaustive search")
+plot(regfit.full, scale="adjr2", main="Exhaustive search")
+
+```
+
+### **2.** Forward and Backward Stepwise Selection
+
+```{r, warning=FALSE, message=FALSE}
+# Forward
+regfit.fwd = regsubsets(formula_reg,data=data,nvmax=nv_max,method="forward")
+summary(regfit.fwd)
+
+# Plot
+par(mfrow=c(1,3))
+plot(summary(regfit.fwd)$rsq, xlab="Number of Variables", ylab="R-squared", type="b")
+plot(summary(regfit.fwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
+plot(summary(regfit.fwd)$rss, xlab="Number of Variables", ylab="RSS", type="b")
+
+par(mfrow=c(1,2))
+plot(regfit.fwd,scale="r2",main="Forward Stepwise Selection")
+plot(regfit.fwd,scale="adjr2",main="Forward Stepwise Selection")
+
+# Backward
+regfit.bwd = regsubsets(formula_reg,data=data,nvmax=nv_max,method="backward")
+summary(regfit.bwd)
+
+# Plot
+par(mfrow=c(1,3))
+plot(summary(regfit.bwd)$rsq, xlab="Number of Variables", ylab="R-squared", type="b")
+plot(summary(regfit.bwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
+plot(summary(regfit.bwd)$rss, xlab="Number of Variables", ylab="RSS", type="b")
+
+par(mfrow=c(1,2))
+plot(regfit.bwd,scale="r2",main="Backward Stepwise Selection")
+plot(regfit.bwd,scale="adjr2",main="Backward Stepwise Selection")
+
+```
+
+### **3.** Comparison
+
+```{r, warning=FALSE, message=FALSE}
+coef(regfit.full,7) # Exhaustive search
+coef(regfit.fwd,7) # Forward Stepwise Selection
+coef(regfit.bwd,7) # Backward Stepwise Selection
+```
+
+### **4.** K-fold-cross-validation (exhaustive search)
+
+```{r, warning=FALSE, message=FALSE}
+k = 10
+folds = sample(1:k,nrow(data),replace=TRUE)
+table(folds)
+
+# Function that performs the prediction for regsubsets
+predict.regsubsets = function(object,newdata,id){
+  form  = as.formula(object$call[[2]])
+  mat   = model.matrix(form,newdata)
+  coefi = coef(object,id=id)
+  xvars = names(coefi)
+  mat[,xvars]%*%coefi
+}
+p = number_of_covariates
+cv.errors = matrix(NA,k,p, dimnames=list(NULL, paste(1:number_of_covariates)))
+
+for(j in 1:k){
+  best.fit = regsubsets(formula_reg,data=data[folds!=j,],nvmax=number_of_covariates,really.big=T)
+  for(i in 1:p){
+    pred = predict(best.fit,data[folds==j,],id=i)
+    cv.errors[j,i] = mean( (data$Y[folds==j]-pred)^2 )
+  }
+}
+
+cv.errors
+
+root.mean.cv.errors = sqrt(apply(cv.errors,2,mean)) # average over the columns
+root.mean.cv.errors
+
+# Plot
+plot(root.mean.cv.errors,type='b')
+points(which.min(root.mean.cv.errors),
+       root.mean.cv.errors[which.min(root.mean.cv.errors)], col='red',pch=19)
+which.min(root.mean.cv.errors)
+
+# Estimation on the full dataset
+reg.best = regsubsets(Y~.,data=data, nvmax=number_of_covariates)
+coef(reg.best,10)
+
+```
+
+## Inference on Betas
+
+```{r, warning=FALSE, message=FALSE}
+## Assuption: Eps ~ N(0, sigma^2)
+## Test (Fisher):
+##    H0: (beta1, beta2) == (0, 0)
+##    H1: (beta1, beta2) != (0, 0)
+r = linear_model_classic$rank - 1  # number of regressors
+
+# needs to be specified
+kk=9
+linearHypothesis(linear_model, cbind(rep(0,kk),diag(kk)), rep(0,kk))
+linear_model
+# Comment
+#   Pr(>F) = final p-value in summary(fm)
+```
+
+### Bonferroni Intervals
+
+```{r, warning=FALSE, message=FALSE}
+alpha = 0.05
+n = dim(data)[1]
+qT = qt(1-alpha/(2*p), n-(r+1))
+
+vals = 1:20
+C = diag(20)
+Bf = c()
+for(j in vals){
+  Bf = rbind(Bf,
+         c( (C %*%coefficients(linear_model_classic))[j]-sqrt((C %*%vcov(linear_model_classic) %*% t(C))[j,j])*qT,
+            (C %*%coefficients(linear_model_classic))[j]+sqrt((C %*%vcov(linear_model_classic) %*% t(C))[j,j])*qT))
+}
+
+Bf = data.frame(Bf)
+all(Bf[,1]*Bf[,2]>0)
+
+# Generic beta_j (p, r, n, alpha generici)
+# beta_j = c(coefficients(fm)[j]-sqrt(vcov(fm)[j,j])*qt(1-alpha/(2*p), n-(r+1)),
+#            coefficients(fm)[j]+sqrt(vcov(fm)[j,j])*qt(1-alpha/(2*p), n-(r+1)))
+
+# Alternatively: Bonferroni's correction
+confint(linear_model_classic, level= 1-alpha/p)[vals,]
+```
+
+### Inferenza sui beta classic model
+
+```{r}
+## Assuption: Eps ~ N(0, sigma^2)
+## Test (Fisher):
+##    H0: (beta1, beta2) == (0, 0)
+##    H1: (beta1, beta2) != (0, 0)
+r = linear_model_classic$rank - 1  # number of regressors
+
+# needs to be specified
+kk=19
+linearHypothesis(linear_model_classic, cbind(rep(0,kk),diag(kk)), rep(0,kk))
+linear_model_classic
+
+```
