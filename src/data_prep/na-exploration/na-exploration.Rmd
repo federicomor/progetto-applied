@@ -40,6 +40,7 @@ selected_countries = c("HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","LTU","LU
 ```{r}
 #path of the original data files
 dataset_path = "/Users/marcogalliani/Library/CloudStorage/OneDrive-PolitecnicodiMilano/Corsi/4.2 Applied Statistics/PISA-dataset/PISA_file_sav"
+dataset_path="C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/Dataset_PISA/SPSS FORMAT"
 ```
 
 Automatic loading by INTSVY package (doesn't work with teacher file)
@@ -53,10 +54,20 @@ pisa_data <- pisa.select.merge(folder= dataset_path,
                                student.file="CY07_MSU_STU_QQQ.sav",
                                student= stu_vars,
                                school = sch_vars,
-                               countries = selected_countries)    
+                               countries = selected_countries)  
+
+pisa_data_schtype <- pisa.select.merge(folder= dataset_path,
+                               school.file="CY07_MSU_SCH_QQQ.sav",
+                                student.file="CY07_MSU_STU_QQQ.sav",
+                               school = "SCHLTYPE"	,
+                               countries = selected_countries)   
+
+head(pisa_data_schtype)
+unique(pisa_data_schtype$SCHLTYPE)
 ```
 
 ```{r}
+pisa_data=pisa_data_schtype
 #decode the variable SCHLTYPE
 pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
 pisa_data <- pisa_data %>%
@@ -67,8 +78,26 @@ pisa_data <- pisa_data %>%
     TRUE ~ NA_character_
   ))
 pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
+plot(pisa_data$SCHLTYPE)
 ```
+# add SCHLTYPE
+```{r}
+pisa_schtype = pisa_data[,c(1,3,6)]
+root_proj_dir = "../../../"
+dataset_dir = paste(root_proj_dir,"/data/pisa_wPV_grouped_bysch.csv",sep="")
+include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 
+pisa_wo_schtype <- read.csv(file=dataset_dir)
+head(pisa_wo_schtype)
+merged_df <- merge(pisa_wo_schtype, pisa_schtype[, c("CNTSCHID", "SCHLTYPE")], by = "CNTSCHID", all.x = TRUE)
+
+# Select the desired columns from the merged dataset
+final_df <- merged_df[, c(colnames(pisa_wo_schtype), "SCHLTYPE")]
+
+# Print and save the final dataset
+head(final_df)
+write.csv(final_df, "../../../data/pisa_wPV_grouped_bysch_schtype.csv", row.names = FALSE)
+```
 ## Teacher data file (DISCARDED)
 
 Trying to load the teacher file separately and then merging:
@@ -85,6 +114,8 @@ teacher_data <- subset(teacher_data, select = c("CNT","CNTSCHID",teach_vars))
 #select the countries
 teacher_data <- teacher_data[teacher_data$CNT %in% selected_countries, ]
 ```
+
+
 
 Instructions to merge data:
 
