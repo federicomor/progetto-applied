@@ -10,7 +10,7 @@ editor_options:
 # Setup
 
 ```{r, setup}
-source("../include/Utilities.R")
+source("../../include/Utilities.R")
 
 library(dplyr)
 library(psych)  
@@ -36,9 +36,10 @@ library(vioplot)
 ## Da fare: spezzare quelle categorie in sotto gruppi, magari anche mischiati? per cercare di riassumere
 ## più variabili in una/due sola/sole, tramite pca
 
-df=read.csv("../../data/pisa_wPV_grouped_bysch.csv")
+df=read.csv("../../../data/pisa_data_final.csv")
 colnames(df)
-df=df[,-c(1,2,3)] #remove X (index) column
+head(df)
+df=df[,-c(1)] #remove X (index) column
 
 # df <- df %>% select(-starts_with("PV")) #excluding target variables 
 df=df[,-c(1:20)] # same but surely works
@@ -46,7 +47,7 @@ df=df[,-c(1:20)] # same but surely works
 colnames(df)
 
 want_to_plot_all_couples=0
-want_to_save_score_df=1
+want_to_save_score_df=0
 
 # sort(colnames(df[,-c(52)]))==sort(c(tec,psi,clt,fam,tch,sch))
 # #c'è tutto ora

@@ -34,7 +34,10 @@ include_dir = "../include/Utilities.R"
 #including utilities
 source(include_dir)
 #importing the dataset
-pisa_data <- read.csv(file=paste(dataset_dir,"pisa_school_final_wo_Outl_PCA_SCORES.csv",sep=""))
+pisa_data <- read.csv(file=paste(dataset_dir,"pisa_data_final.csv",sep=""))
+pisa_data$X <- NULL
+colnames(pisa_data)
+pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
 ```
 
 ```{r}

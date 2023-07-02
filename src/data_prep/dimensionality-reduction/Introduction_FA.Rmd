@@ -34,21 +34,22 @@ library(tidyverse)
 ```{r, setup}
 #DIRECTORIES
 root_proj_dir = "../../../"
-dataset_dir = paste(root_proj_dir,"/data/pisa_wPV_grouped_bysch.csv",sep="")
+dataset_dir = paste(root_proj_dir,"/data/pisa_data_final.csv",sep="")
 include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_dir)
 #IMPORTING THE DATASET
 pisa_data <- read.csv(file=dataset_dir)
+colnames(pisa_data)
+head(pisa_data)
 ```
 
 ```{r}
 #some adjustments on the data
 pisa_data$X <- NULL
-pisa_data$schID <- NULL
 pisa_data$CNT <- as.factor(pisa_data$CNT)
-pisa_data$CNTSCHID <- as.factor(pisa_data$CNTSCHID)
-pisa_data$CNTSTUID <- as.factor(pisa_data$CNTSTUID)
+pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
+head(pisa_data)
 ```
 
 # Data preprocessing: standardization
@@ -103,6 +104,10 @@ grouped_variables[["Reading"]] <- c("JOYREAD", "SCREADCOMP")
 
 ##Family
 grouped_variables[["Family economic status"]] <- c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
+
+### consider only ESCS
+grouped_variables[["Family economic status"]] <- "ESCS"
+
 
 ##Teaching
 grouped_variables[["Teachers' degree"]] <- c("PROAT5AB","PROAT5AM","PROAT6")
