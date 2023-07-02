@@ -7,15 +7,13 @@ editor_options:
 
 # SETTINGS
 
-```{r setup}
+```{r}
 rm( list = ls() )
 
 list.files()
 graphics.off() # chiude tutti i device grafici
 cat("\014") #pulisci console
-```
 
-```{r setup}
 library(mvtnorm)
 library(MVN)
 library(rgl)
@@ -37,6 +35,7 @@ source(include_dir)
 pisa_data <- read.csv(file=paste(dataset_dir,"pisa_data_final.csv",sep=""))
 pisa_data$X <- NULL
 colnames(pisa_data)
+length(colnames(pisa_data))
 pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
 ```
 
@@ -281,34 +280,34 @@ ggplot(df, aes(x = country, y = percentage, fill = group)) +
 #dev.off()
 ```
 
-# **2.** DBSCAN
 
-### **2.1** choice of hyperparameters
 
+## **3.** DBSCAN
+### **3.1** choice of hyperparameters 
 ```{r}
-data_to_cluster = data_grezzi[,tec]
+measures = pisa_data[,21:71]
+colnames(measures)
 # Rule of thumb, minPts = dimensionality + 1 = 3 here
 # How to choose eps from minPts?
 # Plot of the distances to the minPts nearest neighbor
-k_chosen_2=dim(data_to_cluster)[2]+1
-kNNdistplot(as.matrix(data_to_cluster), k = k_chosen_2)
-eps_chosen = 0.5
+k_chosen_2=2
+kNNdistplot(measures, k = k_chosen_2) 
+eps_chosen = 60
 abline(h = eps_chosen, col = "red", lty = 2)
 
 # Run the dbscan
-dbs <- dbscan(data_to_cluster, eps = eps_chosen, minPts = p+1)
+minpts = 15
+dbs <- dbscan(measures, eps = eps_chosen, minPts = minpts)
 dbs
-plot(data_to_cluster, col = dbs$cluster + 1L, pch=19)
+
 ```
-
-### **2.2** Silhouette
-
+### **3.2** Silhouette
 ```{r}
 # Let's compute the silhouette score on the clustering performed before
 # WARNING (specific to DBSCAN): We need to remove the noise points as they do
 # not belong to a cluster, before computing the silhouette score
 clustered_index <- which(dbs$cluster != 0) # Index of non noise points
-clustered_points <- data_grezzi[clustered_index,] # only clustered points
+clustered_points <- measures[clustered_index,] # only clustered points
 clustered_labels <- dbs$cluster[clustered_index] # corresponding labels
 
 sil <- silhouette(clustered_labels, dist(clustered_points))
@@ -323,5 +322,68 @@ sil_score <- function(labels, dist) {
 
 sil_score(clustered_labels, dist(clustered_points))
 ```
+### **3.3** Grid Search
+```{r}
+n = dim(measures)[1]
+# Grid Search
+minPts_grid <- 1:20
+eps_grid <- seq(from = 50, length.out=length(minPts_grid), by = 10)
 
-# 3. K-MEANS
+max_share_noise <- 0.2
+
+dbscan_perf <- function(minPts, eps) {
+  # Compute the silhouette score resulting from dbscan clustering
+  dbs <- dbscan(measures, eps, minPts) # Run dbscan
+  
+  clustered_index <- which(dbs$cluster != 0) # Index of non noise points
+  clustered_points <- measures[clustered_index,] # only clustered points
+  clustered_labels <- dbs$cluster[clustered_index] # corresponding labels
+  nb_clusters <- length(unique(clustered_labels))
+  
+  if ((nb_clusters > 1 & nb_clusters < n) & (length(which(dbs$cluster == 0))/n < max_share_noise)) { 
+    # Silhouette score is defined only if 2 <= nb_clusters <= n-1
+    sil_score(clustered_labels, dist(clustered_points))
+  }
+  
+  else {
+    # otherwise we return 0 which would be the approx. value of the silhouette
+    # score if the clusters were completely overlapping
+    0
+  }
+}
+# We compute the silhouette score for all combinations of minPts and eps
+perf_grid <- outer(minPts_grid, eps_grid, FUN = Vectorize(dbscan_perf))
+dimnames(perf_grid) <- list(minPts_grid, eps_grid)
+
+# Histogram of the Silhouette scores
+
+hist(perf_grid, breaks = 20, xlab = "Silhouette score", xlim = c(-1, 1), main = NULL)
+
+max_score <- max(perf_grid)
+min_score <- min(perf_grid)
+max_abs <- max(abs(max_score), abs(min_score))
+
+image.plot(x = eps_grid, y = minPts_grid, z = perf_grid, xlab = "eps", ylab = "minPts",
+      main = 'Silhouette score', col = hcl.colors(64, palette = 'Blue-Red'),
+      breaks = c(seq(-max_abs, 0, length=33)[-33], seq(0, max_abs, length=33)))
+
+# Retrieve best parameter values
+max_score <- max(perf_grid)
+argmax_score <- which(perf_grid == max_score, arr.ind = TRUE)
+best_eps <- eps_grid[argmax_score[2]]
+best_minPts <- minPts_grid[argmax_score[1]]
+best_eps
+best_minPts
+max_score
+```
+### **3.4** re-run dbscan
+```{r}
+eps_chosen <- best_eps
+minPts_chosen <- best_minPts
+
+dbs <- dbscan(measures, eps = eps_chosen, minPts = minPts_chosen)
+dbs
+
+
+plot(measures, col = dbs$cluster + 1L, pch=19)
+```
