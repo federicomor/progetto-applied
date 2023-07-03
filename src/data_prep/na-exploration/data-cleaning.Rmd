@@ -1,3 +1,8 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
 # Data generation
 
 ## Settings
@@ -49,6 +54,61 @@ pisa_data <- pisa.select.merge(folder= complete_data_dir,
                                school = sch_vars,
                                countries = selected_countries)    
 ```
+# add SCHLTYPE
+```{r}
+dataset_path="C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/Dataset_PISA/SPSS FORMAT"
+pisa_data_schtype <- pisa.select.merge(folder= dataset_path,
+                               school.file="CY07_MSU_SCH_QQQ.sav",
+                                student.file="CY07_MSU_STU_QQQ.sav",
+                               school = c("SCHLTYPE","PRIVATESCH","SC013Q01TA")	,
+                               countries = selected_countries)   
+
+head(pisa_data_schtype)
+unique(pisa_data_schtype$SCHLTYPE)
+unique(pisa_data_schtype$PRIVATESCH)
+unique(pisa_data_schtype$SC013Q01TA)
+```
+
+```{r}
+#decode the variable SCHLTYPE
+pisa_data_schtype$SCHLTYPE <- as.factor(pisa_data_schtype$SCHLTYPE)
+pisa_data_schtype <- pisa_data_schtype %>%
+  mutate(SCHLTYPE = case_when(
+    SCHLTYPE == "1" ~ "Private Independent",
+    SCHLTYPE == "2" ~ "Private Government-dependent",
+    SCHLTYPE == "3" ~ "Public",
+    TRUE ~ NA_character_
+  ))
+```
+
+```{r}
+pisa_data_schtype$SCHLTYPE <- as.factor(pisa_data_schtype$SCHLTYPE)
+plot(pisa_data_schtype$SCHLTYPE)
+length(pisa_data_schtype[pisa_data_schtype$SCHLTYPE!="Public",1])
+
+#troppi NA
+pisa_data_schtype$PRIVATESCH <- as.factor(pisa_data_schtype$PRIVATESCH)
+plot(pisa_data_schtype$PRIVATESCH)
+length(pisa_data_schtype[pisa_data_schtype$PRIVATESCH!="public ",1])
+
+pisa_data_schtype$SC013Q01TA <- as.factor(pisa_data_schtype$SC013Q01TA)
+plot(pisa_data_schtype$SC013Q01TA)
+length(pisa_data_schtype[pisa_data_schtype$SC013Q01TA=="2",1])
+
+```
+
+```{r}
+getwd()
+dataset_dir = "C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/progetto-applied/data/"
+pisa_data <- read.csv(file=paste(dataset_dir,"pisa_wPV_grouped_bysch_schtype.csv",sep=""))
+head(pisa_data)
+pisa_data$X<-NULL
+pisa_data$CNTSCHID<-NULL
+pisa_data$CNTSTUID<-NULL
+
+write.csv(pisa_data,"C:/Users/modin/Desktop/Ettore/UNIVERSITA/PISA_PROJECT/progetto-applied/data/pisa_data_final.csv")
+```
+
 
 # 
 

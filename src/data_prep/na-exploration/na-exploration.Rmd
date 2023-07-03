@@ -10,6 +10,8 @@ editor_options:
 ```{r}
 #libraries
 library(dplyr)
+library(intsvy) # package to analyze PISA dataset
+
 ```
 
 -   Selected variables from `selected_variables.txt`
@@ -40,33 +42,21 @@ selected_countries = c("HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","LTU","LU
 ```{r}
 #path of the original data files
 dataset_path = "/Users/marcogalliani/Library/CloudStorage/OneDrive-PolitecnicodiMilano/Corsi/4.2 Applied Statistics/PISA-dataset/PISA_file_sav"
+
 ```
 
 Automatic loading by INTSVY package (doesn't work with teacher file)
 
 ```{r}
-library(intsvy) # package to analyze PISA dataset
-
 #selecting and merging
 pisa_data <- pisa.select.merge(folder= dataset_path,
                                school.file="CY07_MSU_SCH_QQQ.sav", 
                                student.file="CY07_MSU_STU_QQQ.sav",
                                student= stu_vars,
                                school = sch_vars,
-                               countries = selected_countries)    
-```
+                               countries = selected_countries)  
 
-```{r}
-#decode the variable SCHLTYPE
-pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
-pisa_data <- pisa_data %>%
-  mutate(SCHLTYPE = case_when(
-    SCHLTYPE == "1" ~ "Private Independent",
-    SCHLTYPE == "2" ~ "Private Government-dependent",
-    SCHLTYPE == "3" ~ "Public",
-    TRUE ~ NA_character_
-  ))
-pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
+
 ```
 
 ## Teacher data file (DISCARDED)
@@ -85,6 +75,8 @@ teacher_data <- subset(teacher_data, select = c("CNT","CNTSCHID",teach_vars))
 #select the countries
 teacher_data <- teacher_data[teacher_data$CNT %in% selected_countries, ]
 ```
+
+
 
 Instructions to merge data:
 
