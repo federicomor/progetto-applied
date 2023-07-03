@@ -320,10 +320,10 @@ function main()
         CSV.write("df.csv", df)
 
         ## Backup
-        t0 = string(now())
+        # t0 = string(now())
         # csv_backup = "df_backup_h$(t0[12:13]).csv"
-        csv_backup = "df_backup_h$(t0[12:13])m$(t0[15:16]).csv"
-        CSV.write("$csv_backup", df)
+        # csv_backup = "df_backup_h$(t0[12:13])m$(t0[15:16]).csv"
+        # CSV.write("$csv_backup", df)
     end
 end
 
