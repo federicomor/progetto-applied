@@ -1,0 +1,221 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+library(car)
+library(MVN)
+library(mvtnorm)
+library(mvnormtest)
+#directories
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"/data/pisa_data_final.csv",sep="")
+include_path = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
+#including utilities
+source(include_path)
+#importing the dataset
+data <- read.csv(file=dataset_path)
+head(data)
+```
+
+```{r}
+data$X <- NULL
+data <- data[,-c(1:20)]
+head(data)
+```
+
+
+## **2.** Exploration
+```{r, warning=FALSE, message=FALSE}
+meas_index <- c(1:51)
+lab_1_index <- 52
+lab_2_index <- 53
+lab_index <- c(lab_1_index,lab_2_index)
+
+measure <- data[,meas_index]
+
+Label_1 <- as.factor(data[,lab_1_index])
+factor1 <- levels(Label_1)
+g <- length(factor1)
+
+Label_2 <- as.factor(data[,lab_2_index])
+factor2 <- levels(Label_2)
+b <- length(factor2)
+
+head(data)
+p = dim(data)[2] - 2
+p
+n <- dim(data)[1]
+n
+```
+
+## Data prep
+```{r, warning=FALSE, message=FALSE}
+# Re-name
+colnames(data)[lab_1_index]='label_1'
+colnames(data)[lab_2_index]='label_2'
+head(data)
+
+# if you want to change the name of the levels
+change = 0
+if (change == 1){
+  Label_1 = factor(data$Label_1, labels=factor1) # Treat.1
+  Label_2 = factor(data$Label_2, labels=factor2) # Treat.2
+}
+
+Label_1_2 <- rep(0,n)
+
+for(i in 1:g){
+  for(j in 1:b){
+    Label_1_2[Label_1==factor1[i] & Label_2==factor2[j]] <- paste(factor1[i],factor2[j],sep='')
+  }
+}
+Label_1_2 <- as.factor(Label_1_2)
+data.feats = data[,meas_index]
+
+## Graphical exploration of the data
+for ( i in 1:p){
+  # Effect of the treatments + their interaction on the i-th variable
+  layout(matrix(c(1,1,2,3), 2, byrow=T))
+  boxplot(data.feats[,i]~Label_1_2, main=paste('With Interac. lab_1+lab_2','variable:',i),
+  ylab='Tr', col='grey95')
+  boxplot(data.feats[,i]~Label_1, main='Only lab_1', ylab='Tr',col=c('red','blue'))
+  boxplot(data.feats[,i]~Label_2, main='Only lab_2', ylab='Tr',col=c('forestgreen','gold'))
+}
+```
+
+## **3.** Model Assumptions
+```{r, warning=FALSE, message=FALSE}
+# Note that: if we have to remove rows -> one at the time
+
+# Assumptions
+# 1) Gaussianity
+treat = levels(Label_1_2)
+gb = length(treat)
+
+
+# 2) homogeneity of the covariance (qualitatively)
+S_list = list()
+for ( i in 1:gb){
+  S_list[i] = list(cov(data.feats[Label_1_2==levels(Label_1_2)[i], ]))
+}
+
+S_bind <- do.call(rbind, S_list)
+
+```
+ 
+##**5.** Models 
+### Complete model
+ measure.ijk = mu + tau.i + beta.j + gamma.ij + eps.ijk eps.ijk ~ N(0, sigma^2)  
+ i=1,2 (label_1)  
+ j=1,2 (label_2)  
+```{r, warning=FALSE, message=FALSE}
+# what is the difference with Label_1:Label_2
+fit2.int = manova(as.matrix(data.feats) ~ Label_1 + Label_2 + Label_1:Label_2)
+
+summary(fit2.int, test="Wilks")
+```
+
+### Additive model
+ measure.ijk = mu + tau.i + beta.j + eps.ijk eps.ijk ~ N(0, sigma^2)
+ i=1,2 (label_1)
+ j=1,2 (label_2)
+```{r, warning=FALSE, message=FALSE}
+fit2.ad = manova(as.matrix(data.feats) ~ Label_1 + Label_2)
+summary(fit2.ad, test="Wilks")
+```
+
+## **6.** Which supplement is responsible?
+```{r, warning=FALSE, message=FALSE}
+# First of all:
+#   Let's see on which variables the group has an effect.
+#   Via ANOVA: for each feature we perform an ANOVA to see if the belonging to
+#   the group has an effect on the mean of the variables.
+summ = summary.aov(fit2.int)
+
+
+# j is the label, k the variable
+for( j in 1:2){
+  pval = c()
+  for ( k in 1:51)
+    pval=c(pval,summ[[k]][j, 5])
+  hist(log(pval))
+}
+
+
+
+# Comment
+# Pr(>F) = p-value small -> the group has an influence on that X_k
+# This analysis does NOT say either which groups differ nor which are the variables
+# for which the groups differ.
+```
+
+## WRONG: CODE NEEDS TO BE MORE SPECIFIC
+## **7.** Bonferroni: symmetric design assumption (n1 = n2 = n), change if needed
+We want to know the level (of the labels) that introduces the difference.
+##  SSres vs W??
+```{r, warning=FALSE, message=FALSE}
+W = summary.manova(fit2.int)$SS$Residuals
+
+alpha = 0.1
+# SET BY HAND, need to be changed if n1 != n2
+n_g = n/(g*b)
+Gdl <- n-g-b+1
+# How many comparisons?
+k = g*(g-1)/2*p + b*(b-1)/2*p
+k
+
+qT = qt(1 - alpha / (2 * k), Gdl)
+
+m_list_1 = c()
+for(i in 1:g){
+  m_list_1[i] <- sapply(data.feats[Label_1==factor1[i],],mean)
+}
+
+inf_t1 = diff(m_list_1) - qT * sqrt( diag(W)/Gdl * (1/n_g+1/n_g) )
+sup_t1 = diff(m_list_1) + qT * sqrt( diag(W)/Gdl * (1/n_g+1/n_g) )
+
+m_list_2 = c()
+for(i in 1:b){
+  m_list_2[i] <- sapply(data.feats[Label_2==factor2[i],],mean)
+}
+
+inf_t2 = diff(m_list_2) - qT * sqrt( diag(W)/(Gdl) * (1/n_g+1/n_g) )
+sup_t2 = diff(m_list_2) + qT * sqrt( diag(W)/(Gdl) * (1/n_g+1/n_g) )
+
+IC   = list(lab1.H_lab1.L=cbind(inf_t1,mean = diff(m_list_1), sup_t1), 
+             lab2.H_lab2.L=cbind(inf_t2,mean = diff(m_list_2),sup_t2))
+IC
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+SSres <- t(fit2.ad$residuals) %*% fit2.ad$residuals / Gdl 
+
+meang_sub_g <-list()
+kk<-1
+for(i in 1:2){
+  for(j in 1:p){
+    meang_sub_g[kk]<-list(tapply(measure[[j]],data[,lab_index[i]],mean))
+    kk<-kk+1
+  }
+}
+
+n_g<-n_g*2
+
+BFIC<-list()
+kk<-0
+for(i in 1:2){
+  for(j in 1:p){
+    kk<-kk+1
+    BFIC[kk]<-list( c(diff(meang_sub_g[[kk]]) - qT * sqrt( diag(SSres)[j] * (1/n_g+1/n_g) ), 
+                      diff(meang_sub_g[[kk]]) + qT * sqrt( diag(SSres)[j] * (1/n_g+1/n_g) )))
+   
+  }
+}
+
+BFIC
+```
