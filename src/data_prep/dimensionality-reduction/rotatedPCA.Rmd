@@ -80,15 +80,15 @@ grouped_variables[["ICT at school"]] <- c("ICTCLASS","ICTOUTSIDE","USESCH", "ICT
 
 ##Culture
 grouped_variables[["Cultural possesion"]] <- c("CULTPOSS","HEDRES")
-grouped_variables[["Attitude towards school"]] <- c("SMINS","STUBEHA","ATTLNACT") #not good pca
+grouped_variables[["Attitude towards school"]] <- c("SMINS","STUBEHA","ATTLNACT") 
 grouped_variables[["Reading"]] <- c("JOYREAD", "SCREADCOMP")
 
 ##Teaching
 grouped_variables[["Teachers' degree"]] <- c("PROAT5AB","PROAT5AM","PROAT6")
-grouped_variables[["Teacher support"]] <- c("TEACHINT","TEACHSUP","STIMREAD","TEACHBEHA","PERFEED") #not good pca
+grouped_variables[["Teacher support"]] <- c("TEACHINT","TEACHSUP","STIMREAD","TEACHBEHA","PERFEED") 
 
 ##School
-grouped_variables[["School size"]] <- c("STRATIO","SCHSIZE","CLSIZE") #not good pca
+grouped_variables[["School size"]] <- c("STRATIO","SCHSIZE","CLSIZE")
 grouped_variables[["Equipment of the school"]] <- c("EDUSHORT","STAFFSHORT")
 
 #groups
@@ -151,30 +151,53 @@ for(group in group_list){
 
 
 
+```{r}
+nfactors_2 <- list()
+
+for(group in group_list){
+ nfactors_2[[group]] <- 1
+}
+```
 
 ## Fitting the models
 
 -   principal(): performs PCA in a more sophisticated way, using rotations to inrease the interpretability of the components. See the documentation in this folder [package psych]
 
+what the next chunk does is
+- define a "soglia" of explained variance for every group
+- perform a first pca with the previously chosen number of components
+- increase by one the number of components until every group has an explained variance that reaches the "soglia"
 ```{r}
-# rotated PCA
-fit_PCA_rotated <- list()
-
-#fitting the models
-for(group in group_list){
-  
-  #advanced PCA
-  fit_PCA_rotated[[group]] <- principal(r = cor(data[,grouped_variables[[group]]]),
-                               nfactors = nfactors[[group]], 
-                               rotate = "promax")
-}
-```
+soglia = 0.65
+nfactors = nfactors_2
 
 
--   variance explained (it is the average of the communalities)
 
-```{r}
+iter = 1
 cum_var = list()
+while(iter<5){  # it would be better to have a better check, but it's fast and works
+
+  fit_PCA_rotated <- list()
+  #fitting the models
+  for(group in group_list){
+    
+    #advanced PCA
+    fit_PCA_rotated[[group]] <- principal(r = cor(data[,grouped_variables[[group]]]),
+                                 nfactors = nfactors[[group]], 
+                                 rotate = "promax")
+    cum_var[[group]]=sum(fit_PCA_rotated[[group]]$Vaccounted["Proportion Var",])
+  }
+
+  bool = cum_var<soglia
+  groups_low_cumvar = names(nfactors[bool])
+  for(k in groups_low_cumvar )
+    nfactors[[k]] =nfactors[[k]] +1
+
+  iter = iter +1
+}
+
+
+# results
 for(group in group_list){
   cat("\n-----------Group:", group, "-----------\n")
   
@@ -182,22 +205,17 @@ for(group in group_list){
   cat("\nNumbr of components: ", nfactors[[group]])
   cat("-> fit: ", fit_PCA_rotated[[group]]$fit,"\n")
   cat("-> summary:\n")
-  cum_var[[group]]=sum(fit_PCA_rotated[[group]]$Vaccounted["Proportion Var",])
+
   print(cum_var[[group]])
   #print(fit_PCA_rotated[[group]]$Vaccounted)
 
 }
-```
-# Adjust number of components
-```{r}
-
 ```
 
 
 
 # Visualize the loadings:
 ```{r}
-
 group_list
 #Principal Component method
 for(group in group_list){
@@ -209,11 +227,20 @@ for(group in group_list){
 
 # compute scores dataset
 ```{r}
+orig_vars= c(original_vars,facotor_vars)
+
+scores_orig = list()
+for (i in orig_vars)
+  scores_orig[[i]] = list(pisa_data[,i])
+
+scores_orig = data.frame(scores_orig)
+colnames(scores_orig) = orig_vars
+head(scores_orig)
+
 scores <- function(fit,data){
   return(as.data.frame(as.matrix(data)%*%fit$loadings))
 }
 
-colnames(pisa_data)
 
 scores_data = list()
 for(group in group_list){
@@ -221,6 +248,7 @@ for(group in group_list){
 }
 
 scores_data=data.frame(scores_data)
+scores_data_final = cbind(scores_data,scores_orig)
 ```
 
 
