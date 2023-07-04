@@ -251,6 +251,39 @@ scores_data=data.frame(scores_data)
 scores_data_final = cbind(scores_data,scores_orig)
 ```
 
+```{r}
+include_dir2 = paste(root_proj_dir,"/src/include/computing_WBindex.R",sep="")
+source(include_dir2) ###!!!including new file!!!###
+pisa_data <- read.csv(file=dataset_dir)
+```
+
+Recall to scale the dataset
+
+```{r}
+#standardize the variables
+transformed_data <- as.data.frame(scale(select_if(pisa_data,is.numeric)))
+transformed_data$CNT <- pisa_data$CNT #adding CNT column
+
+pisa_data <- transformed_data
+rm(transformed_data)
+```
+
+Actually computing WB index
+
+```{r}
+scores_WB <- computing_scoresWB(pisa_data, root_proj_dir)
+names_s = names(scores_WB)
+scores_WB = data.frame(scores_WB)
+colnames(scores_WB)=names_s
+head(scores_WB)
+```
+
+# Final dataset
+```{r}
+scores_data_final= cbind(scores_data_final,scores_WB)
+head(scores_data_final)
+```
+
 
 
 
