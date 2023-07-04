@@ -107,7 +107,7 @@ grouped_variables[["Reading"]] <- c("JOYREAD", "SCREADCOMP")
 grouped_variables[["Family economic status"]] <- c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
 
 ### consider only ESCS
-grouped_variables[["Family economic status"]] <- "ESCS"
+#grouped_variables[["Family economic status"]] <- "ESCS"
 
 
 ##Teaching
@@ -120,6 +120,11 @@ grouped_variables[["Equipment of the school"]] <- c("EDUSHORT","STAFFSHORT")
 
 #groups
 group_list <- names(grouped_variables)
+
+names_grouped = (unlist(grouped_variables))
+col_names_data = colnames(pisa_data)
+difference1 <- setdiff(col_names_data,names_grouped)
+# "PERFEED"  "CREACTIV"
 ```
 
 Some graphs to validate the choice made while grouping the variables

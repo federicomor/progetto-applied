@@ -1,6 +1,12 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
 # Example: computation of well-being indeces
 
 ```{r}
+library(dplyr)
 #DIRECTORIES
 root_proj_dir = "../.."
 dataset_dir = paste(root_proj_dir,"/data/pisa_data_final.csv",sep="")
@@ -32,6 +38,7 @@ Actually computing WB index
 
 ```{r}
 scores <- computing_scoresWB(pisa_data, root_proj_dir)
+names(scores)
 ```
 
 The scores are stored in a list containing the two vectors for the two types of well-being

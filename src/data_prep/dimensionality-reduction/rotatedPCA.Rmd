@@ -1,0 +1,235 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+## Settings
+
+```{r}
+#loaded librarires
+library(dplyr)
+library(psych) #for KMO test and principal()
+library(car) #to apply transformations
+library(MVN) #to perform multivariate gaussianity check
+library(GGally) #for ggcorr
+library(ggplot2)
+library(elasticnet) #trying out sparse principal component analysis [spca()]
+library(tidyverse)
+```
+
+```{r, setup}
+#DIRECTORIES
+root_proj_dir = "../../../"
+dataset_dir = paste(root_proj_dir,"/data/pisa_data_final.csv",sep="")
+include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_dir)
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_dir)
+colnames(pisa_data)
+head(pisa_data)
+```
+# Modify dataset
+```{r}
+pisa_data$X <- NULL
+pisa_data$CREACTIV <- as.factor(round(pisa_data$CREACTIV))
+pisa_data$CNT <- as.factor(pisa_data$CNT)
+pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
+head(pisa_data)
+# remove PV
+pisa_data <- pisa_data %>% select(-starts_with("PV"))
+# LMINS and MMINS averaged
+pisa_data$SMINS = (pisa_data$LMINS+pisa_data$MMINS)/2
+
+head(pisa_data)
+```
+#standardize the variables
+
+```{r}
+transformed_data <- as.data.frame(scale(select_if(pisa_data,is.numeric)))
+data <- transformed_data
+
+col_names_pisa = colnames(pisa_data)
+col_names_data = colnames(data)
+facotor_vars <- setdiff(col_names_pisa,col_names_data)
+facotor_vars # those needs to be added later
+```
+# Remove variables that are already ok (numeric) + psyc that will be dealt differently
+```{r}
+remove_vars = c("EUDMO","SWBP","GFOFAIL", "RESILIENCE", "COMPETE",  #Psychological Well-being
+                  "PERCOOP","PERCOMP","EMOSUPS","BELONG","BEINGBULLIED", #Social Well-Being
+                  "WEALTH","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI", # Family: ESCS is enpough
+                  "LMINS","MMINS" #just the average
+                  
+)
+
+original_vars = c("ESCS")
+                  
+```
+
+# Groups
+```{r}
+grouped_variables <-list()
+#list of grouped variables
+
+grouped_variables[["ICT at home"]] <- c("ICTHOME","ICTRES","ENTUSE","HOMESCH")
+grouped_variables[["Relationship with ICT"]] <- c("AUTICT","COMPICT","INTICT","ENTUSE", "HOMESCH", "USESCH")
+grouped_variables[["ICT at school"]] <- c("ICTCLASS","ICTOUTSIDE","USESCH", "ICTSCH","RATCMP1")
+
+##Culture
+grouped_variables[["Cultural possesion"]] <- c("CULTPOSS","HEDRES")
+grouped_variables[["Attitude towards school"]] <- c("SMINS","STUBEHA","ATTLNACT") #not good pca
+grouped_variables[["Reading"]] <- c("JOYREAD", "SCREADCOMP")
+
+##Teaching
+grouped_variables[["Teachers' degree"]] <- c("PROAT5AB","PROAT5AM","PROAT6")
+grouped_variables[["Teacher support"]] <- c("TEACHINT","TEACHSUP","STIMREAD","TEACHBEHA","PERFEED") #not good pca
+
+##School
+grouped_variables[["School size"]] <- c("STRATIO","SCHSIZE","CLSIZE") #not good pca
+grouped_variables[["Equipment of the school"]] <- c("EDUSHORT","STAFFSHORT")
+
+#groups
+group_list <- names(grouped_variables)
+
+names_grouped =c( (unlist(grouped_variables)),original_vars,facotor_vars,remove_vars)
+col_names_data = colnames(pisa_data)
+difference1 <- setdiff(col_names_data,names_grouped)
+difference1
+```
+
+# Correlation within groups
+Some graphs to validate the choice made while grouping the variables
+
+```{r}
+p_ <- GGally::print_if_interactive
+
+#overall correlation overview
+ggcorr(select_if(pisa_data, is.numeric),
+       label = TRUE,
+       label_size = 0.5)
+
+for(group_name in group_list){
+  
+  p_(ggcorr(data[,grouped_variables[[group_name]]],
+         label=TRUE,label_size = 2) +
+    ggtitle(group_name))
+}
+
+```
+
+
+## Selecting the number of factors
+
+the following methods are useful to select the initial number of factors. The final choice should be made based on the portion of variance explained
+
+(Note that scree plots are contained in parallel analysis)
+
+```{r}
+nfactors <- list()
+
+for(group in group_list){
+  #scree plot
+  #scree(pisa_data[,grouped_variables[[group]]], 
+  #      pc=TRUE, 
+  #      main = paste("Scree plot:", group))
+  
+  #parallel analysis
+  parallel.an <- fa.parallel(data[,grouped_variables[[group]]], 
+              main = paste("Parallel Analysis Scree Plots:",group))
+  
+  nfactors[[group]] <- parallel.an$ncomp
+  
+  #a method from psych package with many more criteria
+  #nfactors(cor(pisa_data[,grouped_variables[[group]]]),
+  #         title = paste("Number of factors", group),
+  #         plot=FALSE)
+}
+```
+
+
+
+
+## Fitting the models
+
+-   principal(): performs PCA in a more sophisticated way, using rotations to inrease the interpretability of the components. See the documentation in this folder [package psych]
+
+```{r}
+# rotated PCA
+fit_PCA_rotated <- list()
+
+#fitting the models
+for(group in group_list){
+  
+  #advanced PCA
+  fit_PCA_rotated[[group]] <- principal(r = cor(data[,grouped_variables[[group]]]),
+                               nfactors = nfactors[[group]], 
+                               rotate = "promax")
+}
+```
+
+
+-   variance explained (it is the average of the communalities)
+
+```{r}
+cum_var = list()
+for(group in group_list){
+  cat("\n-----------Group:", group, "-----------\n")
+  
+  #number of factors and components
+  cat("\nNumbr of components: ", nfactors[[group]])
+  cat("-> fit: ", fit_PCA_rotated[[group]]$fit,"\n")
+  cat("-> summary:\n")
+  cum_var[[group]]=sum(fit_PCA_rotated[[group]]$Vaccounted["Proportion Var",])
+  print(cum_var[[group]])
+  #print(fit_PCA_rotated[[group]]$Vaccounted)
+
+}
+```
+# Adjust number of components
+```{r}
+
+```
+
+
+
+# Visualize the loadings:
+```{r}
+
+group_list
+#Principal Component method
+for(group in group_list){
+  for(i in 1:nfactors[[group]]){
+    barplot(fit_PCA_rotated[[group]]$loadings[,i], main = paste("factor",group,i),las=2,cex.names=0.7)
+  }
+}
+```
+
+# compute scores dataset
+```{r}
+scores <- function(fit,data){
+  return(as.data.frame(as.matrix(data)%*%fit$loadings))
+}
+
+colnames(pisa_data)
+
+scores_data = list()
+for(group in group_list){
+    scores_data[group] = list(scores(fit_PCA_rotated[[group]],pisa_data[,grouped_variables[[group]]]))
+}
+
+scores_data=data.frame(scores_data)
+```
+
+
+
+
+
+
+
+
+
+
+
