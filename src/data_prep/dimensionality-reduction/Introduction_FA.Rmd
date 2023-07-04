@@ -3,6 +3,7 @@ output: html_document
 editor_options: 
   chunk_output_type: inline
 ---
+
 # Factor Analysis
 
 ## Notes and references
@@ -300,7 +301,7 @@ for(group in group_list){
 
 # Loadings
 
-## MinRes FA 
+## MinRes FA
 
 Visualizing the loadings:
 

@@ -1,0 +1,37 @@
+# Example: computation of well-being indeces
+
+```{r}
+#DIRECTORIES
+root_proj_dir = "../.."
+dataset_dir = paste(root_proj_dir,"/data/pisa_data_final.csv",sep="")
+include_dir1 = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
+###!!! in this file a put the function used to compute the scores !!!###
+include_dir2 = paste(root_proj_dir,"/src/include/computing_WBindex.R",sep="")
+
+#INCLUDING UTILITIES
+source(include_dir1)
+source(include_dir2) ###!!!including new file!!!###
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_dir)
+colnames(pisa_data)
+head(pisa_data)
+```
+
+Recall to scale the dataset
+
+```{r}
+#standardize the variables
+transformed_data <- as.data.frame(scale(select_if(pisa_data,is.numeric)))
+transformed_data$CNT <- pisa_data$CNT #adding CNT column
+
+pisa_data <- transformed_data
+rm(transformed_data)
+```
+
+Actually computing WB index
+
+```{r}
+scores <- computing_scoresWB(pisa_data, root_proj_dir)
+```
+
+The scores are stored in a list containing the two vectors for the two types of well-being

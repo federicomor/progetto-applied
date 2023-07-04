@@ -1,6 +1,6 @@
 #----A script to compute the scores----
 
-computing_scoresWB <- function(pisa_data){
+computing_scoresWB <- function(pisa_data, root_proj_dir){
   library(dplyr)
   
   cat("***Recall to standardize your data***\n")
@@ -9,8 +9,8 @@ computing_scoresWB <- function(pisa_data){
   psychologicalWB_var <- c("EUDMO","SWBP", "RESILIENCE")
   socialWB_var <- c("EMOSUPS","BELONG","BEINGBULLIED")
   
-  load("SocialWB_loadings.RData")
-  load("PsychologicalWB_loadings.RData")
+  load(paste(root_proj_dir,"/src/include/SocialWB_loadings.RData", sep=""))
+  load(paste(root_proj_dir,"/src/include/PsychologicalWB_loadings.RData", sep=""))
   
   scores <- list()
   
