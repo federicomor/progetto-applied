@@ -39,9 +39,9 @@ pisa_data$CNT <- as.factor(pisa_data$CNT)
 pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
 head(pisa_data)
 # remove PV
-pisa_data <- pisa_data %>% select(-starts_with("PV"))
+#pisa_data <- pisa_data %>% select(-starts_with("PV"))
 # LMINS and MMINS averaged
-pisa_data$SMINS = (pisa_data$LMINS+pisa_data$MMINS)/2
+pisa_data$LM_MINS = (pisa_data$LMINS+pisa_data$MMINS)/2
 
 head(pisa_data)
 ```
@@ -54,7 +54,7 @@ data <- transformed_data
 col_names_pisa = colnames(pisa_data)
 col_names_data = colnames(data)
 facotor_vars <- setdiff(col_names_pisa,col_names_data)
-facotor_vars # those needs to be added later
+facotor_vars # those needed to be added later
 ```
 # Remove variables that are already ok (numeric) + psyc that will be dealt differently
 ```{r}
@@ -65,7 +65,26 @@ remove_vars = c("EUDMO","SWBP","GFOFAIL", "RESILIENCE", "COMPETE",  #Psychologic
                   
 )
 
-original_vars = c("ESCS")
+original_vars = c("ESCS",
+                  "RATCMP1",
+                  "ICTSCH",
+                  "ICTRES",
+                  "ENTUSE",
+                  "LM_MINS",
+                  "HEDRES",
+                  "STUBEHA",
+                  "ATTLNACT",
+                  "JOYREAD",
+                  "PROAT6",
+                  "TEACHBEHA",
+                  "STRATIO",
+                  "CLSIZE",
+                  "EDUSHORT",
+                  "STAFFSHORT",
+                  "PV1MATH","PV1READ"
+                  
+
+                  )
                   
 ```
 
@@ -74,22 +93,15 @@ original_vars = c("ESCS")
 grouped_variables <-list()
 #list of grouped variables
 
-grouped_variables[["ICT at home"]] <- c("ICTHOME","ICTRES","ENTUSE","HOMESCH")
-grouped_variables[["Relationship with ICT"]] <- c("AUTICT","COMPICT","INTICT","ENTUSE", "HOMESCH", "USESCH")
-grouped_variables[["ICT at school"]] <- c("ICTCLASS","ICTOUTSIDE","USESCH", "ICTSCH","RATCMP1")
+grouped_variables[["Approach to ICT"]] <- c("AUTICT","COMPICT","INTICT")
 
-##Culture
-grouped_variables[["Cultural possesion"]] <- c("CULTPOSS","HEDRES")
-grouped_variables[["Attitude towards school"]] <- c("SMINS","STUBEHA","ATTLNACT") 
-grouped_variables[["Reading"]] <- c("JOYREAD", "SCREADCOMP")
+grouped_variables[["Use of ICT"]] <- c("HOMESCH","USESCH")
 
 ##Teaching
-grouped_variables[["Teachers' degree"]] <- c("PROAT5AB","PROAT5AM","PROAT6")
-grouped_variables[["Teacher support"]] <- c("TEACHINT","TEACHSUP","STIMREAD","TEACHBEHA","PERFEED") 
+grouped_variables[["Teachers' degree"]] <- c("PROAT5AB","PROAT5AM")
+grouped_variables[["Teacher skill"]] <- c("TEACHINT","TEACHSUP","STIMREAD","PERFEED") 
 
-##School
-grouped_variables[["School size"]] <- c("STRATIO","SCHSIZE","CLSIZE")
-grouped_variables[["Equipment of the school"]] <- c("EDUSHORT","STAFFSHORT")
+                  
 
 #groups
 group_list <- names(grouped_variables)
@@ -127,7 +139,7 @@ the following methods are useful to select the initial number of factors. The fi
 
 (Note that scree plots are contained in parallel analysis)
 
-```{r}
+```{r,eval=F}
 nfactors <- list()
 
 for(group in group_list){
@@ -168,7 +180,7 @@ what the next chunk does is
 - perform a first pca with the previously chosen number of components
 - increase by one the number of components until every group has an explained variance that reaches the "soglia"
 ```{r}
-soglia = 0.65
+soglia = 0.40
 nfactors = nfactors_2
 
 
@@ -216,13 +228,28 @@ for(group in group_list){
 
 # Visualize the loadings:
 ```{r}
-group_list
-#Principal Component method
 for(group in group_list){
   for(i in 1:nfactors[[group]]){
     barplot(fit_PCA_rotated[[group]]$loadings[,i], main = paste("factor",group,i),las=2,cex.names=0.7)
   }
 }
+```
+
+
+```{r}
+group_gg=group_list[5]
+
+for(i in grouped_variables[[group_gg]]){
+  print(paste0(i,"-"))
+  spiega(i)
+  print("   ")
+}
+
+for(i in 1:nfactors[[group_gg]]){
+  vals = fit_PCA_rotated[[group_gg]]$loadings[,i]
+  print(vals)
+}
+
 ```
 
 # compute scores dataset
@@ -248,6 +275,7 @@ for(group in group_list){
 }
 
 scores_data=data.frame(scores_data)
+colnames(scores_data)=group_list
 scores_data_final = cbind(scores_data,scores_orig)
 ```
 
@@ -283,6 +311,11 @@ head(scores_WB)
 scores_data_final= cbind(scores_data_final,scores_WB)
 head(scores_data_final)
 ```
+#Save Dataframe of scores
+```{r}
+#write.csv(scores_data_final,"../../../data/pisa_scores_final.csv")
+```
+
 
 
 
