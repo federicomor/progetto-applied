@@ -1789,15 +1789,365 @@ library(insight)</code></pre>
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaGVhZChkYXRhKVxuZGF0YSRYIDwtIE5VTExcbmRhdGEkU0NITFRZUEUgPC0gYXMuZmFjdG9yKGRhdGEkU0NITFRZUEUpXG5kYXRhJENOVCA8LSBhcy5mYWN0b3IoZGF0YSRDTlQpXG5gYGAifQ== -->
-<pre class="r"><code>head(data)
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGF0YT1kYXRhXG5oZWFkKGRhdGEpXG5jb2xuYW1lcyhkYXRhKVxuZGF0YSRYIDwtIE5VTExcbmRhdGEkU0NITFRZUEUgPC0gYXMuZmFjdG9yKGRhdGEkU0NITFRZUEUpXG5kYXRhJENOVCA8LSBhcy5mYWN0b3IoZGF0YSRDTlQpXG5cbklNX1BVQkxJQyA9IHJlcCgwLGRpbShkYXRhKVsxXSlcbklNX1BVQkxJQyBbd2hpY2goZGF0YSRTQ0hMVFlQRT09XCJQdWJsaWNcIildID0gMVxuZGF0YSRJTV9QVUJMSUMgPSBhcy5mYWN0b3IoSU1fUFVCTElDKVxuXG5gYGAifQ== -->
+<pre class="r"><code>data=data
+head(data)
+colnames(data)
 data$X &lt;- NULL
 data$SCHLTYPE &lt;- as.factor(data$SCHLTYPE)
-data$CNT &lt;- as.factor(data$CNT)</code></pre>
+data$CNT &lt;- as.factor(data$CNT)
+
+IM_PUBLIC = rep(0,dim(data)[1])
+IM_PUBLIC [which(data$SCHLTYPE==&quot;Public&quot;)] = 1
+data$IM_PUBLIC = as.factor(IM_PUBLIC)
+</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<div id="modello-1" class="section level1">
+<h1>Modello 1</h1>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZml0X3NvY2lhbCA9IGxtKFNvY2lhbC53ZWxsLmJlaW5nIH4gQXBwcm9hY2gudG8uSUNUK1VzZS5vZi5JQ1QrVGVhY2hlcnMuLmRlZ3JlZStUZWFjaGVyLnNraWxsK0VTQ1MrUkFUQ01QMStJQ1RTQ0grSUNUUkVTK0VOVFVTRStMTV9NSU5TK0hFRFJFUytTVFVCRUhBK0FUVExOQUNUK1xuSk9ZUkVBRCtQUk9BVDYrVEVBQ0hCRUhBK1NUUkFUSU8rQ0xTSVpFK0VEVVNIT1JUK1NUQUZGU0hPUlQrUFYxTUFUSCtcblBWMVJFQUQrQ1JFQUNUSVYrU0NITFRZUEUsZGF0YT1kYXRhKVxuXG5zdW1tYXJ5KGZpdF9zb2NpYWwpXG5gYGAifQ== -->
+<pre class="r"><code>fit_social = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+STUBEHA+ATTLNACT+
+JOYREAD+PROAT6+TEACHBEHA+STRATIO+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+SCHLTYPE,data=data)
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2siDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCmVkaXRvcl9vcHRpb25zOiANCiAgY2h1bmtfb3V0cHV0X3R5cGU6IGlubGluZQ0KLS0tDQoNCmBgYHtyLCBzZXR1cH0NCnJvb3RfcHJval9kaXIgPSAiLi4vLi4vIg0KZGF0YXNldF9wYXRoID0gcGFzdGUocm9vdF9wcm9qX2RpciwiZGF0YS9waXNhX3Njb3Jlc19maW5hbC5jc3YiLHNlcD0iIikNCmluY2x1ZGVfcGF0aCA9IHBhc3RlKHJvb3RfcHJval9kaXIsInNyYy9pbmNsdWRlL1V0aWxpdGllcy5SIixzZXA9IiIpDQojSU5DTFVESU5HIFVUSUxJVElFUw0Kc291cmNlKGluY2x1ZGVfcGF0aCkNCiNJTVBPUlRJTkcgVEhFIERBVEFTRVQNCmRhdGEgPC0gcmVhZC5jc3YoZmlsZT1kYXRhc2V0X3BhdGgpDQpgYGANCg0KYGBge3J9DQpsaWJyYXJ5KG12dG5vcm0pDQpsaWJyYXJ5KE1BU1MpDQpsaWJyYXJ5KGNhcikNCmxpYnJhcnkocmdsKQ0KbGlicmFyeShsZWFwcykNCmxpYnJhcnkoSVNMUikNCmxpYnJhcnkoZ2xtbmV0KQ0KbGlicmFyeShsbWU0KQ0KbGlicmFyeShubG1lVSkgIyMgLS0+IGZvciB0aGUgZGF0YXNldA0KbGlicmFyeShubG1lKSAgIyMgLS0+IGZvciBtb2RlbHMgaW1wbGVtZW50YXRpb24NCg0KbGlicmFyeShjb3JycGxvdCkNCmxpYnJhcnkobGF0dGljZSkNCmxpYnJhcnkocGxvdC5tYXRyaXgpDQoNCmxpYnJhcnkoaW5zaWdodCkNCmBgYA0KDQpgYGB7cn0NCmhlYWQoZGF0YSkNCmRhdGEkWCA8LSBOVUxMDQpkYXRhJFNDSExUWVBFIDwtIGFzLmZhY3RvcihkYXRhJFNDSExUWVBFKQ0KZGF0YSRDTlQgPC0gYXMuZmFjdG9yKGRhdGEkQ05UKQ0KYGBg</div>
+summary(fit_social)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="variable-reduction--backwards" class="section level1">
+<h1>Variable Reduction -backwards</h1>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYj1jb2VmZmljaWVudHMoZml0X3NvY2lhbClcbmNoZWNrX2JldGEgPC0gYyhcblx0Z3JlcChcIklDVFJFU1wiLCBuYW1lcyhiKSksXG5cdGdyZXAoXCJFTlRVU0VcIiwgbmFtZXMoYikpLFxuXHRncmVwKFwiTE1fTUlOU1wiLCBuYW1lcyhiKSksXG5cdGdyZXAoXCJURUFDSEJFSEFcIiwgbmFtZXMoYikpLFxuXHRncmVwKFwiRURVU0hPUlRcIiwgbmFtZXMoYikpLFxuXHRncmVwKFwiU1RVQkVIQVwiLCBuYW1lcyhiKSksXG5cdGdyZXAoXCJKT1lSRUFEXCIsIG5hbWVzKGIpKSxcblx0Z3JlcChcIlNUUkFUSU9cIiwgbmFtZXMoYikpLFxuXHRncmVwKFwiRVNDU1wiLCBuYW1lcyhiKSksXG5cdGdyZXAoXCJQUk9BVDZcIiwgbmFtZXMoYikpLFxuXHRncmVwKFwiUkFUQ01QMVwiLCBuYW1lcyhiKSlcbilcblxuQyA8LSBjKClcbmZvciggaSBpbiAxOiBsZW5ndGgoY2hlY2tfYmV0YSkpe1xuICB2ZWN0IDwtIHJlcCgwLGZpdF9zb2NpYWwkcmFuaylcbiAgdmVjdFtjaGVja19iZXRhW2ldXSA8LSAxXG4gIEMgPC0gcmJpbmQoQyx2ZWN0KVxufVxubGluZWFySHlwb3RoZXNpcyhmaXRfc29jaWFsLCBDLCByZXAoMCxsZW5ndGgoY2hlY2tfYmV0YSkpKVxuIyBsb3JvIHNpIHRvbGdvbm9cbmBgYCJ9 -->
+<pre class="r"><code>b=coefficients(fit_social)
+check_beta &lt;- c(
+    grep(&quot;ICTRES&quot;, names(b)),
+    grep(&quot;ENTUSE&quot;, names(b)),
+    grep(&quot;LM_MINS&quot;, names(b)),
+    grep(&quot;TEACHBEHA&quot;, names(b)),
+    grep(&quot;EDUSHORT&quot;, names(b)),
+    grep(&quot;STUBEHA&quot;, names(b)),
+    grep(&quot;JOYREAD&quot;, names(b)),
+    grep(&quot;STRATIO&quot;, names(b)),
+    grep(&quot;ESCS&quot;, names(b)),
+    grep(&quot;PROAT6&quot;, names(b)),
+    grep(&quot;RATCMP1&quot;, names(b))
+)
+
+C &lt;- c()
+for( i in 1: length(check_beta)){
+  vect &lt;- rep(0,fit_social$rank)
+  vect[check_beta[i]] &lt;- 1
+  C &lt;- rbind(C,vect)
+}
+linearHypothesis(fit_social, C, rep(0,length(check_beta)))
+# loro si tolgono</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZml0X3NvY2lhbF81ID0gbG0oU29jaWFsLndlbGwuYmVpbmcgfiBBcHByb2FjaC50by5JQ1QrVXNlLm9mLklDVCtUZWFjaGVycy4uZGVncmVlK1RlYWNoZXIuc2tpbGwrUkFUQ01QMStJQ1RTQ0grSEVEUkVTK0FUVExOQUNUK0NMU0laRStTVEFGRlNIT1JUK1BWMU1BVEgrXG5QVjFSRUFEK0NSRUFDVElWK0lNX1BVQkxJQyxkYXRhPWRhdGEpXG5zdW1tYXJ5KGZpdF9zb2NpYWxfNSlcbmBgYCJ9 -->
+<pre class="r"><code>fit_social_5 = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+RATCMP1+ICTSCH+HEDRES+ATTLNACT+CLSIZE+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+IM_PUBLIC,data=data)
+summary(fit_social_5)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<div id="salta-qui" class="section level2">
+<h2>SALTA QUI :)</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuRk9STVVMQSA9IGZvcm11bGEoU29jaWFsLndlbGwuYmVpbmcgfiBBcHByb2FjaC50by5JQ1QrVXNlLm9mLklDVCtUZWFjaGVycy4uZGVncmVlK1RlYWNoZXIuc2tpbGwrUkFUQ01QMStJQ1RTQ0grSEVEUkVTK0FUVExOQUNUK0NMU0laRStTVEFGRlNIT1JUK1BWMU1BVEgrXG5QVjFSRUFEK0NSRUFDVElWK0lNX1BVQkxJQylcbmZpdF9zb2NpYWwgPSBsbShGT1JNVUxBLGRhdGE9ZGF0YSlcbnN1bW1hcnkoZml0X3NvY2lhbClcbmBgYCJ9 -->
+<pre class="r"><code>FORMULA = formula(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+RATCMP1+ICTSCH+HEDRES+ATTLNACT+CLSIZE+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+IM_PUBLIC)
+fit_social = lm(FORMULA,data=data)
+summary(fit_social)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucGFyKG1mcm93PWMoMiwyKSlcbnBsb3QoZml0X3NvY2lhbClcbnNoYXBpcm8udGVzdChmaXRfc29jaWFsJHJlc2lkdWFscylcbmBgYCJ9 -->
+<pre class="r"><code>par(mfrow=c(2,2))
+plot(fit_social)
+shapiro.test(fit_social$residuals)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucmVzID0gZml0X3NvY2lhbCRyZXNpZHVhbHNcbmZvciAoaSBpbiAxOihkaW0oZGF0YSlbMl0tMSkpe1xuXHRwbG90KHJlcyxkYXRhWyxpXSxtYWluPWNvbG5hbWVzKGRhdGEpW2ldKVxufVxuYGBgIn0= -->
+<pre class="r"><code>res = fit_social$residuals
+for (i in 1:(dim(data)[2]-1)){
+    plot(res,data[,i],main=colnames(data)[i])
+}</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxueDExKClcbmhpc3QoZGF0YSRUZWFjaGVycy4uZGVncmVlKVxuYGBgIn0= -->
+<pre class="r"><code>x11()
+hist(data$Teachers..degree)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="lasso" class="section level2">
+<h2>Lasso</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuTEFNQkRBX0dSSUQgPSAxMF5zZXEoLTEwLDEsYnk9MC4xKVxuXG54ID0gbW9kZWwubWF0cml4KEZPUk1VTEEsZGF0YT1kYXRhKVssLTFdXG4jIEJ1aWxkIHRoZSB2ZWN0b3Igb2YgcmVzcG9uc2UvdGFyZ2V0XG55ID0gZGF0YSRTb2NpYWwud2VsbC5iZWluZ1xubGFtYmRhLmdyaWQgPSBMQU1CREFfR1JJRFxuZml0Lmxhc3NvID0gZ2xtbmV0KHgseSwgbGFtYmRhID0gbGFtYmRhLmdyaWQsIGFscGhhPTEpXG5cbmNvbHMgPSBjb2xvcmEoZGltKHgpWzJdLDEpXG5wbG90KGZpdC5sYXNzbywgeHZhcj0nbGFtYmRhJywgbGFiZWw9VFJVRSwgY29sID0gY29scylcbmxlZ2VuZCgndG9wcmlnaHQnLCBkaW1uYW1lcyh4KVtbMl1dLCBjb2wgPSBjb2xzLCBsdHk9MSwgY2V4PTAuNClcblxuIyMjIFNlbGVjdCBsYW1iZGEgd2l0aCBDVlxuY3YubGFzc28gPSBjdi5nbG1uZXQoeCx5LGxhbWJkYT1sYW1iZGEuZ3JpZCwgbmZvbGRzID0gMTAwKVxuYmVzdGxhbS5sYXNzbyA9IGN2Lmxhc3NvJGxhbWJkYS5taW5cbmJlc3RsYW0ubGFzc29cbnBsb3QoY3YubGFzc28pXG5hYmxpbmUodj1sb2coYmVzdGxhbS5sYXNzbyksIGx0eT0xKVxuXG5jb2VmLmxhc3NvID0gcHJlZGljdChmaXQubGFzc28sIHM9YmVzdGxhbS5sYXNzbywgdHlwZSA9ICdjb2VmZmljaWVudHMnKVxuY29lZi5sYXNzb1xuYGBgIn0= -->
+<pre class="r"><code>LAMBDA_GRID = 10^seq(-10,1,by=0.1)
+
+x = model.matrix(FORMULA,data=data)[,-1]
+# Build the vector of response/target
+y = data$Social.well.being
+lambda.grid = LAMBDA_GRID
+fit.lasso = glmnet(x,y, lambda = lambda.grid, alpha=1)
+
+cols = colora(dim(x)[2],1)
+plot(fit.lasso, xvar=&#39;lambda&#39;, label=TRUE, col = cols)
+legend(&#39;topright&#39;, dimnames(x)[[2]], col = cols, lty=1, cex=0.4)
+
+### Select lambda with CV
+cv.lasso = cv.glmnet(x,y,lambda=lambda.grid, nfolds = 100)
+bestlam.lasso = cv.lasso$lambda.min
+bestlam.lasso
+plot(cv.lasso)
+abline(v=log(bestlam.lasso), lty=1)
+
+coef.lasso = predict(fit.lasso, s=bestlam.lasso, type = &#39;coefficients&#39;)
+coef.lasso</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="move-to-lmm" class="section level2">
+<h2>Move to LMM</h2>
+<div id="creazione-unico-factor-combinato" class="section level3">
+<h3>creazione unico factor combinato</h3>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBFeGFtcGxlIGNhdGVnb3JpY2FsIHZhcmlhYmxlc1xuaW5kZXhfY250ID0gZ3JlcChcIkNOVFwiLGNvbG5hbWVzKGRhdGEpKVxuXG5jb2xuYW1lcyhkYXRhKVxuXG5sZXZlbHMoZGF0YVssaW5kZXhfY250XSk9bGV2ZWxzKGRhdGEkQ05UKVxuY2F0X3ZhcjEgPC0gZGF0YVssaW5kZXhfY250XVxuXG5pbmRleF9wdWJsaWM9IGdyZXAoXCJJTV9QVUJMSUNcIixjb2xuYW1lcyhkYXRhKSlcbmxldmVscyhkYXRhWyxpbmRleF9wdWJsaWNdKT1sZXZlbHMoZGF0YSRJTV9QVUJMSUMpXG5jYXRfdmFyMiA8LSBkYXRhWyxpbmRleF9wdWJsaWNdXG5cbiMgQ29tYmluZSBjYXRlZ29yaWNhbCB2YXJpYWJsZXNcbm5ld192YXIgPC0gaW50ZXJhY3Rpb24oY2F0X3ZhcjEsIGNhdF92YXIyLCBzZXAgPSBcIi1cIilcbmxldmVscyhuZXdfdmFyKVxubGVuZ3RoKGxldmVscyhuZXdfdmFyKSlcblxuZGF0YSRORVdfVkFSID0gYXMuZmFjdG9yKG5ld192YXIpXG5jb2xuYW1lcyhkYXRhKVxuYGBgIn0= -->
+<pre class="r"><code># Example categorical variables
+index_cnt = grep(&quot;CNT&quot;,colnames(data))
+
+colnames(data)
+
+levels(data[,index_cnt])=levels(data$CNT)
+cat_var1 &lt;- data[,index_cnt]
+
+index_public= grep(&quot;IM_PUBLIC&quot;,colnames(data))
+levels(data[,index_public])=levels(data$IM_PUBLIC)
+cat_var2 &lt;- data[,index_public]
+
+# Combine categorical variables
+new_var &lt;- interaction(cat_var1, cat_var2, sep = &quot;-&quot;)
+levels(new_var)
+length(levels(new_var))
+
+data$NEW_VAR = as.factor(new_var)
+colnames(data)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="fit-modello" class="section level3">
+<h3>fit modello</h3>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuRk9STVVMQV9MTU0gPSBmb3JtdWxhKFNvY2lhbC53ZWxsLmJlaW5nIH4gQXBwcm9hY2gudG8uSUNUK1VzZS5vZi5JQ1QrVGVhY2hlcnMuLmRlZ3JlZStcblx0XHRcdFx0XHQgIFx0VGVhY2hlci5za2lsbCtSQVRDTVAxK1xuXHRcdFx0XHRcdCAgXHRJQ1RTQ0grSEVEUkVTK0FUVExOQUNUK0NMU0laRStTVEFGRlNIT1JUK1BWMU1BVEgrXG5QVjFSRUFEK0NSRUFDVElWKysoMXxORVdfVkFSKSlcbmZpdF9zb2NpYWxfbG1tID0gbG1lcihGT1JNVUxBX0xNTSxkYXRhPWRhdGEpXG5maXRfc29jaWFsX2xtbVxuXG5mbSA9IGZpdF9zb2NpYWxfbG1tXG5zaWdtYTJfZXBzIDwtIGFzLm51bWVyaWMoZ2V0X3ZhcmlhbmNlX3Jlc2lkdWFsKGZtKSlcbnNpZ21hMl9iIDwtIGFzLm51bWVyaWMoZ2V0X3ZhcmlhbmNlX3JhbmRvbShmbSkpXG5cblBWUkUgPC0gc2lnbWEyX2IvKHNpZ21hMl9iK3NpZ21hMl9lcHMpXG5QVlJFICMgNTElIGlzIHZlcnkgaGlnaCFcblxuIyMgdmlzdWFsaXphdGlvbiBvZiB0aGUgcmFuZG9tIGludGVyY2VwdHMgd2l0aCB0aGVpciA5NSUgY29uZmlkZW5jZSBpbnRlcnZhbHNcbiMgUmFuZG9tIGVmZmVjdHM6IGJfMGkgZm9yIGk9MSwuLi4sMjM0XG5kb3RwbG90KHJhbmVmKGZtLCBjb25kVmFyPVQpKSRORVdfVkFSXG5gYGAifQ== -->
+<pre class="r"><code>FORMULA_LMM = formula(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+
+                        Teacher.skill+RATCMP1+
+                        ICTSCH+HEDRES+ATTLNACT+CLSIZE+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV++(1|NEW_VAR))
+fit_social_lmm = lmer(FORMULA_LMM,data=data)
+fit_social_lmm
+
+fm = fit_social_lmm
+sigma2_eps &lt;- as.numeric(get_variance_residual(fm))
+sigma2_b &lt;- as.numeric(get_variance_random(fm))
+
+PVRE &lt;- sigma2_b/(sigma2_b+sigma2_eps)
+PVRE # 51% is very high!
+
+## visualization of the random intercepts with their 95% confidence intervals
+# Random effects: b_0i for i=1,...,234
+dotplot(ranef(fm, condVar=T))$NEW_VAR</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="assumptions-check" class="section level3">
+<h3>assumptions check</h3>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBub3JtYWxpdHkgb2YgcmVzaWR1YWxzXG5xcW5vcm0ocmVzaWQoZml0X3NvY2lhbF9sbW0pKVxucXFsaW5lKHJlc2lkKGZpdF9zb2NpYWxfbG1tKSwgY29sPSdyZWQnLCBsd2Q9MilcbnNoYXBpcm8udGVzdChyZXNpZChmaXRfc29jaWFsX2xtbSkpXG4jIG5vcm1hbGl0eSBvZiByYW5kb20gZWZmZWN0c1xuIyBjYXNlIG9ubHkgaW50ZXJlY2VwdFxucXFub3JtKHVubGlzdChyYW5lZihmaXRfc29jaWFsX2xtbSkkTkVXX1ZBUiksXG5tYWluPSdOb3JtYWwgUS1RIFBsb3QgLSBSYW5kb20gRWZmZWN0cyBvbiBJbnRlcmNlcHQnKVxucXFsaW5lKHVubGlzdChyYW5lZihmaXRfc29jaWFsX2xtbSkkTkVXX1ZBUiksIGNvbD0ncmVkJywgbHdkPTIpXG4jIGNhc2UgaW50ZXJlY2VwdCBhbmQgc2xvcGVcbmBgYCJ9 -->
+<pre class="r"><code># normality of residuals
+qqnorm(resid(fit_social_lmm))
+qqline(resid(fit_social_lmm), col=&#39;red&#39;, lwd=2)
+shapiro.test(resid(fit_social_lmm))
+# normality of random effects
+# case only interecept
+qqnorm(unlist(ranef(fit_social_lmm)$NEW_VAR),
+main=&#39;Normal Q-Q Plot - Random Effects on Intercept&#39;)
+qqline(unlist(ranef(fit_social_lmm)$NEW_VAR), col=&#39;red&#39;, lwd=2)
+# case interecept and slope</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+</div>
+</div>
+<div id="modello-2" class="section level1">
+<h1>Modello 2</h1>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuSU1fUFVCTElDID0gcmVwKDAsZGltKGRhdGEpWzFdKVxuSU1fUFVCTElDIFt3aGljaChkYXRhJFNDSExUWVBFPT1cIlB1YmxpY1wiKV0gPSAxXG5cbmZpdF9wc3ljaCA9IGxtKFBzeWNob2xvZ2ljYWwud2VsbC5iZWluZyB+IEFwcHJvYWNoLnRvLklDVCtVc2Uub2YuSUNUK1RlYWNoZXJzLi5kZWdyZWUrVGVhY2hlci5za2lsbCtcbkVTQ1MrUkFUQ01QMStJQ1RTQ0grSUNUUkVTK0VOVFVTRStMTV9NSU5TK0hFRFJFUytTVFVCRUhBK0FUVExOQUNUK1xuSk9ZUkVBRCtQUk9BVDYrVEVBQ0hCRUhBK1NUUkFUSU8rQ0xTSVpFK0VEVVNIT1JUK1NUQUZGU0hPUlQrUFYxTUFUSCtcblBWMVJFQUQrQ1JFQUNUSVYrSU1fUFVCTElDLGRhdGE9ZGF0YSlcbnN1bW1hcnkoZml0X3BzeWNoKVxuYGBgIn0= -->
+<pre class="r"><code>IM_PUBLIC = rep(0,dim(data)[1])
+IM_PUBLIC [which(data$SCHLTYPE==&quot;Public&quot;)] = 1
+
+fit_psych = lm(Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+
+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+STUBEHA+ATTLNACT+
+JOYREAD+PROAT6+TEACHBEHA+STRATIO+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+IM_PUBLIC,data=data)
+summary(fit_psych)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<div id="variable-reduction" class="section level2">
+<h2>Variable Reduction</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZml0ID0gZml0X3BzeWNoXG5iPWNvZWZmaWNpZW50cyhmaXQpXG5jaGVja19iZXRhIDwtIGMoXG5cdGdyZXAoXCJUZWFjaGVycy4uZGVncmVlIFwiLCBuYW1lcyhiKSksXG5cdGdyZXAoXCJTVFVCRUhBXCIsIG5hbWVzKGIpKSxcblx0Z3JlcChcIkpPWVJFQURcIiwgbmFtZXMoYikpLFxuXHRncmVwKFwiUFJPQVQ2XCIsIG5hbWVzKGIpKSxcblx0Z3JlcChcIlRFQUNIQkVIQVwiLCBuYW1lcyhiKSksXG5cdGdyZXAoXCJTVFJBVElPXCIsIG5hbWVzKGIpKSxcblx0Z3JlcChcIlNUQUZGU0hPUlRcIiwgbmFtZXMoYikpLFxuXHRncmVwKFwiRURVU0hPUlRcIiwgbmFtZXMoYikpXG4pXG5cbkMgPC0gYygpXG5mb3IoIGkgaW4gMTogbGVuZ3RoKGNoZWNrX2JldGEpKXtcbiAgdmVjdCA8LSByZXAoMCxmaXQkcmFuaylcbiAgdmVjdFtjaGVja19iZXRhW2ldXSA8LSAxXG4gIEMgPC0gcmJpbmQoQyx2ZWN0KVxufVxubGluZWFySHlwb3RoZXNpcyhmaXQsIEMsIHJlcCgwLGxlbmd0aChjaGVja19iZXRhKSkpXG4jIGxvcm8gc2kgdG9sZ29ub1xuYGBgIn0= -->
+<pre class="r"><code>fit = fit_psych
+b=coefficients(fit)
+check_beta &lt;- c(
+    grep(&quot;Teachers..degree &quot;, names(b)),
+    grep(&quot;STUBEHA&quot;, names(b)),
+    grep(&quot;JOYREAD&quot;, names(b)),
+    grep(&quot;PROAT6&quot;, names(b)),
+    grep(&quot;TEACHBEHA&quot;, names(b)),
+    grep(&quot;STRATIO&quot;, names(b)),
+    grep(&quot;STAFFSHORT&quot;, names(b)),
+    grep(&quot;EDUSHORT&quot;, names(b))
+)
+
+C &lt;- c()
+for( i in 1: length(check_beta)){
+  vect &lt;- rep(0,fit$rank)
+  vect[check_beta[i]] &lt;- 1
+  C &lt;- rbind(C,vect)
+}
+linearHypothesis(fit, C, rep(0,length(check_beta)))
+# loro si tolgono</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+<div id="salta-qui-1" class="section level2">
+<h2>SALTA QUI :)</h2>
+</div>
+<div id="move-to-lmm-1" class="section level2">
+<h2>Move to LMM</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuRk9STVVMQV9MTU1fUFNZQ0ggPSBmb3JtdWxhKFxuXHRQc3ljaG9sb2dpY2FsLndlbGwuYmVpbmcgflxuXHRcdFx0QXBwcm9hY2gudG8uSUNUK1VzZS5vZi5JQ1QrVGVhY2hlci5za2lsbCtcbkVTQ1MrUkFUQ01QMStJQ1RTQ0grSUNUUkVTK0VOVFVTRStMTV9NSU5TK0hFRFJFUytBVFRMTkFDVCtDTFNJWkUrUFYxTUFUSCtcblBWMVJFQUQrQ1JFQUNUSVYrKDF8TkVXX1ZBUikpXG5cbmZpdF9sbW1fcHN5Y2ggPSBsbWVyKEZPUk1VTEFfTE1NX1BTWUNILGRhdGE9ZGF0YSlcbmZpdF9sbW1fcHN5Y2hcblxuXG5mbSA9IGZpdF9sbW1fcHN5Y2hcbnNpZ21hMl9lcHMgPC0gYXMubnVtZXJpYyhnZXRfdmFyaWFuY2VfcmVzaWR1YWwoZm0pKVxuc2lnbWEyX2IgPC0gYXMubnVtZXJpYyhnZXRfdmFyaWFuY2VfcmFuZG9tKGZtKSlcblxuUFZSRSA8LSBzaWdtYTJfYi8oc2lnbWEyX2Irc2lnbWEyX2VwcylcblBWUkUgIyA1MSUgaXMgdmVyeSBoaWdoIVxuXG4jIyB2aXN1YWxpemF0aW9uIG9mIHRoZSByYW5kb20gaW50ZXJjZXB0cyB3aXRoIHRoZWlyIDk1JSBjb25maWRlbmNlIGludGVydmFsc1xuIyBSYW5kb20gZWZmZWN0czogYl8waSBmb3IgaT0xLC4uLiwyMzRcbmRvdHBsb3QocmFuZWYoZm0sIGNvbmRWYXI9VCkpJE5FV19WQVJcbmBgYCJ9 -->
+<pre class="r"><code>FORMULA_LMM_PSYCH = formula(
+    Psychological.well.being ~
+            Approach.to.ICT+Use.of.ICT+Teacher.skill+
+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+CLSIZE+PV1MATH+
+PV1READ+CREACTIV+(1|NEW_VAR))
+
+fit_lmm_psych = lmer(FORMULA_LMM_PSYCH,data=data)
+fit_lmm_psych
+
+
+fm = fit_lmm_psych
+sigma2_eps &lt;- as.numeric(get_variance_residual(fm))
+sigma2_b &lt;- as.numeric(get_variance_random(fm))
+
+PVRE &lt;- sigma2_b/(sigma2_b+sigma2_eps)
+PVRE # 51% is very high!
+
+## visualization of the random intercepts with their 95% confidence intervals
+# Random effects: b_0i for i=1,...,234
+dotplot(ranef(fm, condVar=T))$NEW_VAR</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<div id="assumptions-check-1" class="section level3">
+<h3>assumptions check</h3>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBub3JtYWxpdHkgb2YgcmVzaWR1YWxzXG5mbSA9IGZpdF9sbW1fcHN5Y2hcbnFxbm9ybShyZXNpZChmbSkpXG5xcWxpbmUocmVzaWQoZm0pLCBjb2w9J3JlZCcsIGx3ZD0yKVxuc2hhcGlyby50ZXN0KHJlc2lkKGZtKSlcbiMgbm9ybWFsaXR5IG9mIHJhbmRvbSBlZmZlY3RzXG4jIGNhc2Ugb25seSBpbnRlcmVjZXB0XG5xcW5vcm0odW5saXN0KHJhbmVmKGZtKSRORVdfVkFSKSxcbm1haW49J05vcm1hbCBRLVEgUGxvdCAtIFJhbmRvbSBFZmZlY3RzIG9uIEludGVyY2VwdCcpXG5xcWxpbmUodW5saXN0KHJhbmVmKGZtKSRORVdfVkFSKSwgY29sPSdyZWQnLCBsd2Q9MilcbiMgY2FzZSBpbnRlcmVjZXB0IGFuZCBzbG9wZVxuYm94cGxvdChyZXNpZHVhbHMoZm0pfmRhdGEkTkVXX1ZBUixsYXM9MilcblxucmVzID0gcmVzaWR1YWxzKGZtKVxuaGlzdChyZXMpXG5zaGFwaXJvLnRlc3QobG9nKHJlcythYnMobWluKHJlcykpKzEpKVxuYGBgIn0= -->
+<pre class="r"><code># normality of residuals
+fm = fit_lmm_psych
+qqnorm(resid(fm))
+qqline(resid(fm), col=&#39;red&#39;, lwd=2)
+shapiro.test(resid(fm))
+# normality of random effects
+# case only interecept
+qqnorm(unlist(ranef(fm)$NEW_VAR),
+main=&#39;Normal Q-Q Plot - Random Effects on Intercept&#39;)
+qqline(unlist(ranef(fm)$NEW_VAR), col=&#39;red&#39;, lwd=2)
+# case interecept and slope
+boxplot(residuals(fm)~data$NEW_VAR,las=2)
+
+res = residuals(fm)
+hist(res)
+shapiro.test(log(res+abs(min(res))+1))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZm1fdmFyID0gZm1cbiMjIHJhdyByZXNpZHVhbHMgXG5wbG90KGZtX3ZhciwgcmVzaWQoLiwgdHlwZSA9IFwicmVzcG9uc2VcIikgfiBmaXR0ZWQoLikpICMgUmF3IHZzLiBmaXR0ZWRcbiMgV2Ugb2JzZXJ2ZSBhbiBhc3ltbWV0cmljIHBhdHRlcm4sIHdpdGggbGFyZ2UgcG9zaXRpdmUgKG5lZ2F0aXZlKSByZXNpZHVhbHMgcHJlc2VudCBtYWlubHkgZm9yIHNtYWxsIChsYXJnZSkgZml0dGVkIHZhbHVlcy5cbiMgYnV0IGl0IGNhbiBiZSBhIGNvbnNlcXVlbmNlIG9mIHRoZSBmYWN0IHRoYXQgcmF3IHJlc2lkdWFscyBhcmUgaW50cmluc2ljYWxseSBoZXRlcm9zY2VkYXN0aWMgYW5kIGNvcnJlbGF0ZWQuXG5cbnBsb3QoZm1fdmFyLCByZXNpZCguLCB0eXBlID0gXCJyZXNwb25zZVwiKSB+IGFzLm51bWVyaWMoTkVXX1ZBUikpICMgUmF3IHZzLiBORVdfVkFSIChub3Qgc2hvd24pXG5id3Bsb3QocmVzaWQoZm1fdmFyKSB+IE5FV19WQVIsIHBjaCA9IFwifFwiLCBkYXRhID0gZGF0YSlcbiMgVGhlIGJveGFuZC13aGlza2VycyBwbG90cyBjbGVhcmx5IHNob3cgYW4gaW5jcmVhc2luZyB2YXJpYW5jZSBvZiB0aGUgcmVzaWR1YWxzLlxuXG4jIyBQZWFyc29uIHJlc2lkdWFscyBcbiMjIFBlYXJzb24gcmVzaWR1YWxzIGFyZSBvYnRhaW5lZCBmcm9tIHRoZSByYXcgcmVzaWR1YWxzIGJ5IGRpdmlkaW5nIHRoZSBsYXR0ZXIgYnkgYW5cbiMjIGVzdGltYXRlIG9mIHRoZSBhcHByb3ByaWF0ZSByZXNpZHVhbCBzdGFuZGFyZCBkZXZpYXRpb24sIHNvIHRoZXkgc2hvdWxkIGJlIG1vcmUgaG9tb3NjZWRhc3RpY1xuXG5cbnBsb3QoZm1fdmFyLCByZXNpZCguLCB0eXBlID0gXCJwZWFyc29uXCIgKSB+IGZpdHRlZCguKSkgIyBQZWFyc29uIHZzLiBmaXR0ZWRcbnBsb3QoZm1fdmFyLHJlc2lkKC4sIHR5cGUgPSBcInBlYXJzb25cIikgfiBhcy5udW1lcmljKE5FV19WQVIpKSBcbmJ3cGxvdCggcmVzaWQoZm1fdmFyLCB0eXBlID0gXCJwZWFyc29uXCIpIH4gTkVXX1ZBUiwgIyBQZWFyc29uIHZzLiB0aW1lLmZcbiAgICAgICAgcGNoID0gXCJ8XCIsIGRhdGEgPSBkYXRhKVxuIyMgdGhpcyBwbG90IGlsbHVzdHJhdGUgdGhlIGVmZmVjdCBvZiBzY2FsaW5nOiB0aGUgdmFyaWFuY2Ugb2YgdGhlIHJlc2lkdWFscyBpcyB2aXJ0dWFsbHkgY29uc3RhbnQuXG5gYGAifQ== -->
+<pre class="r"><code>fm_var = fm
+## raw residuals 
+plot(fm_var, resid(., type = &quot;response&quot;) ~ fitted(.)) # Raw vs. fitted
+# We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
+# but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
+
+plot(fm_var, resid(., type = &quot;response&quot;) ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
+bwplot(resid(fm_var) ~ NEW_VAR, pch = &quot;|&quot;, data = data)
+# The boxand-whiskers plots clearly show an increasing variance of the residuals.
+
+## Pearson residuals 
+## Pearson residuals are obtained from the raw residuals by dividing the latter by an
+## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
+
+
+plot(fm_var, resid(., type = &quot;pearson&quot; ) ~ fitted(.)) # Pearson vs. fitted
+plot(fm_var,resid(., type = &quot;pearson&quot;) ~ as.numeric(NEW_VAR)) 
+bwplot( resid(fm_var, type = &quot;pearson&quot;) ~ NEW_VAR, # Pearson vs. time.f
+        pch = &quot;|&quot;, data = data)
+## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+</div>
+</div>
+<div id="possibili-soluzioni-ai-residui" class="section level2">
+<h2>possibili soluzioni ai residui</h2>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShyb2J1c3RsbW0pXG5yb2J1c3RsbW06OnJsbWVyKClcblxuXG5gYGAifQ== -->
+<pre class="r"><code>library(robustlmm)
+robustlmm::rlmer()
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+</div>
+</div>
+
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2siDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCmVkaXRvcl9vcHRpb25zOiANCiAgY2h1bmtfb3V0cHV0X3R5cGU6IGlubGluZQ0KLS0tDQoNCmBgYHtyLCBzZXR1cH0NCnJvb3RfcHJval9kaXIgPSAiLi4vLi4vIg0KZGF0YXNldF9wYXRoID0gcGFzdGUocm9vdF9wcm9qX2RpciwiZGF0YS9waXNhX3Njb3Jlc19maW5hbC5jc3YiLHNlcD0iIikNCmluY2x1ZGVfcGF0aCA9IHBhc3RlKHJvb3RfcHJval9kaXIsInNyYy9pbmNsdWRlL1V0aWxpdGllcy5SIixzZXA9IiIpDQojSU5DTFVESU5HIFVUSUxJVElFUw0Kc291cmNlKGluY2x1ZGVfcGF0aCkNCiNJTVBPUlRJTkcgVEhFIERBVEFTRVQNCmRhdGEgPC0gcmVhZC5jc3YoZmlsZT1kYXRhc2V0X3BhdGgpDQpgYGANCg0KYGBge3J9DQpsaWJyYXJ5KG12dG5vcm0pDQpsaWJyYXJ5KE1BU1MpDQpsaWJyYXJ5KGNhcikNCmxpYnJhcnkocmdsKQ0KbGlicmFyeShsZWFwcykNCmxpYnJhcnkoSVNMUikNCmxpYnJhcnkoZ2xtbmV0KQ0KbGlicmFyeShsbWU0KQ0KbGlicmFyeShubG1lVSkgIyMgLS0+IGZvciB0aGUgZGF0YXNldA0KbGlicmFyeShubG1lKSAgIyMgLS0+IGZvciBtb2RlbHMgaW1wbGVtZW50YXRpb24NCg0KbGlicmFyeShjb3JycGxvdCkNCmxpYnJhcnkobGF0dGljZSkNCmxpYnJhcnkocGxvdC5tYXRyaXgpDQoNCmxpYnJhcnkoaW5zaWdodCkNCmBgYA0KDQpgYGB7cn0NCmRhdGE9ZGF0YQ0KaGVhZChkYXRhKQ0KY29sbmFtZXMoZGF0YSkNCmRhdGEkWCA8LSBOVUxMDQpkYXRhJFNDSExUWVBFIDwtIGFzLmZhY3RvcihkYXRhJFNDSExUWVBFKQ0KZGF0YSRDTlQgPC0gYXMuZmFjdG9yKGRhdGEkQ05UKQ0KDQpJTV9QVUJMSUMgPSByZXAoMCxkaW0oZGF0YSlbMV0pDQpJTV9QVUJMSUMgW3doaWNoKGRhdGEkU0NITFRZUEU9PSJQdWJsaWMiKV0gPSAxDQpkYXRhJElNX1BVQkxJQyA9IGFzLmZhY3RvcihJTV9QVUJMSUMpDQoNCmBgYA0KDQoNCiMgTW9kZWxsbyAxDQpgYGB7cn0NCmZpdF9zb2NpYWwgPSBsbShTb2NpYWwud2VsbC5iZWluZyB+IEFwcHJvYWNoLnRvLklDVCtVc2Uub2YuSUNUK1RlYWNoZXJzLi5kZWdyZWUrVGVhY2hlci5za2lsbCtFU0NTK1JBVENNUDErSUNUU0NIK0lDVFJFUytFTlRVU0UrTE1fTUlOUytIRURSRVMrU1RVQkVIQStBVFRMTkFDVCsNCkpPWVJFQUQrUFJPQVQ2K1RFQUNIQkVIQStTVFJBVElPK0NMU0laRStFRFVTSE9SVCtTVEFGRlNIT1JUK1BWMU1BVEgrDQpQVjFSRUFEK0NSRUFDVElWK1NDSExUWVBFLGRhdGE9ZGF0YSkNCg0Kc3VtbWFyeShmaXRfc29jaWFsKQ0KYGBgDQoNCiMgVmFyaWFibGUgUmVkdWN0aW9uIC1iYWNrd2FyZHMNCmBgYHtyfQ0KYj1jb2VmZmljaWVudHMoZml0X3NvY2lhbCkNCmNoZWNrX2JldGEgPC0gYygNCglncmVwKCJJQ1RSRVMiLCBuYW1lcyhiKSksDQoJZ3JlcCgiRU5UVVNFIiwgbmFtZXMoYikpLA0KCWdyZXAoIkxNX01JTlMiLCBuYW1lcyhiKSksDQoJZ3JlcCgiVEVBQ0hCRUhBIiwgbmFtZXMoYikpLA0KCWdyZXAoIkVEVVNIT1JUIiwgbmFtZXMoYikpLA0KCWdyZXAoIlNUVUJFSEEiLCBuYW1lcyhiKSksDQoJZ3JlcCgiSk9ZUkVBRCIsIG5hbWVzKGIpKSwNCglncmVwKCJTVFJBVElPIiwgbmFtZXMoYikpLA0KCWdyZXAoIkVTQ1MiLCBuYW1lcyhiKSksDQoJZ3JlcCgiUFJPQVQ2IiwgbmFtZXMoYikpLA0KCWdyZXAoIlJBVENNUDEiLCBuYW1lcyhiKSkNCikNCg0KQyA8LSBjKCkNCmZvciggaSBpbiAxOiBsZW5ndGgoY2hlY2tfYmV0YSkpew0KICB2ZWN0IDwtIHJlcCgwLGZpdF9zb2NpYWwkcmFuaykNCiAgdmVjdFtjaGVja19iZXRhW2ldXSA8LSAxDQogIEMgPC0gcmJpbmQoQyx2ZWN0KQ0KfQ0KbGluZWFySHlwb3RoZXNpcyhmaXRfc29jaWFsLCBDLCByZXAoMCxsZW5ndGgoY2hlY2tfYmV0YSkpKQ0KIyBsb3JvIHNpIHRvbGdvbm8NCmBgYA0KDQoNCmBgYHtyfQ0KZml0X3NvY2lhbF81ID0gbG0oU29jaWFsLndlbGwuYmVpbmcgfiBBcHByb2FjaC50by5JQ1QrVXNlLm9mLklDVCtUZWFjaGVycy4uZGVncmVlK1RlYWNoZXIuc2tpbGwrUkFUQ01QMStJQ1RTQ0grSEVEUkVTK0FUVExOQUNUK0NMU0laRStTVEFGRlNIT1JUK1BWMU1BVEgrDQpQVjFSRUFEK0NSRUFDVElWK0lNX1BVQkxJQyxkYXRhPWRhdGEpDQpzdW1tYXJ5KGZpdF9zb2NpYWxfNSkNCmBgYA0KDQojIyBTQUxUQSBRVUkgOikNCmBgYHtyfQ0KRk9STVVMQSA9IGZvcm11bGEoU29jaWFsLndlbGwuYmVpbmcgfiBBcHByb2FjaC50by5JQ1QrVXNlLm9mLklDVCtUZWFjaGVycy4uZGVncmVlK1RlYWNoZXIuc2tpbGwrUkFUQ01QMStJQ1RTQ0grSEVEUkVTK0FUVExOQUNUK0NMU0laRStTVEFGRlNIT1JUK1BWMU1BVEgrDQpQVjFSRUFEK0NSRUFDVElWK0lNX1BVQkxJQykNCmZpdF9zb2NpYWwgPSBsbShGT1JNVUxBLGRhdGE9ZGF0YSkNCnN1bW1hcnkoZml0X3NvY2lhbCkNCmBgYA0KDQoNCmBgYHtyfQ0KcGFyKG1mcm93PWMoMiwyKSkNCnBsb3QoZml0X3NvY2lhbCkNCnNoYXBpcm8udGVzdChmaXRfc29jaWFsJHJlc2lkdWFscykNCmBgYA0KDQoNCmBgYHtyfQ0KcmVzID0gZml0X3NvY2lhbCRyZXNpZHVhbHMNCmZvciAoaSBpbiAxOihkaW0oZGF0YSlbMl0tMSkpew0KCXBsb3QocmVzLGRhdGFbLGldLG1haW49Y29sbmFtZXMoZGF0YSlbaV0pDQp9DQpgYGANCmBgYHtyfQ0KeDExKCkNCmhpc3QoZGF0YSRUZWFjaGVycy4uZGVncmVlKQ0KYGBgDQoNCg0KIyMgTGFzc28NCmBgYHtyfQ0KTEFNQkRBX0dSSUQgPSAxMF5zZXEoLTEwLDEsYnk9MC4xKQ0KDQp4ID0gbW9kZWwubWF0cml4KEZPUk1VTEEsZGF0YT1kYXRhKVssLTFdDQojIEJ1aWxkIHRoZSB2ZWN0b3Igb2YgcmVzcG9uc2UvdGFyZ2V0DQp5ID0gZGF0YSRTb2NpYWwud2VsbC5iZWluZw0KbGFtYmRhLmdyaWQgPSBMQU1CREFfR1JJRA0KZml0Lmxhc3NvID0gZ2xtbmV0KHgseSwgbGFtYmRhID0gbGFtYmRhLmdyaWQsIGFscGhhPTEpDQoNCmNvbHMgPSBjb2xvcmEoZGltKHgpWzJdLDEpDQpwbG90KGZpdC5sYXNzbywgeHZhcj0nbGFtYmRhJywgbGFiZWw9VFJVRSwgY29sID0gY29scykNCmxlZ2VuZCgndG9wcmlnaHQnLCBkaW1uYW1lcyh4KVtbMl1dLCBjb2wgPSBjb2xzLCBsdHk9MSwgY2V4PTAuNCkNCg0KIyMjIFNlbGVjdCBsYW1iZGEgd2l0aCBDVg0KY3YubGFzc28gPSBjdi5nbG1uZXQoeCx5LGxhbWJkYT1sYW1iZGEuZ3JpZCwgbmZvbGRzID0gMTAwKQ0KYmVzdGxhbS5sYXNzbyA9IGN2Lmxhc3NvJGxhbWJkYS5taW4NCmJlc3RsYW0ubGFzc28NCnBsb3QoY3YubGFzc28pDQphYmxpbmUodj1sb2coYmVzdGxhbS5sYXNzbyksIGx0eT0xKQ0KDQpjb2VmLmxhc3NvID0gcHJlZGljdChmaXQubGFzc28sIHM9YmVzdGxhbS5sYXNzbywgdHlwZSA9ICdjb2VmZmljaWVudHMnKQ0KY29lZi5sYXNzbw0KYGBgDQoNCiMjIE1vdmUgdG8gTE1NDQojIyMgY3JlYXppb25lIHVuaWNvIGZhY3RvciBjb21iaW5hdG8NCmBgYHtyfQ0KIyBFeGFtcGxlIGNhdGVnb3JpY2FsIHZhcmlhYmxlcw0KaW5kZXhfY250ID0gZ3JlcCgiQ05UIixjb2xuYW1lcyhkYXRhKSkNCg0KY29sbmFtZXMoZGF0YSkNCg0KbGV2ZWxzKGRhdGFbLGluZGV4X2NudF0pPWxldmVscyhkYXRhJENOVCkNCmNhdF92YXIxIDwtIGRhdGFbLGluZGV4X2NudF0NCg0KaW5kZXhfcHVibGljPSBncmVwKCJJTV9QVUJMSUMiLGNvbG5hbWVzKGRhdGEpKQ0KbGV2ZWxzKGRhdGFbLGluZGV4X3B1YmxpY10pPWxldmVscyhkYXRhJElNX1BVQkxJQykNCmNhdF92YXIyIDwtIGRhdGFbLGluZGV4X3B1YmxpY10NCg0KIyBDb21iaW5lIGNhdGVnb3JpY2FsIHZhcmlhYmxlcw0KbmV3X3ZhciA8LSBpbnRlcmFjdGlvbihjYXRfdmFyMSwgY2F0X3ZhcjIsIHNlcCA9ICItIikNCmxldmVscyhuZXdfdmFyKQ0KbGVuZ3RoKGxldmVscyhuZXdfdmFyKSkNCg0KZGF0YSRORVdfVkFSID0gYXMuZmFjdG9yKG5ld192YXIpDQpjb2xuYW1lcyhkYXRhKQ0KYGBgDQoNCg0KDQojIyMgZml0IG1vZGVsbG8NCmBgYHtyfQ0KRk9STVVMQV9MTU0gPSBmb3JtdWxhKFNvY2lhbC53ZWxsLmJlaW5nIH4gQXBwcm9hY2gudG8uSUNUK1VzZS5vZi5JQ1QrVGVhY2hlcnMuLmRlZ3JlZSsNCgkJCQkJICAJVGVhY2hlci5za2lsbCtSQVRDTVAxKw0KCQkJCQkgIAlJQ1RTQ0grSEVEUkVTK0FUVExOQUNUK0NMU0laRStTVEFGRlNIT1JUK1BWMU1BVEgrDQpQVjFSRUFEK0NSRUFDVElWKysoMXxORVdfVkFSKSkNCmZpdF9zb2NpYWxfbG1tID0gbG1lcihGT1JNVUxBX0xNTSxkYXRhPWRhdGEpDQpmaXRfc29jaWFsX2xtbQ0KDQpmbSA9IGZpdF9zb2NpYWxfbG1tDQpzaWdtYTJfZXBzIDwtIGFzLm51bWVyaWMoZ2V0X3ZhcmlhbmNlX3Jlc2lkdWFsKGZtKSkNCnNpZ21hMl9iIDwtIGFzLm51bWVyaWMoZ2V0X3ZhcmlhbmNlX3JhbmRvbShmbSkpDQoNClBWUkUgPC0gc2lnbWEyX2IvKHNpZ21hMl9iK3NpZ21hMl9lcHMpDQpQVlJFICMgNTElIGlzIHZlcnkgaGlnaCENCg0KIyMgdmlzdWFsaXphdGlvbiBvZiB0aGUgcmFuZG9tIGludGVyY2VwdHMgd2l0aCB0aGVpciA5NSUgY29uZmlkZW5jZSBpbnRlcnZhbHMNCiMgUmFuZG9tIGVmZmVjdHM6IGJfMGkgZm9yIGk9MSwuLi4sMjM0DQpkb3RwbG90KHJhbmVmKGZtLCBjb25kVmFyPVQpKSRORVdfVkFSDQpgYGANCg0KIyMjIGFzc3VtcHRpb25zIGNoZWNrDQpgYGB7cn0NCiMgbm9ybWFsaXR5IG9mIHJlc2lkdWFscw0KcXFub3JtKHJlc2lkKGZpdF9zb2NpYWxfbG1tKSkNCnFxbGluZShyZXNpZChmaXRfc29jaWFsX2xtbSksIGNvbD0ncmVkJywgbHdkPTIpDQpzaGFwaXJvLnRlc3QocmVzaWQoZml0X3NvY2lhbF9sbW0pKQ0KIyBub3JtYWxpdHkgb2YgcmFuZG9tIGVmZmVjdHMNCiMgY2FzZSBvbmx5IGludGVyZWNlcHQNCnFxbm9ybSh1bmxpc3QocmFuZWYoZml0X3NvY2lhbF9sbW0pJE5FV19WQVIpLA0KbWFpbj0nTm9ybWFsIFEtUSBQbG90IC0gUmFuZG9tIEVmZmVjdHMgb24gSW50ZXJjZXB0JykNCnFxbGluZSh1bmxpc3QocmFuZWYoZml0X3NvY2lhbF9sbW0pJE5FV19WQVIpLCBjb2w9J3JlZCcsIGx3ZD0yKQ0KIyBjYXNlIGludGVyZWNlcHQgYW5kIHNsb3BlDQpgYGANCg0KDQoNCg0KIyBNb2RlbGxvIDINCmBgYHtyfQ0KSU1fUFVCTElDID0gcmVwKDAsZGltKGRhdGEpWzFdKQ0KSU1fUFVCTElDIFt3aGljaChkYXRhJFNDSExUWVBFPT0iUHVibGljIildID0gMQ0KDQpmaXRfcHN5Y2ggPSBsbShQc3ljaG9sb2dpY2FsLndlbGwuYmVpbmcgfiBBcHByb2FjaC50by5JQ1QrVXNlLm9mLklDVCtUZWFjaGVycy4uZGVncmVlK1RlYWNoZXIuc2tpbGwrDQpFU0NTK1JBVENNUDErSUNUU0NIK0lDVFJFUytFTlRVU0UrTE1fTUlOUytIRURSRVMrU1RVQkVIQStBVFRMTkFDVCsNCkpPWVJFQUQrUFJPQVQ2K1RFQUNIQkVIQStTVFJBVElPK0NMU0laRStFRFVTSE9SVCtTVEFGRlNIT1JUK1BWMU1BVEgrDQpQVjFSRUFEK0NSRUFDVElWK0lNX1BVQkxJQyxkYXRhPWRhdGEpDQpzdW1tYXJ5KGZpdF9wc3ljaCkNCmBgYA0KDQoNCg0KDQojIyBWYXJpYWJsZSBSZWR1Y3Rpb24NCmBgYHtyfQ0KZml0ID0gZml0X3BzeWNoDQpiPWNvZWZmaWNpZW50cyhmaXQpDQpjaGVja19iZXRhIDwtIGMoDQoJZ3JlcCgiVGVhY2hlcnMuLmRlZ3JlZSAiLCBuYW1lcyhiKSksDQoJZ3JlcCgiU1RVQkVIQSIsIG5hbWVzKGIpKSwNCglncmVwKCJKT1lSRUFEIiwgbmFtZXMoYikpLA0KCWdyZXAoIlBST0FUNiIsIG5hbWVzKGIpKSwNCglncmVwKCJURUFDSEJFSEEiLCBuYW1lcyhiKSksDQoJZ3JlcCgiU1RSQVRJTyIsIG5hbWVzKGIpKSwNCglncmVwKCJTVEFGRlNIT1JUIiwgbmFtZXMoYikpLA0KCWdyZXAoIkVEVVNIT1JUIiwgbmFtZXMoYikpDQopDQoNCkMgPC0gYygpDQpmb3IoIGkgaW4gMTogbGVuZ3RoKGNoZWNrX2JldGEpKXsNCiAgdmVjdCA8LSByZXAoMCxmaXQkcmFuaykNCiAgdmVjdFtjaGVja19iZXRhW2ldXSA8LSAxDQogIEMgPC0gcmJpbmQoQyx2ZWN0KQ0KfQ0KbGluZWFySHlwb3RoZXNpcyhmaXQsIEMsIHJlcCgwLGxlbmd0aChjaGVja19iZXRhKSkpDQojIGxvcm8gc2kgdG9sZ29ubw0KYGBgDQoNCiMjIFNBTFRBIFFVSSA6KQ0KIyMgTW92ZSB0byBMTU0NCmBgYHtyfQ0KRk9STVVMQV9MTU1fUFNZQ0ggPSBmb3JtdWxhKA0KCVBzeWNob2xvZ2ljYWwud2VsbC5iZWluZyB+DQoJCQlBcHByb2FjaC50by5JQ1QrVXNlLm9mLklDVCtUZWFjaGVyLnNraWxsKw0KRVNDUytSQVRDTVAxK0lDVFNDSCtJQ1RSRVMrRU5UVVNFK0xNX01JTlMrSEVEUkVTK0FUVExOQUNUK0NMU0laRStQVjFNQVRIKw0KUFYxUkVBRCtDUkVBQ1RJVisoMXxORVdfVkFSKSkNCg0KZml0X2xtbV9wc3ljaCA9IGxtZXIoRk9STVVMQV9MTU1fUFNZQ0gsZGF0YT1kYXRhKQ0KZml0X2xtbV9wc3ljaA0KDQoNCmZtID0gZml0X2xtbV9wc3ljaA0Kc2lnbWEyX2VwcyA8LSBhcy5udW1lcmljKGdldF92YXJpYW5jZV9yZXNpZHVhbChmbSkpDQpzaWdtYTJfYiA8LSBhcy5udW1lcmljKGdldF92YXJpYW5jZV9yYW5kb20oZm0pKQ0KDQpQVlJFIDwtIHNpZ21hMl9iLyhzaWdtYTJfYitzaWdtYTJfZXBzKQ0KUFZSRSAjIDUxJSBpcyB2ZXJ5IGhpZ2ghDQoNCiMjIHZpc3VhbGl6YXRpb24gb2YgdGhlIHJhbmRvbSBpbnRlcmNlcHRzIHdpdGggdGhlaXIgOTUlIGNvbmZpZGVuY2UgaW50ZXJ2YWxzDQojIFJhbmRvbSBlZmZlY3RzOiBiXzBpIGZvciBpPTEsLi4uLDIzNA0KZG90cGxvdChyYW5lZihmbSwgY29uZFZhcj1UKSkkTkVXX1ZBUg0KYGBgDQoNCg0KDQoNCg0KIyMjIGFzc3VtcHRpb25zIGNoZWNrDQpgYGB7cn0NCiMgbm9ybWFsaXR5IG9mIHJlc2lkdWFscw0KZm0gPSBmaXRfbG1tX3BzeWNoDQpxcW5vcm0ocmVzaWQoZm0pKQ0KcXFsaW5lKHJlc2lkKGZtKSwgY29sPSdyZWQnLCBsd2Q9MikNCnNoYXBpcm8udGVzdChyZXNpZChmbSkpDQojIG5vcm1hbGl0eSBvZiByYW5kb20gZWZmZWN0cw0KIyBjYXNlIG9ubHkgaW50ZXJlY2VwdA0KcXFub3JtKHVubGlzdChyYW5lZihmbSkkTkVXX1ZBUiksDQptYWluPSdOb3JtYWwgUS1RIFBsb3QgLSBSYW5kb20gRWZmZWN0cyBvbiBJbnRlcmNlcHQnKQ0KcXFsaW5lKHVubGlzdChyYW5lZihmbSkkTkVXX1ZBUiksIGNvbD0ncmVkJywgbHdkPTIpDQojIGNhc2UgaW50ZXJlY2VwdCBhbmQgc2xvcGUNCmJveHBsb3QocmVzaWR1YWxzKGZtKX5kYXRhJE5FV19WQVIsbGFzPTIpDQoNCnJlcyA9IHJlc2lkdWFscyhmbSkNCmhpc3QocmVzKQ0Kc2hhcGlyby50ZXN0KGxvZyhyZXMrYWJzKG1pbihyZXMpKSsxKSkNCmBgYA0KDQpgYGB7cn0NCmZtX3ZhciA9IGZtDQojIyByYXcgcmVzaWR1YWxzIA0KcGxvdChmbV92YXIsIHJlc2lkKC4sIHR5cGUgPSAicmVzcG9uc2UiKSB+IGZpdHRlZCguKSkgIyBSYXcgdnMuIGZpdHRlZA0KIyBXZSBvYnNlcnZlIGFuIGFzeW1tZXRyaWMgcGF0dGVybiwgd2l0aCBsYXJnZSBwb3NpdGl2ZSAobmVnYXRpdmUpIHJlc2lkdWFscyBwcmVzZW50IG1haW5seSBmb3Igc21hbGwgKGxhcmdlKSBmaXR0ZWQgdmFsdWVzLg0KIyBidXQgaXQgY2FuIGJlIGEgY29uc2VxdWVuY2Ugb2YgdGhlIGZhY3QgdGhhdCByYXcgcmVzaWR1YWxzIGFyZSBpbnRyaW5zaWNhbGx5IGhldGVyb3NjZWRhc3RpYyBhbmQgY29ycmVsYXRlZC4NCg0KcGxvdChmbV92YXIsIHJlc2lkKC4sIHR5cGUgPSAicmVzcG9uc2UiKSB+IGFzLm51bWVyaWMoTkVXX1ZBUikpICMgUmF3IHZzLiBORVdfVkFSIChub3Qgc2hvd24pDQpid3Bsb3QocmVzaWQoZm1fdmFyKSB+IE5FV19WQVIsIHBjaCA9ICJ8IiwgZGF0YSA9IGRhdGEpDQojIFRoZSBib3hhbmQtd2hpc2tlcnMgcGxvdHMgY2xlYXJseSBzaG93IGFuIGluY3JlYXNpbmcgdmFyaWFuY2Ugb2YgdGhlIHJlc2lkdWFscy4NCg0KIyMgUGVhcnNvbiByZXNpZHVhbHMgDQojIyBQZWFyc29uIHJlc2lkdWFscyBhcmUgb2J0YWluZWQgZnJvbSB0aGUgcmF3IHJlc2lkdWFscyBieSBkaXZpZGluZyB0aGUgbGF0dGVyIGJ5IGFuDQojIyBlc3RpbWF0ZSBvZiB0aGUgYXBwcm9wcmlhdGUgcmVzaWR1YWwgc3RhbmRhcmQgZGV2aWF0aW9uLCBzbyB0aGV5IHNob3VsZCBiZSBtb3JlIGhvbW9zY2VkYXN0aWMNCg0KDQpwbG90KGZtX3ZhciwgcmVzaWQoLiwgdHlwZSA9ICJwZWFyc29uIiApIH4gZml0dGVkKC4pKSAjIFBlYXJzb24gdnMuIGZpdHRlZA0KcGxvdChmbV92YXIscmVzaWQoLiwgdHlwZSA9ICJwZWFyc29uIikgfiBhcy5udW1lcmljKE5FV19WQVIpKSANCmJ3cGxvdCggcmVzaWQoZm1fdmFyLCB0eXBlID0gInBlYXJzb24iKSB+IE5FV19WQVIsICMgUGVhcnNvbiB2cy4gdGltZS5mDQogICAgICAgIHBjaCA9ICJ8IiwgZGF0YSA9IGRhdGEpDQojIyB0aGlzIHBsb3QgaWxsdXN0cmF0ZSB0aGUgZWZmZWN0IG9mIHNjYWxpbmc6IHRoZSB2YXJpYW5jZSBvZiB0aGUgcmVzaWR1YWxzIGlzIHZpcnR1YWxseSBjb25zdGFudC4NCmBgYA0KDQojIyBwb3NzaWJpbGkgc29sdXppb25pIGFpIHJlc2lkdWkNCmBgYHtyfQ0KbGlicmFyeShyb2J1c3RsbW0pDQpyb2J1c3RsbW06OnJsbWVyKCkNCg0KDQpgYGANCg0KDQoNCg0KDQoNCg0K</div>
 
 
 
