@@ -8,8 +8,8 @@ editor_options:
 ## Settings
 
 ```{r, setup}
-root_proj_dir = "../../../"
-dataset_path = paste(root_proj_dir,"data/pisa_wPV_grouped_bysch.csv",sep="")
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/pisa_scores_final.csv",sep="")
 include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_path)
@@ -37,7 +37,9 @@ library(insight)
 ```
 
 ```{r}
+head(data)
 data$X <- NULL
+data$SCHLTYPE <- as.factor(data$SCHLTYPE)
 data$CNT <- as.factor(data$CNT)
 ```
 

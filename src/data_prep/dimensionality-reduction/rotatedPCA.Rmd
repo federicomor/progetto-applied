@@ -311,9 +311,11 @@ head(scores_WB)
 scores_data_final= cbind(scores_data_final,scores_WB)
 head(scores_data_final)
 ```
+
+
 #Save Dataframe of scores
 ```{r}
-#write.csv(scores_data_final,"../../../data/pisa_scores_final.csv")
+write.csv(scores_data_final,"../../../data/pisa_scores_final.csv")
 ```
 
 
