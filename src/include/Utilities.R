@@ -180,39 +180,24 @@ what_is[["EDUSHORT"]] = "Shortage of educational material (WLE)"
 what_is[["STAFFSHORT"]] = "Shortage of educational staff (WLE)"
 what_is[["STUBEHA"]] = "Student behaviour hindering learning (WLE)"
 
-
 STATES = c("HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","LTU","LUX","POL","SVK" ,"SVN","ESP")
-grouped_variables_dfscores <-list()
 
-grouped_variables_dfscores[["tec"]] <- c("CNT","col1_tec",
-										 "col2_tec",
-										 "col3_tec",
-										 "col4_tec",
-										 "col5_tec")
+# dopo la nuova pca:
+what_is[["Approach to ICT"]] = "Somma di bravura, interesse, competenza, ecc nell'informatica"
+what_is[["Use of ICT"]] = "Use of ICT però per le cose scolastiche"
+what_is[["Teachers' degree"]] = "Alta se titolo alto (master), bassa altrimenti (bachelor)"
+what_is[["Teacher skill"]] = "Quanto il prof è bravo; è la somma di interesse, supporto, stimolo, ecc"
 
-grouped_variables_dfscores[["psi"]] <- c("CNT","col1_psi",
-										 "col2_psi",
-										 "col3_psi",
-										 "col4_psi",
-										 "col5_psi",
-										 # "col6_psi",
-										 "col7_psi")
 
-grouped_variables_dfscores[["clt"]] <- c("CNT","col1_clt",
-										 "col2_clt",
-										 "col3_clt")
 
-grouped_variables_dfscores[["fam"]] <- c("CNT","col1_fam")
 
-grouped_variables_dfscores[["tch"]] <- c("CNT","col1_tch",
-										 "col2_tch",
-										 "col3_tch",
-										 "col4_tch")
 
-grouped_variables_dfscores[["sch"]] <- c("CNT","col1_sch",
-										 "col2_sch",
-										 "col3_sch",
-										 "col4_sch")
+
+
+
+
+
+
 
 
 
