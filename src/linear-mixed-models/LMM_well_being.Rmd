@@ -35,8 +35,267 @@ library(insight)
 ```
 
 ```{r}
+df=data
 head(data)
+colnames(data)
 data$X <- NULL
 data$SCHLTYPE <- as.factor(data$SCHLTYPE)
 data$CNT <- as.factor(data$CNT)
 ```
+
+
+# Modello 1
+```{r}
+fit_social = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+STUBEHA+ATTLNACT+
+JOYREAD+PROAT6+TEACHBEHA+STRATIO+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+SCHLTYPE,data=df)
+
+summary(fit_social)
+```
+
+## Cose noiose
+```{r}
+# test su
+# ICTRES
+# ENTUSE
+# LM_MINS
+
+fit = fit_social
+b=coefficients(fit)
+check_beta <- c(
+	grep("ICTRES", names(b)),
+	grep("ENTUSE", names(b)),
+	grep("LM_MINS", names(b))
+)
+
+C <- c()
+for( i in 1: length(check_beta)){
+  vect <- rep(0,fit$rank)
+  vect[check_beta[i]] <- 1
+  C <- rbind(C,vect)
+}
+linearHypothesis(fit, C, rep(0,length(check_beta)))
+# loro si tolgono
+
+fit_social_2 = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+
+JOYREAD+PROAT6+TEACHBEHA+STRATIO+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+SCHLTYPE,data=df)
+
+summary(fit_social_2)
+IM_PUBLIC = rep(0,dim(df)[1])
+IM_PUBLIC [which(df$SCHLTYPE=="Public")] = 1
+
+fit_social_3 = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+
+JOYREAD+PROAT6+TEACHBEHA+STRATIO+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+IM_PUBLIC,data=df)
+
+summary(fit_social_3)
+
+fit = fit_social
+b=coefficients(fit)
+check_beta <- c(
+	grep("ICTRES", names(b)),
+	grep("ENTUSE", names(b)),
+	grep("LM_MINS", names(b)),
+	grep("TEACHBEHA", names(b)),
+	grep("EDUSHORT", names(b))
+)
+
+C <- c()
+for( i in 1: length(check_beta)){
+  vect <- rep(0,fit$rank)
+  vect[check_beta[i]] <- 1
+  C <- rbind(C,vect)
+}
+linearHypothesis(fit, C, rep(0,length(check_beta)))
+# loro si tolgono
+
+
+fit_social_4 = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+
+JOYREAD+PROAT6+STRATIO+CLSIZE+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+IM_PUBLIC,data=df)
+
+summary(fit_social_4)
+
+
+fit = fit_social
+b=coefficients(fit)
+check_beta <- c(
+	grep("ICTRES", names(b)),
+	grep("ENTUSE", names(b)),
+	grep("LM_MINS", names(b)),
+	grep("TEACHBEHA", names(b)),
+	grep("EDUSHORT", names(b)),
+	grep("STUBEHA", names(b)),
+	grep("JOYREAD", names(b)),
+	grep("STRATIO", names(b))
+)
+
+C <- c()
+for( i in 1: length(check_beta)){
+  vect <- rep(0,fit$rank)
+  vect[check_beta[i]] <- 1
+  C <- rbind(C,vect)
+}
+linearHypothesis(fit, C, rep(0,length(check_beta)))
+# loro si tolgono
+
+
+
+fit_social_5 = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+ATTLNACT+PROAT6+CLSIZE+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+IM_PUBLIC,data=df)
+summary(fit_social_5)
+
+fit = fit_social
+b=coefficients(fit)
+check_beta <- c(
+	grep("ICTRES", names(b)),
+	grep("ENTUSE", names(b)),
+	grep("LM_MINS", names(b)),
+	grep("TEACHBEHA", names(b)),
+	grep("EDUSHORT", names(b)),
+	grep("STUBEHA", names(b)),
+	grep("JOYREAD", names(b)),
+	grep("STRATIO", names(b)),
+	grep("ESCS", names(b)),
+	grep("PROAT6", names(b)),
+	grep("RATCMP1", names(b))
+)
+
+C <- c()
+for( i in 1: length(check_beta)){
+  vect <- rep(0,fit$rank)
+  vect[check_beta[i]] <- 1
+  C <- rbind(C,vect)
+}
+linearHypothesis(fit, C, rep(0,length(check_beta)))
+# loro si tolgono
+
+
+fit_social_5 = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+RATCMP1+ICTSCH+HEDRES+ATTLNACT+CLSIZE+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+IM_PUBLIC,data=df)
+summary(fit_social_5)
+
+
+```
+
+## SALTA QUI :)
+```{r}
+FORMULA = formula(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+RATCMP1+ICTSCH+HEDRES+ATTLNACT+CLSIZE+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+IM_PUBLIC)
+fit_social = lm(FORMULA,data=df)
+summary(fit_social)
+```
+
+
+## Lasso
+```{r}
+LAMBDA_GRID = 10^seq(-10,1,by=0.1)
+
+x = model.matrix(FORMULA,data=df)[,-1]
+# Build the vector of response/target
+y = df$Social.well.being
+lambda.grid = LAMBDA_GRID
+fit.lasso = glmnet(x,y, lambda = lambda.grid, alpha=1)
+
+cols = colora(dim(x)[2],1)
+plot(fit.lasso, xvar='lambda', label=TRUE, col = cols)
+legend('topright', dimnames(x)[[2]], col = cols, lty=1, cex=0.4)
+
+### Select lambda with CV
+cv.lasso = cv.glmnet(x,y,lambda=lambda.grid, nfolds = 100)
+bestlam.lasso = cv.lasso$lambda.min
+bestlam.lasso
+plot(cv.lasso)
+abline(v=log(bestlam.lasso), lty=1)
+
+coef.lasso = predict(fit.lasso, s=bestlam.lasso, type = 'coefficients')
+coef.lasso
+```
+
+## Move to LMM
+```{r}
+FORMULA_LMM = formula(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+RATCMP1+ICTSCH+HEDRES+ATTLNACT+CLSIZE+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+IM_PUBLIC+(1|CNT))
+fit_social_lmm = lmer(FORMULA_LMM,data=df)
+fit_social_lmm
+
+
+```
+
+
+```{r}
+fm = fit_social_lmm
+sigma2_eps <- as.numeric(get_variance_residual(fm))
+sigma2_b <- as.numeric(get_variance_random(fm))
+
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+PVRE # 51% is very high!
+
+## visualization of the random intercepts with their 95% confidence intervals
+# Random effects: b_0i for i=1,...,234
+dotplot(ranef(fm, condVar=T))$CNT
+
+```
+
+
+
+
+# Modello 2
+```{r}
+IM_PUBLIC = rep(0,dim(df)[1])
+IM_PUBLIC [which(df$SCHLTYPE=="Public")] = 1
+
+fit_psych = lm(Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+
+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+STUBEHA+ATTLNACT+
+JOYREAD+PROAT6+TEACHBEHA+STRATIO+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV+IM_PUBLIC,data=df)
+summary(fit_psych)
+```
+
+
+
+
+## Cose noiose
+```{r}
+fit = fit_psych
+b=coefficients(fit)
+check_beta <- c(
+	grep("Teachers..degree ", names(b)),
+	grep("STUBEHA", names(b)),
+	grep("JOYREAD", names(b)),
+	grep("PROAT6", names(b)),
+	grep("TEACHBEHA", names(b)),
+	grep("STRATIO", names(b)),
+	grep("STAFFSHORT", names(b)),
+	grep("EDUSHORT", names(b))
+)
+
+C <- c()
+for( i in 1: length(check_beta)){
+  vect <- rep(0,fit$rank)
+  vect[check_beta[i]] <- 1
+  C <- rbind(C,vect)
+}
+linearHypothesis(fit, C, rep(0,length(check_beta)))
+# loro si tolgono
+```
+
+## SALTA QUI :)
+```{r}
+fit_psych = lm(Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+
+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+CLSIZE+PV1MATH+
+PV1READ+CREACTIV+IM_PUBLIC,data=df)
+summary(fit_psych)
+
+
+```
+
+
+
+
+
+
+
+
+
