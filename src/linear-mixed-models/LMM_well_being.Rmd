@@ -35,7 +35,7 @@ library(insight)
 ```
 
 ```{r}
-df=data
+data=data
 head(data)
 colnames(data)
 data$X <- NULL
@@ -48,7 +48,7 @@ data$CNT <- as.factor(data$CNT)
 ```{r}
 fit_social = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+STUBEHA+ATTLNACT+
 JOYREAD+PROAT6+TEACHBEHA+STRATIO+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+
-PV1READ+CREACTIV+SCHLTYPE,data=df)
+PV1READ+CREACTIV+SCHLTYPE,data=data)
 
 summary(fit_social)
 ```
@@ -79,15 +79,15 @@ linearHypothesis(fit, C, rep(0,length(check_beta)))
 
 fit_social_2 = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+
 JOYREAD+PROAT6+TEACHBEHA+STRATIO+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+
-PV1READ+CREACTIV+SCHLTYPE,data=df)
+PV1READ+CREACTIV+SCHLTYPE,data=data)
 
 summary(fit_social_2)
-IM_PUBLIC = rep(0,dim(df)[1])
-IM_PUBLIC [which(df$SCHLTYPE=="Public")] = 1
+IM_PUBLIC = rep(0,dim(data)[1])
+IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
 
 fit_social_3 = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+
 JOYREAD+PROAT6+TEACHBEHA+STRATIO+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+
-PV1READ+CREACTIV+IM_PUBLIC,data=df)
+PV1READ+CREACTIV+IM_PUBLIC,data=data)
 
 summary(fit_social_3)
 
@@ -113,7 +113,7 @@ linearHypothesis(fit, C, rep(0,length(check_beta)))
 
 fit_social_4 = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+
 JOYREAD+PROAT6+STRATIO+CLSIZE+STAFFSHORT+PV1MATH+
-PV1READ+CREACTIV+IM_PUBLIC,data=df)
+PV1READ+CREACTIV+IM_PUBLIC,data=data)
 
 summary(fit_social_4)
 
@@ -143,7 +143,7 @@ linearHypothesis(fit, C, rep(0,length(check_beta)))
 
 
 fit_social_5 = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+ATTLNACT+PROAT6+CLSIZE+STAFFSHORT+PV1MATH+
-PV1READ+CREACTIV+IM_PUBLIC,data=df)
+PV1READ+CREACTIV+IM_PUBLIC,data=data)
 summary(fit_social_5)
 
 fit = fit_social
@@ -173,7 +173,7 @@ linearHypothesis(fit, C, rep(0,length(check_beta)))
 
 
 fit_social_5 = lm(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+RATCMP1+ICTSCH+HEDRES+ATTLNACT+CLSIZE+STAFFSHORT+PV1MATH+
-PV1READ+CREACTIV+IM_PUBLIC,data=df)
+PV1READ+CREACTIV+IM_PUBLIC,data=data)
 summary(fit_social_5)
 
 
@@ -183,8 +183,27 @@ summary(fit_social_5)
 ```{r}
 FORMULA = formula(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+RATCMP1+ICTSCH+HEDRES+ATTLNACT+CLSIZE+STAFFSHORT+PV1MATH+
 PV1READ+CREACTIV+IM_PUBLIC)
-fit_social = lm(FORMULA,data=df)
+fit_social = lm(FORMULA,data=data)
 summary(fit_social)
+```
+
+
+```{r}
+par(mfrow=c(2,2))
+plot(fit_social)
+shapiro.test(fit_social$residuals)
+```
+
+
+```{r}
+res = fit_social$residuals
+for (i in 1:(dim(data)[2]-1)){
+	plot(res,data[,i],main=colnames(data)[i])
+}
+```
+```{r}
+x11()
+hist(data$Teachers..degree)
 ```
 
 
@@ -192,9 +211,9 @@ summary(fit_social)
 ```{r}
 LAMBDA_GRID = 10^seq(-10,1,by=0.1)
 
-x = model.matrix(FORMULA,data=df)[,-1]
+x = model.matrix(FORMULA,data=data)[,-1]
 # Build the vector of response/target
-y = df$Social.well.being
+y = data$Social.well.being
 lambda.grid = LAMBDA_GRID
 fit.lasso = glmnet(x,y, lambda = lambda.grid, alpha=1)
 
@@ -214,17 +233,44 @@ coef.lasso
 ```
 
 ## Move to LMM
+### creazione unico factor combinato
 ```{r}
-FORMULA_LMM = formula(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+RATCMP1+ICTSCH+HEDRES+ATTLNACT+CLSIZE+STAFFSHORT+PV1MATH+
-PV1READ+CREACTIV+IM_PUBLIC+(1|CNT))
-fit_social_lmm = lmer(FORMULA_LMM,data=df)
-fit_social_lmm
+# Example categorical variables
+grep("CNT",colnames(data))
+which(colnames(data)=="CNT")
+colnames(data)
 
+levels(data[,24])=levels(data$CNT)
+cat_var1 <- data[,24]
 
+data$IM_PUBLIC = as.factor(IM_PUBLIC)
+colnames(data)
+
+grep("IM_PUBLIC",colnames(data))
+which(colnames(data)=="IM_PUBLIC")
+levels(data[,28])=levels(data$IM_PUBLIC)
+cat_var2 <- data[,28]
+
+# Combine categorical variables
+new_var <- interaction(cat_var1, cat_var2, sep = "-")
+levels(new_var)
+length(levels(new_var))
+
+data$NEW_VAR = as.factor(new_var)
+colnames(data)
 ```
 
 
+
+### fit modello
 ```{r}
+FORMULA_LMM = formula(Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+
+					  	Teacher.skill+RATCMP1+
+					  	ICTSCH+HEDRES+ATTLNACT+CLSIZE+STAFFSHORT+PV1MATH+
+PV1READ+CREACTIV++(1|NEW_VAR))
+fit_social_lmm = lmer(FORMULA_LMM,data=data)
+fit_social_lmm
+
 fm = fit_social_lmm
 sigma2_eps <- as.numeric(get_variance_residual(fm))
 sigma2_b <- as.numeric(get_variance_random(fm))
@@ -234,8 +280,21 @@ PVRE # 51% is very high!
 
 ## visualization of the random intercepts with their 95% confidence intervals
 # Random effects: b_0i for i=1,...,234
-dotplot(ranef(fm, condVar=T))$CNT
+dotplot(ranef(fm, condVar=T))$NEW_VAR
+```
 
+### assumptions check
+```{r}
+# normality of residuals
+qqnorm(resid(fit_social_lmm))
+qqline(resid(fit_social_lmm), col='red', lwd=2)
+shapiro.test(resid(fit_social_lmm))
+# normality of random effects
+# case only interecept
+qqnorm(unlist(ranef(fit_social_lmm)$NEW_VAR),
+main='Normal Q-Q Plot - Random Effects on Intercept')
+qqline(unlist(ranef(fit_social_lmm)$NEW_VAR), col='red', lwd=2)
+# case interecept and slope
 ```
 
 
@@ -243,13 +302,13 @@ dotplot(ranef(fm, condVar=T))$CNT
 
 # Modello 2
 ```{r}
-IM_PUBLIC = rep(0,dim(df)[1])
-IM_PUBLIC [which(df$SCHLTYPE=="Public")] = 1
+IM_PUBLIC = rep(0,dim(data)[1])
+IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
 
 fit_psych = lm(Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+
 ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+STUBEHA+ATTLNACT+
 JOYREAD+PROAT6+TEACHBEHA+STRATIO+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+
-PV1READ+CREACTIV+IM_PUBLIC,data=df)
+PV1READ+CREACTIV+IM_PUBLIC,data=data)
 summary(fit_psych)
 ```
 
@@ -282,16 +341,84 @@ linearHypothesis(fit, C, rep(0,length(check_beta)))
 ```
 
 ## SALTA QUI :)
+## Move to LMM
 ```{r}
-fit_psych = lm(Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+
+FORMULA_LMM_PSYCH = formula(
+	Psychological.well.being ~
+			Approach.to.ICT+Use.of.ICT+Teacher.skill+
 ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+CLSIZE+PV1MATH+
-PV1READ+CREACTIV+IM_PUBLIC,data=df)
-summary(fit_psych)
+PV1READ+CREACTIV+(1|NEW_VAR))
+
+fit_lmm_psych = lmer(FORMULA_LMM_PSYCH,data=data)
+fit_lmm_psych
 
 
+fm = fit_lmm_psych
+sigma2_eps <- as.numeric(get_variance_residual(fm))
+sigma2_b <- as.numeric(get_variance_random(fm))
+
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+PVRE # 51% is very high!
+
+## visualization of the random intercepts with their 95% confidence intervals
+# Random effects: b_0i for i=1,...,234
+dotplot(ranef(fm, condVar=T))$NEW_VAR
 ```
 
 
+
+
+
+### assumptions check
+```{r}
+# normality of residuals
+fm = fit_lmm_psych
+qqnorm(resid(fm))
+qqline(resid(fm), col='red', lwd=2)
+shapiro.test(resid(fm))
+# normality of random effects
+# case only interecept
+qqnorm(unlist(ranef(fm)$NEW_VAR),
+main='Normal Q-Q Plot - Random Effects on Intercept')
+qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
+# case interecept and slope
+boxplot(residuals(fm)~data$NEW_VAR,las=2)
+
+res = residuals(fm)
+hist(res)
+shapiro.test(log(res+abs(min(res))+1))
+```
+
+```{r}
+fm_var = fm
+## raw residuals 
+plot(fm_var, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
+# We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
+# but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
+
+plot(fm_var, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
+bwplot(resid(fm_var) ~ NEW_VAR, pch = "|", data = data)
+# The boxand-whiskers plots clearly show an increasing variance of the residuals.
+
+## Pearson residuals 
+## Pearson residuals are obtained from the raw residuals by dividing the latter by an
+## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
+
+
+plot(fm_var, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
+plot(fm_var,resid(., type = "pearson") ~ as.numeric(NEW_VAR)) 
+bwplot( resid(fm_var, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
+        pch = "|", data = data)
+## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
+```
+
+## possibili soluzioni ai residui
+```{r}
+library(robustlmm)
+robustlmm::rlmer()
+
+
+```
 
 
 
