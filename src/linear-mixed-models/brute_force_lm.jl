@@ -51,46 +51,82 @@ covariate_fit = [
 f1(x) = x
 f2(x) = x^2
 f3(x) = x^3
-# f4(x) = exp(x)
-# f5(x) = cos(x)
-# f6(x) = sin(x)
-# f7(x) = abs(x)
+f4(x) = exp(-x^2)
+f5(x) = cos(x)
+f6(x) = sin(x)
+f7(x) = abs(x)
 f8(x) = log(x+abs(minimum(x))+1)
+f9(x) = sqrt(abs(x))
 
+############# Random tests #############
 funzioni = [
 	f1 
 	f2 
 	f3 
-	# f4
+	f4
 	# f5 
 	# f6
 	# f7
 	f8
+	f9
 ]
+
+SOGLIA_PVALUE = 1e-8
+n_rand_tests = 100_000
+
+for i in 1:n_rand_tests
+	print("Iteration $i\r")
+	X = ones(size(df)[1])
+	# v=digits(i,base=length(funzioni)-1,pad=length(covariate_fit)+1)
+	v=rand(1:length(funzioni),length(covariate_fit)+1)
+	covariate = covariate_fit
+	for j in 1:(length(v)-1)
+		X = [X funzioni[v[j]].(df[:,covariate[j]])]
+	end
+	y=funzioni[v[end]].(df[:,"Psychological well-being"])
+	fit=lm(X,y)
+	# @show fit
+	try
+		pval = normality(residuals(fit)).pval[1]
+		# @show fit
+		if(pval>SOGLIA_PVALUE)
+			print("\nFound something:")
+			@show v i
+			println(pval)
+		end
+	catch e
+		@show e
+	end
+end
+
+
 
 # fit = glm(formula, data, Normal(), IdentityLink())
 
-n_tests = length(funzioni)^(length(covariate_fit)+1)
-println("Doing $n_tests tests")
+############# Sequential test (brute force) #############
+# n_tests = length(funzioni)^(length(covariate_fit)+1)
+# println("Doing $n_tests tests")
 
-# aggiornare il limite qui ECC:n_tests in base a dove siete arrivati a runnare
-for i in 70_000:n_tests
-	X = ones(size(df)[1])
-	v=digits(i,base=length(funzioni)-1,pad=length(covariate_fit)+1)
-	covariate = covariate_fit
-	for j in 1:(length(v)-1)
-		X = [X funzioni[v[j]+1].(df[:,covariate[j]])]
-	end
-	y=funzioni[v[end]+1].(df[:,"Psychological well-being"])
-	fit=lm(X,y)
-	pval = normality(residuals(fit)).pval[1]
-	i%1000 == 0 && println(i)
-	# @show fit
-	if(pval>1e-20)
-		@show v i
-		println(pval)
-	end
-end
+## aggiornare il limite qui ECC:n_tests in base a dove siete arrivati a runnare
+# for i in 242_000:n_tests
+# 	X = ones(size(df)[1])
+# 	v=digits(i,base=length(funzioni)-1,pad=length(covariate_fit)+1)
+# 	covariate = covariate_fit
+# 	for j in 1:(length(v)-1)
+# 		X = [X funzioni[v[j]+1].(df[:,covariate[j]])]
+# 	end
+# 	y=funzioni[v[end]+1].(df[:,"Psychological well-being"])
+# 	fit=lm(X,y)
+# 	pval = normality(residuals(fit)).pval[1]
+# 	i%3000 == 0 && println(i)
+# 	# @show fit
+# 	if(pval>1e-20)
+# 		@show v i
+# 		println(pval)
+# 	end
+# end
+
+
 
 # covariate = covariate_fit
 # for combination in IterTools.subsets(covariate)
