@@ -192,7 +192,20 @@ what_is[["Teacher skill"]] = "Quanto il prof è bravo; è la somma di interesse,
 
 
 
+categories_variables=list()
 
+categories_variables[["TECH"]] = c("Approach.to.ICT","ICTSCH","ICTRES" ,"Use.of.ICT","RATCMP1","ENTUSE" )
+
+categories_variables[["TEACH"]] = c("Teacher.skill","TEACHBEHA","Teachers..degree","PROAT6")
+
+categories_variables[["WELL-BEING"]] = c("Social.well.being","Psychological.well.being")
+
+categories_variables[["SCHOOL"]] = c("EDUSHORT","STAFFSHORT","STRATIO","CLSIZE","CREACTIV")
+
+categories_variables[["STUDENT"]] = c("LM_MINS","ATTLNACT","PV1READ", "PV1MATH" ,"STUBEHA","JOYREAD"  )
+
+categories_variables[["FAMILY"]] = c("ESCS", "HEDRES")
+cat_var_names = names(categories_variables)
 
 
 

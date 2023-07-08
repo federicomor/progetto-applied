@@ -136,6 +136,11 @@ bwd = names(coef(regfit.bwd,max_vars)) # Backward Stepwise Selection
 all(full==bwd)
 all(fwd==bwd)
 bwd
+
+vars_chosen_social <- bwd[2:max_vars]
+
+# Salvataggio dei nomi nel file "nomi.txt"
+writeLines(vars_chosen_social,"../../data/lm_social_vars.txt")
 ```
 
 ##  K-fold-cross-validation (exhaustive search)
@@ -273,7 +278,7 @@ bwplot( resid(fm_var, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
 
 
 
-
+# 같같같같같같같같같같같같같같같같같같같같같같
 
 #**1** Modello 2-Psychological.well.being
 ```{r}
@@ -344,6 +349,11 @@ bwd = names(coef(regfit.bwd,max_vars)) # Backward Stepwise Selection
 all(full==bwd)
 all(fwd==bwd)
 bwd
+
+vars_chosen_psyc <- bwd[2:max_vars]
+
+# Salvataggio dei nomi nel file "nomi.txt"
+writeLines(vars_chosen_psyc, "../../data/lm_psico_vars.txt")
 ```
 # **3** fit final model
 ```{r}
@@ -444,7 +454,7 @@ bwplot( resid(fit_social_lmm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
         pch = "|", data = data)
 ## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
 ```
-
+# 같같같같같같같같같같같같같같같같같같같같같같�
 ## possibili soluzioni ai residui
 ```{r}
 library(robustlmm)

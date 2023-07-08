@@ -24,46 +24,103 @@ library(fields)
 library(ggplot2)
 library(GGally)
 ```
-
 ```{r}
-#directories
-dataset_dir = "../../data/"
-include_dir = "../include/Utilities.R"
-#including utilities
-source(include_dir)
-#importing the dataset
-pisa_data <- read.csv(file=paste(dataset_dir,"pisa_data_final.csv",sep=""))
-pisa_data$X <- NULL
-colnames(pisa_data)
-length(colnames(pisa_data))
-pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/pisa_scores_final.csv",sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+data <- read.csv(file=dataset_path)
+head(data)
 ```
 
-```{r}
-categories_variables = list(tec,psi,clt,fam,tch,sch)
-cat_var_names = c("tec","psi","clt","fam","tch","sch")
 
-data_grezzi <- pisa_data
-data_clustered <- pisa_data
+# **0** DATA PREP
+```{r}
+data$X <- NULL
+data$SCHLTYPE <- as.factor(data$SCHLTYPE)
+data$CNT <- as.factor(data$CNT)
+
+IM_PUBLIC = rep(0,dim(data)[1])
+IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
+data$IM_PUBLIC = as.factor(IM_PUBLIC)
+data$SCHLTYPE <- NULL
+head(data)
+
+```
+# Define grouped variables, dimension too big to do complete
+```{r}
+linear_model_vars <- readLines("../../data/lm_social_vars.txt")
+
+filter <- function(category,var_lm) {
+  risultato <- c()
+  
+  for (elemento in category) {
+    if (elemento %in% var_lm) {
+      risultato <- c(risultato, elemento)
+    }
+  }
+  
+  return(risultato)
+}
+
+categories_variables=list()
+
+categories_variables[["TECH"]] = c("Approach.to.ICT","ICTSCH","ICTRES" ,"Use.of.ICT","RATCMP1","ENTUSE" )
+
+categories_variables[["TEACH"]] = c("Teacher.skill","TEACHBEHA","Teachers..degree","PROAT6")
+
+categories_variables[["WELL-BEING"]] = c("Social.well.being","Psychological.well.being")
+
+categories_variables[["SCHOOL"]] = c("EDUSHORT","STAFFSHORT","STRATIO","CLSIZE","CREACTIV")
+
+categories_variables[["STUDENT"]] = c("LM_MINS","ATTLNACT","PV1READ", "PV1MATH" ,"STUBEHA","JOYREAD"  )
+
+categories_variables[["FAMILY"]] = c("ESCS", "HEDRES")
+cat_var_names = names(categories_variables)
+
+categories_variables_filtered=list()
+
+for(cat in cat_var_names ){
+  categories_variables_filtered[[cat]]=filter(categories_variables[[cat]],linear_model_vars)
+}
+categories_variables_filtered[["WELL-BEING"]] = c("Social.well.being","Psychological.well.being")
+categories_variables_filtered
+#categories_variables=categories_variables_filtered
+```
+```{r}
+k=1
+for(cat in categories_variables_filtered){
+  if (length(cat)==2){
+    plot(data[,cat],main=cat_var_names[k],col=data$CNT)
+  }
+  if (length(cat)==3){
+    plot3d(data[,cat],main=cat_var_names[k],col=as.numeric(data$CNT))
+  }
+  k=k+1
+}
+```
+
+
+
+```{r}
+p =dim(data)[2]
+lab_index =c(24,27) # CNT and IM_PUBLIC
+
+cols <- seq(1,p)
+feats <- cols[!cols %in% lab_index]
+
+
+data_grezzi <- data
+data_clustered <- data
 # Dimensions
 n = dim(data_grezzi)[1]
 p = dim(data_grezzi)[2]
 #removing the CNT column
-meas_labels<-c(2:p)
-data_grezzi = data_grezzi[,meas_labels]
+data_grezzi = data_grezzi[,feats]
 head(data_grezzi)
 ## note: rescale the variables if there's a high order of magnitude
-```
-
-# 0. MAYBE SOME SCATTERPLOTS TO SEE IF DATA ARE CLUSTERED FOR SOME VARIABLES
-
-```{r}
-ggpairs(pisa_data[,categories_variables[[1]]]) #tec
-ggpairs(pisa_data[,categories_variables[[2]]]) #psi
-ggpairs(pisa_data[,categories_variables[[3]]]) #clt
-ggpairs(pisa_data[,categories_variables[[4]]]) #fam
-ggpairs(pisa_data[,categories_variables[[5]]]) #tch
-ggpairs(pisa_data[,categories_variables[[6]]]) #sch
 ```
 
 # **1.** HIERARCHICAL CLUSTERING
@@ -76,7 +133,7 @@ ggpairs(pisa_data[,categories_variables[[6]]]) #sch
 #looping over the categories of variables
 for(k in 1:length(categories_variables)){ 
   #selecting the group of variables
-  data_grezzi = pisa_data[,c("CNT",categories_variables[[k]])] 
+  data_grezzi = data[,c("CNT",categories_variables[[k]])] 
   #discarding CNT variable in measures
   meas_labels <-c(2: dim(data_grezzi)[2]) 
   measures = data_grezzi[,meas_labels]
@@ -92,7 +149,7 @@ for(k in 1:length(categories_variables)){
   #EXPERIMENTING DIFFERENT LINKAGES
   i <- 1 
   for(dist_chosen in distances){ 
-    data_grezzi = pisa_data[,c("CNT",categories_variables[[k]])] 
+    data_grezzi = data[,c("CNT",categories_variables[[k]])] 
     name_dist_chosen <- names[i] 
     i <- i+1
     #hierarchical clustering for each type of linkage
@@ -126,6 +183,9 @@ for(k in 1:length(categories_variables)){
     da = cor(data.e, coph.da) 
     dw = cor(data.e, coph.dw) 
     dw2 = cor(data.e, coph.dw2)
+    coph= list(dc,da,dw,dw2)
+    
+    categories_variables[[k]]$coph = list(name_dist_chosen,coph)
     
     print(cat_var_names[k])
     print(name_dist_chosen)
@@ -140,7 +200,7 @@ for(k in 1:length(categories_variables)){
 ## 1.2 APPLIYING THE SELECTED DISTANCE AND LINKAGE
 
 ```{r, warning=FALSE, message=FALSE}
-data_grezzi <- pisa_data
+data_grezzi <- data
 counter_names = 1
 for (k in categories_variables){
   measures = data_grezzi[,k]
@@ -194,7 +254,7 @@ head(data_clustered)
 
 ```{r}
 country_names <- unique(data_clustered$CNT)
-g=16
+g=14
 indeces = list()
 for (jj in 1:g){
     indeces[jj] <- list(which(data_clustered$CNT == country_names[jj]))
@@ -285,18 +345,18 @@ ggplot(df, aes(x = country, y = percentage, fill = group)) +
 ## **3.** DBSCAN
 ### **3.1** choice of hyperparameters 
 ```{r}
-measures = pisa_data[,21:71]
+measures = data_grezzi
 colnames(measures)
 # Rule of thumb, minPts = dimensionality + 1 = 3 here
 # How to choose eps from minPts?
 # Plot of the distances to the minPts nearest neighbor
 k_chosen_2=2
 kNNdistplot(measures, k = k_chosen_2) 
-eps_chosen = 60
+eps_chosen = 50
 abline(h = eps_chosen, col = "red", lty = 2)
 
 # Run the dbscan
-minpts = 15
+minpts = 2
 dbs <- dbscan(measures, eps = eps_chosen, minPts = minpts)
 dbs
 
