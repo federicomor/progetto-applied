@@ -34,7 +34,7 @@ library(plot.matrix)
 
 library(insight)
 ```
-
+# **0** DATA PREP
 ```{r}
 data$X <- NULL
 data$SCHLTYPE <- as.factor(data$SCHLTYPE)
@@ -70,7 +70,7 @@ colnames(data)
 ```
 
 
-# Modello 1-Social.well.being
+# **1** Modello 1-Social.well.being
 ```{r}
 FORMULA_COMPLETE_SOCIAL = formula(Social.well.being~.-Psychological.well.being-CNT-IM_PUBLIC-NEW_VAR)
 fit_social = lm(FORMULA_COMPLETE_SOCIAL,data=data)
@@ -80,25 +80,17 @@ nv_max = length(b)-1
 names(b)
 ```
 
-
+# **2** Variable selection
 ## Best Subset Selection (exhaustive search) 
 ```{r, warning=FALSE, message=FALSE}
-regfit.full = regsubsets(FORMULA_COMPLETE_SOCIAL, data=data)
-# Best Subset Selection
-summary(regfit.full)
-
-# Best Subset Selection: we say when we stop
-
 regfit.full = regsubsets(FORMULA_COMPLETE_SOCIAL, data=data, nvmax=nv_max)
-summary(regfit.full)
-
 reg.summary = summary(regfit.full)
 
 # Which one we choose:
 #reg.summary$which
 # Plots
 plot(reg.summary$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-plot(reg.summary$rss, xlab="Number of Variables", ylab="RSS", type="b")
+
 
 # We want the model with max r.adj^2 so we extract the coefficients of that model
 # Note: ind = how many coefficients has the model
@@ -111,41 +103,45 @@ coef(regfit.full, ind)
 ```{r, warning=FALSE, message=FALSE}
 # Forward
 regfit.fwd = regsubsets(FORMULA_COMPLETE_SOCIAL,data=data,nvmax=nv_max,method="forward")
-summary(regfit.fwd)
+
 
 # Plot
 
 plot(summary(regfit.fwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-plot(summary(regfit.fwd)$rss, xlab="Number of Variables", ylab="RSS", type="b")
 
-
+ind_fwd = which.max(summary(regfit.fwd)$adjr2)
+ind_fwd
 # Backward
 regfit.bwd = regsubsets(FORMULA_COMPLETE_SOCIAL,data=data,nvmax=nv_max,method="backward")
-summary(regfit.bwd)
+
 
 # Plot
 
 
 plot(summary(regfit.bwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-plot(summary(regfit.bwd)$rss, xlab="Number of Variables", ylab="RSS", type="b")
-
+ind_bwd = which.max(summary(regfit.bwd)$adjr2)
+ind_bwd
 
 ```
 
 ## Comparison- they are all the same
 ```{r, warning=FALSE, message=FALSE}
-max_vars = 12
+max_vars = 18
 full = names(coef(regfit.full,max_vars)) # Exhaustive search
-print(" ")
+
 fwd = names(coef(regfit.fwd,max_vars)) # Forward Stepwise Selection
-print(" ")
+
 bwd = names(coef(regfit.bwd,max_vars)) # Backward Stepwise Selection
+
+all(full==bwd)
+all(fwd==bwd)
+bwd
 ```
 
 ##  K-fold-cross-validation (exhaustive search)
 ```{r, warning=FALSE, message=FALSE}
 p = nv_max
-k = 30
+k = 10
 folds = sample(1:k,nrow(data),replace=TRUE)
 table(folds)
 
@@ -185,7 +181,7 @@ coef(reg.best,10)
 
 ```
 
-# Fit final model
+# **3** Fit final model
 ```{r}
 vars = c(bwd[2:max_vars],"CNT","IM_PUBLIC")
 formula_social <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
@@ -197,7 +193,7 @@ summary(fit_social_final)
 
 
 
-## Analysis of residuals
+# **4** Analysis of residuals
 ```{r}
 par(mfrow=c(2,2))
 plot(fit_social_final)
@@ -213,8 +209,7 @@ for (i in 1:(dim(data)[2]-1)){
 ```
 
 
-## Move to LMM
-### fit modello
+# **5** Move to LMM
 ```{r}
 vars = c(bwd[2:max_vars],"(1|NEW_VAR)")
 FORMULA_LMM <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
@@ -280,7 +275,7 @@ bwplot( resid(fm_var, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
 
 
 
-# Modello 2-Psychological.well.being
+#**1** Modello 2-Psychological.well.being
 ```{r}
 FORMULA_COMPLETE_PSICO = formula(Psychological.well.being~.-Social.well.being-CNT-IM_PUBLIC-NEW_VAR)
 fit_psico = lm(FORMULA_COMPLETE_PSICO,data=data)
@@ -290,17 +285,12 @@ nv_max = length(b)-1
 names(b)
 ```
 
-
+# **2** Variable selection
 ## Best Subset Selection (exhaustive search) 
 ```{r, warning=FALSE, message=FALSE}
-regfit.full = regsubsets(FORMULA_COMPLETE_PSICO, data=data)
-# Best Subset Selection
-summary(regfit.full)
-
-# Best Subset Selection: we say when we stop
-
 regfit.full = regsubsets(FORMULA_COMPLETE_PSICO, data=data, nvmax=nv_max)
-summary(regfit.full)
+reg.summary = summary(regfit.full)
+
 
 reg.summary = summary(regfit.full)
 
@@ -308,50 +298,54 @@ reg.summary = summary(regfit.full)
 #reg.summary$which
 # Plots
 plot(reg.summary$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-plot(reg.summary$rss, xlab="Number of Variables", ylab="RSS", type="b")
 
 # We want the model with max r.adj^2 so we extract the coefficients of that model
 # Note: ind = how many coefficients has the model
 ind = which.max(reg.summary$adjr2)
 ind
-coef(regfit.full, ind)
-```
 
+```
+  
 ##  Forward and Backward Stepwise Selection
+
 ```{r, warning=FALSE, message=FALSE}
 # Forward
 regfit.fwd = regsubsets(FORMULA_COMPLETE_PSICO,data=data,nvmax=nv_max,method="forward")
-summary(regfit.fwd)
+
 
 # Plot
 
 plot(summary(regfit.fwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-plot(summary(regfit.fwd)$rss, xlab="Number of Variables", ylab="RSS", type="b")
 
-
+ind_fwd = which.max(summary(regfit.fwd)$adjr2)
+ind_fwd
 # Backward
 regfit.bwd = regsubsets(FORMULA_COMPLETE_PSICO,data=data,nvmax=nv_max,method="backward")
-summary(regfit.bwd)
+
 
 # Plot
 
 
 plot(summary(regfit.bwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-plot(summary(regfit.bwd)$rss, xlab="Number of Variables", ylab="RSS", type="b")
-
+ind_bwd = which.max(summary(regfit.bwd)$adjr2)
+ind_bwd
 
 ```
 
 ## Comparison- they are all the same
 ```{r, warning=FALSE, message=FALSE}
-max_vars = 12
+max_vars = 17
 full = names(coef(regfit.full,max_vars)) # Exhaustive search
-print(" ")
-fwd = names(coef(regfit.fwd,max_vars)) # Forward Stepwise Selection
-print(" ")
-bwd = names(coef(regfit.bwd,max_vars)) # Backward Stepwise Selection
-```
 
+fwd = names(coef(regfit.fwd,max_vars)) # Forward Stepwise Selection
+
+bwd = names(coef(regfit.bwd,max_vars)) # Backward Stepwise Selection
+
+all(full==bwd)
+all(fwd==bwd)
+bwd
+```
+# **3** fit final model
 ```{r}
 vars = c(bwd[2:max_vars],"CNT","IM_PUBLIC")
 formula_psyco <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
@@ -369,7 +363,7 @@ summary(formula_psyco_final)
 
 
 
-## Analysis of residuals
+# **4** Analysis of residuals
 ```{r}
 par(mfrow=c(2,2))
 plot(formula_psyco_final)
@@ -385,7 +379,7 @@ for (i in 1:(dim(data)[2]-1)){
 ```
 
 
-## Move to LMM
+# **5** Move to LMM
 ```{r}
 vars = c(bwd[2:max_vars],"(1|NEW_VAR)")
 FORMULA_LMM <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
@@ -402,7 +396,7 @@ PVRE # 51% is very high!
 
 ## visualization of the random intercepts with their 95% confidence intervals
 # Random effects: b_0i for i=1,...,234
-dotplot(ranef(fm, condVar=T))$NEW_VAR
+dotplot(ranef(fit_social_lmm, condVar=T))$NEW_VAR
 ```
 
 
@@ -412,32 +406,31 @@ dotplot(ranef(fm, condVar=T))$NEW_VAR
 ### assumptions check
 ```{r}
 # normality of residuals
-fm = fit_lmm_psych
-qqnorm(resid(fm))
-qqline(resid(fm), col='red', lwd=2)
-shapiro.test(resid(fm))
+qqnorm(resid(fit_social_lmm))
+qqline(resid(fit_social_lmm), col='red', lwd=2)
+shapiro.test(resid(fit_social_lmm))
 # normality of random effects
 # case only interecept
-qqnorm(unlist(ranef(fm)$NEW_VAR),
+qqnorm(unlist(ranef(fit_social_lmm)$NEW_VAR),
 main='Normal Q-Q Plot - Random Effects on Intercept')
-qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
+qqline(unlist(ranef(fit_social_lmm)$NEW_VAR), col='red', lwd=2)
 # case interecept and slope
-boxplot(residuals(fm)~data$NEW_VAR,las=2)
+boxplot(residuals(fit_social_lmm)~data$NEW_VAR,las=2)
 
-res = residuals(fm)
+res = residuals(fit_social_lmm)
 hist(res)
 shapiro.test(log(res+abs(min(res))+1))
 ```
 
 ```{r}
-fm_var = fm
+
 ## raw residuals 
-plot(fm_var, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
+plot(fit_social_lmm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
 # We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
 # but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
 
-plot(fm_var, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
-bwplot(resid(fm_var) ~ NEW_VAR, pch = "|", data = data)
+plot(fit_social_lmm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
+bwplot(resid(fit_social_lmm) ~ NEW_VAR, pch = "|", data = data)
 # The boxand-whiskers plots clearly show an increasing variance of the residuals.
 
 ## Pearson residuals 
@@ -445,9 +438,9 @@ bwplot(resid(fm_var) ~ NEW_VAR, pch = "|", data = data)
 ## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
 
 
-plot(fm_var, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
-plot(fm_var,resid(., type = "pearson") ~ as.numeric(NEW_VAR)) 
-bwplot( resid(fm_var, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
+plot(fit_social_lmm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
+plot(fit_social_lmm,resid(., type = "pearson") ~ as.numeric(NEW_VAR)) 
+bwplot( resid(fit_social_lmm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
         pch = "|", data = data)
 ## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
 ```
