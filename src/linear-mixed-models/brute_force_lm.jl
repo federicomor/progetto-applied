@@ -58,6 +58,7 @@ f7(x) = abs(x)
 f8(x) = log(x+abs(minimum(x))+1)
 f9(x) = sqrt(abs(x))
 
+println("## Performing random tests ##")
 ############# Random tests #############
 funzioni = [
 	f1 
@@ -72,10 +73,12 @@ funzioni = [
 ]
 
 SOGLIA_PVALUE = 1e-8
-n_rand_tests = 100_000
+n_rand_tests = 100_000_000
+bestpval_ord = -80
 
 for i in 1:n_rand_tests
-	print("Iteration $i\r")
+	# print("Iteration $i\r")
+	global bestpval_ord
 	X = ones(size(df)[1])
 	# v=digits(i,base=length(funzioni)-1,pad=length(covariate_fit)+1)
 	v=rand(1:length(funzioni),length(covariate_fit)+1)
@@ -84,19 +87,23 @@ for i in 1:n_rand_tests
 		X = [X funzioni[v[j]].(df[:,covariate[j]])]
 	end
 	y=funzioni[v[end]].(df[:,"Psychological well-being"])
-	fit=lm(X,y)
-	# @show fit
+	
+	fit = ""
+	pval = ""
 	try
+		fit=lm(X,y)
 		pval = normality(residuals(fit)).pval[1]
 		# @show fit
-		if(pval>SOGLIA_PVALUE)
-			print("\nFound something:")
-			@show v i
-			println(pval)
-		end
 	catch e
 		@show e
 	end
+	if(pval>SOGLIA_PVALUE)
+		println("\nFound something: ")
+		@show v
+		# println("pvalue = $pval")
+	end
+		bestpval_ord = max(bestpval_ord,log10(pval))
+		i%100==0 && print("Iteration $i | Pvalue order: $(log10(pval)) | Min till now pvalue order: $bestpval_ord\r")
 end
 
 

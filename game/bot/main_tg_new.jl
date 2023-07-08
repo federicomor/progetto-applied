@@ -33,9 +33,9 @@ empty!(df)
 describe(df)
 
 # maybe this should always be done
-if ("rec" in ARGS || 1==1)
+if ("rec" in ARGS)
     println("Recovering the previous dataframe.")
-    df = DataFrame(CSV.File("df.csv",stringtype=String))
+    df = DataFrame(CSV.File("df.csv")) #,stringtype=String))
     @show df
 end
 
@@ -52,7 +52,7 @@ include("const_variables.jl")
 ############# Include game functions #############
 include("game_functions.jl")
 
-
+println("Ready to play.")
 ############# Real program #############
 function handle_command(msg)
     chat_id = ""
@@ -259,11 +259,11 @@ function handle_command(msg)
         include("visualize_score.jl")
 
     ############# DANGER ZONE #############
-    # elseif occursin("/bcast",lowercase(msg_text)) && chat_id==641681765
-    #     to_send = replace(msg_text,"/bcast" => "")
-    #     if to_send != ""
-    #         bcast(msg_text)
-    #     end
+    elseif occursin("/bcast",lowercase(msg_text)) && chat_id==641681765
+        to_send = replace(msg_text,"/bcast" => "")
+        if to_send != ""
+            bcast(to_send)
+        end
 
     elseif lowercase(msg_text)=="/done for all" && chat_id==641681765
         try
