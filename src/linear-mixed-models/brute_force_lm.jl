@@ -51,17 +51,30 @@ covariate_fit = [
 f1(x) = x
 f2(x) = x^2
 f3(x) = x^3
-f4(x) = exp(x)
-f5(x) = cos(x)
-f6(x) = sin(x)
-f7(x) = abs(x)
+# f4(x) = exp(x)
+# f5(x) = cos(x)
+# f6(x) = sin(x)
+# f7(x) = abs(x)
 f8(x) = log(x+abs(minimum(x))+1)
 
-funzioni = [f1 f2 f3 f4 f5 f6 f7 f8]
+funzioni = [
+	f1 
+	f2 
+	f3 
+	# f4
+	# f5 
+	# f6
+	# f7
+	f8
+]
 
 # fit = glm(formula, data, Normal(), IdentityLink())
 
-for i in 100_000:(8^13)
+n_tests = length(funzioni)^(length(covariate_fit)+1)
+println("Doing $n_tests tests")
+
+# aggiornare il limite qui ECC:n_tests in base a dove siete arrivati a runnare
+for i in 70_000:n_tests
 	X = ones(size(df)[1])
 	v=digits(i,base=length(funzioni)-1,pad=length(covariate_fit)+1)
 	covariate = covariate_fit
@@ -73,7 +86,7 @@ for i in 100_000:(8^13)
 	pval = normality(residuals(fit)).pval[1]
 	i%1000 == 0 && println(i)
 	# @show fit
-	if(pval>1e-30)
+	if(pval>1e-20)
 		@show v i
 		println(pval)
 	end
