@@ -452,7 +452,7 @@ d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
 hist(d2,breaks = 300,xlim = c(0,300))
 abline(v=50,col="red")
 
-data_woo = data[which(d2 <= 50), ]
+data_woo = data[which(d2 <= 28), ]
 print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
 print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
 ```
@@ -464,12 +464,62 @@ data_woo_scaled[,c(numerical_variables)] =
   data.frame(scale(data_woo_scaled[,c(numerical_variables)]))
 
 boxplot(data[,numerical_variables], main="old data",las=2)
+boxplot(data_woo[,numerical_variables], main="woo data",las=2)
 boxplot(data_woo_scaled[,numerical_variables],main="scaled and woo data",las=2)
 # magari dare qualche spuntatina manuale a proat6 e ratcmp1 che sembrano le peggiori
 ```
 
+### Spuntatina manuale
+```{r}
+boxplot(data_woo_scaled[,numerical_variables],main="scaled and woo data",las=2)
+
+old_dim = dim(data_woo_scaled)[1]
+data_woo_scaled = data_woo_scaled[which(data_woo_scaled$PROAT6<4),]
+data_woo_scaled = data_woo_scaled[which(data_woo_scaled$RATCMP1<4),]
+data_woo_scaled = data_woo_scaled[which(data_woo_scaled$LM_MINS<4.1),]
+new_dim = dim(data_woo_scaled)[1]
+boxplot(data_woo_scaled[,numerical_variables],main="scaled and woo data, after spuntatina",las=2)
+
+print(paste("From",old_dim,"obs we moved to",new_dim))
+print(paste("Percentuale di dati sopravvissuti:",new_dim/old_dim*100,"%"))
+```
 
 
+### Fit sul nuovo dataset
+```{r}
+fit_social_lmm_woo_scaled = lmer(FORMULA_LMM,data=data_woo_scaled)
+fit_social_lmm_woo_scaled
+
+sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo_scaled))
+sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo_scaled))
+
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+print(paste("PVRE =",PVRE)) # 51% is very high!
+
+## visualization of the random intercepts with their 95% confidence intervals
+# Random effects: b_0i for i=1,...,234
+dotplot(ranef(fit_social_lmm_woo_scaled, condVar=T))$NEW_VAR
+```
+
+### Assumptions check
+```{r}
+# normality of residuals
+fm = fit_social_lmm_woo_scaled
+qqnorm(resid(fm))
+qqline(resid(fm), col='red', lwd=2)
+shapiro.test(resid(fm))
+# normality of random effects
+# case only interecept
+qqnorm(unlist(ranef(fm)$NEW_VAR),
+main='Normal Q-Q Plot - Random Effects on Intercept')
+qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
+# case interecept and slope
+boxplot(residuals(fm)~data_woo_scaled$NEW_VAR,las=2)
+
+res = residuals(fm)
+hist(res)
+shapiro.test(log(res+abs(min(res))+1))
+```
 
 
 
