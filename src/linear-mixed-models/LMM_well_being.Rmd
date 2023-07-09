@@ -1,7 +1,7 @@
 ---
 title: "R Notebook"
 output: html_notebook
-editor_options: 
+editor_options:
   chunk_output_type: inline
 ---
 
@@ -83,7 +83,7 @@ names(b)
 ```
 
 # [2] Variable selection
-## Best Subset Selection (exhaustive search) 
+## Best Subset Selection (exhaustive search)
 ```{r, warning=FALSE, message=FALSE}
 regfit.full = regsubsets(FORMULA_COMPLETE_SOCIAL, data=data, nvmax=nv_max)
 reg.summary = summary(regfit.full)
@@ -145,48 +145,6 @@ vars_chosen_social <- bwd[2:max_vars]
 writeLines(vars_chosen_social,"../../data/lm_social_vars.txt")
 ```
 
-##  K-fold-cross-validation (exhaustive search)
-```{r, warning=FALSE, message=FALSE}
-p = nv_max
-k = 10
-folds = sample(1:k,nrow(data),replace=TRUE)
-table(folds)
-
-# Function that performs the prediction for regsubsets
-predict.regsubsets = function(object,newdata,id){
-  form  = as.formula(object$call[[2]])
-  mat   = model.matrix(form,newdata)
-  coefi = coef(object,id=id)
-  xvars = names(coefi)
-  mat[,xvars]%*%coefi
-}
-
-cv.errors = matrix(NA,k,p, dimnames=list(NULL, paste(1:nv_max)))
-
-for(j in 1:k){
-  best.fit = regsubsets(FORMULA_COMPLETE_SOCIAL,data=data[folds!=j,],nvmax=nv_max,really.big=T)
-  for(i in 1:p){
-    pred = predict(best.fit,data[folds==j,],id=i)
-    cv.errors[j,i] = mean( (data$Y[folds==j]-pred)^2 )
-  }
-}
-
-cv.errors
-
-root.mean.cv.errors = sqrt(apply(cv.errors,2,mean)) # average over the columns
-root.mean.cv.errors
-
-# Plot
-plot(root.mean.cv.errors,type='b')
-points(which.min(root.mean.cv.errors),
-       root.mean.cv.errors[which.min(root.mean.cv.errors)], col='red',pch=19)
-which.min(root.mean.cv.errors)
-
-# Estimation on the full dataset
-reg.best = regsubsets(FORMULA_COMPLETE_SOCIAL.,data=data, nvmax=nv_max)
-coef(reg.best,10)
-
-```
 
 # [3] Fit final model
 ```{r}
@@ -233,8 +191,7 @@ print(paste("PVRE =",PVRE))
 
 ## visualization of the random intercepts with their 95% confidence intervals
 # Random effects: b_0i for i=1,...,234
-fm = fit_social_lmm
-dotplot(ranef(fm, condVar=T))$NEW_VAR
+dotplot(ranef(fit_social_lmm, condVar=T))$NEW_VAR
 ```
 
 ### assumptions check
@@ -258,7 +215,7 @@ shapiro.test(log(res+abs(min(res))+1))
 ```
 
 ```{r}
-## raw residuals 
+## raw residuals
 plot(fm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
 # We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
 # but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
@@ -267,13 +224,13 @@ plot(fm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (n
 bwplot(resid(fm) ~ NEW_VAR, pch = "|", data = data)
 # The boxand-whiskers plots clearly show an increasing variance of the residuals.
 
-## Pearson residuals 
+## Pearson residuals
 ## Pearson residuals are obtained from the raw residuals by dividing the latter by an
 ## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
 
 
 plot(fm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
-plot(fm,resid(., type = "pearson") ~ as.numeric(NEW_VAR)) 
+plot(fm,resid(., type = "pearson") ~ as.numeric(NEW_VAR))
 bwplot( resid(fm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
         pch = "|", data = data)
 ## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
@@ -333,7 +290,7 @@ hist(res)
 ```
 
 ```{r}
-## raw residuals 
+## raw residuals
 plot(fm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
 # We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
 # but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
@@ -342,13 +299,13 @@ plot(fm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (n
 bwplot(resid(fm) ~ NEW_VAR, pch = "|", data = data)
 # The boxand-whiskers plots clearly show an increasing variance of the residuals.
 
-## Pearson residuals 
+## Pearson residuals
 ## Pearson residuals are obtained from the raw residuals by dividing the latter by an
 ## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
 
 
 plot(fm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
-plot(fm,resid(., type = "pearson") ~ as.numeric(NEW_VAR)) 
+plot(fm,resid(., type = "pearson") ~ as.numeric(NEW_VAR))
 bwplot( resid(fm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
         pch = "|", data = data)
 ## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
@@ -453,6 +410,7 @@ boxplot(residuals(fm)~data_woo$NEW_VAR,las=2)
 
 res = residuals(fm)
 hist(res)
+
 ```
 
 
@@ -552,7 +510,7 @@ names(b)
 ```
 
 # [2] Variable selection
-## Best Subset Selection (exhaustive search) 
+## Best Subset Selection (exhaustive search)
 ```{r, warning=FALSE, message=FALSE}
 regfit.full = regsubsets(FORMULA_COMPLETE_PSICO, data=data, nvmax=nv_max)
 reg.summary = summary(regfit.full)
@@ -571,7 +529,7 @@ ind = which.max(reg.summary$adjr2)
 ind
 
 ```
-  
+
 ##  Forward and Backward Stepwise Selection
 
 ```{r, warning=FALSE, message=FALSE}
@@ -694,7 +652,7 @@ shapiro.test(log(res+abs(min(res))+1))
 ```
 
 ```{r}
-## raw residuals 
+## raw residuals
 plot(fit_social_lmm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
 # We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
 # but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
@@ -703,13 +661,13 @@ plot(fit_social_lmm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs
 bwplot(resid(fit_social_lmm) ~ NEW_VAR, pch = "|", data = data)
 # The boxand-whiskers plots clearly show an increasing variance of the residuals.
 
-## Pearson residuals 
+## Pearson residuals
 ## Pearson residuals are obtained from the raw residuals by dividing the latter by an
 ## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
 
 
 plot(fit_social_lmm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
-plot(fit_social_lmm,resid(., type = "pearson") ~ as.numeric(NEW_VAR)) 
+plot(fit_social_lmm,resid(., type = "pearson") ~ as.numeric(NEW_VAR))
 bwplot( resid(fit_social_lmm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
         pch = "|", data = data)
 ## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
@@ -850,21 +808,3 @@ res = residuals(fm)
 hist(res)
 shapiro.test(res)
 ```
-
-
-
-
-
-# ?????????????????????????????????????????????
-## possibili soluzioni ai residui
-```{r}
-library(robustlmm)
-robustlmm::rlmer()
-```
-
-
-
-
-
-
-
