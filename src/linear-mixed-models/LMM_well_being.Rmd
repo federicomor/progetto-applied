@@ -191,7 +191,7 @@ print(paste("PVRE =",PVRE)) # 51% is very high!
 
 ## visualization of the random intercepts with their 95% confidence intervals
 # Random effects: b_0i for i=1,...,234
-dotplot(ranef(fm, condVar=T))$NEW_VAR
+dotplot(ranef(fit_social_lmm, condVar=T))$NEW_VAR
 ```
 
 ### assumptions check
@@ -671,16 +671,6 @@ bwplot( resid(fit_social_lmm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
         pch = "|", data = data)
 ## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
 ```
-
-# ?????????????????????????????????????????????
-## possibili soluzioni ai residui
-```{r}
-library(robustlmm)
-robustlmm::rlmer()
-```
-
-
-
 
 
 
