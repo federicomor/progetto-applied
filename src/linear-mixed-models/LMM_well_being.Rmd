@@ -5,6 +5,8 @@ editor_options:
   chunk_output_type: inline
 ---
 
+(ho messo le quadre davanti ai numeri, quindi [1] anzich챕 **1** perch챕 mi sembrava pi첫 leggibile)
+
 ```{r}
 root_proj_dir = "../../"
 dataset_path = paste(root_proj_dir,"data/pisa_scores_final.csv",sep="")
@@ -34,7 +36,7 @@ library(plot.matrix)
 
 library(insight)
 ```
-# **0** DATA PREP
+# [0] DATA PREP
 ```{r}
 data$X <- NULL
 data$SCHLTYPE <- as.factor(data$SCHLTYPE)
@@ -70,7 +72,7 @@ colnames(data)
 ```
 
 
-# **1** Modello 1-Social.well.being
+# [1] Modello 1-Social.well.being
 ```{r}
 FORMULA_COMPLETE_SOCIAL = formula(Social.well.being~.-Psychological.well.being-CNT-IM_PUBLIC-NEW_VAR)
 fit_social = lm(FORMULA_COMPLETE_SOCIAL,data=data)
@@ -80,7 +82,7 @@ nv_max = length(b)-1
 names(b)
 ```
 
-# **2** Variable selection
+# [2] Variable selection
 ## Best Subset Selection (exhaustive search) 
 ```{r, warning=FALSE, message=FALSE}
 regfit.full = regsubsets(FORMULA_COMPLETE_SOCIAL, data=data, nvmax=nv_max)
@@ -186,7 +188,7 @@ coef(reg.best,10)
 
 ```
 
-# **3** Fit final model
+# [3] Fit final model
 ```{r}
 vars = c(bwd[2:max_vars],"CNT","IM_PUBLIC")
 formula_social <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
@@ -198,7 +200,7 @@ summary(fit_social_final)
 
 
 
-# **4** Analysis of residuals
+# [4] Analysis of residuals
 ```{r}
 par(mfrow=c(2,2))
 plot(fit_social_final)
@@ -214,7 +216,7 @@ for (i in 1:(dim(data)[2]-1)){
 ```
 
 
-# **5** Move to LMM
+# [5] Move to LMM
 ```{r}
 vars = c(bwd[2:max_vars],"(1|NEW_VAR)")
 FORMULA_LMM <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
@@ -227,7 +229,7 @@ sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm))
 sigma2_b <- as.numeric(get_variance_random(fit_social_lmm))
 
 PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-PVRE # 51% is very high!
+print(paste("PVRE =",PVRE)) # 51% is very high!
 
 ## visualization of the random intercepts with their 95% confidence intervals
 # Random effects: b_0i for i=1,...,234
@@ -277,10 +279,203 @@ bwplot( resid(fm_var, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
 ```
 
 
+# [6] Tentativi di recupero assumptions
 
-# 같같같같같같같같같같같같같같같같같같같같같같
+## [6.1] Scalando le covariate
+Nel LMM qui sopra usciva il warnign "some predictor variables are on very different scales: consider rescaling". So we try rescaling.
 
-#**1** Modello 2-Psychological.well.being
+```{r}
+data
+colnames(data)
+numerical_variables = c(1:23,25,26)
+colnames(data)[numerical_variables]
+
+data_scaled = data
+data_scaled[,c(numerical_variables)] = data.frame(scale(data_scaled[,c(numerical_variables)]))
+boxplot(data[,numerical_variables], main="old data")
+boxplot(data_scaled[,numerical_variables],main="scaled data")
+```
+
+### Fit sul nuovo dataset
+```{r}
+fit_social_lmm_scaled = lmer(FORMULA_LMM,data=data_scaled)
+fit_social_lmm_scaled
+
+sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_scaled))
+sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_scaled))
+
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+print(paste("PVRE =",PVRE)) # 51% is very high!
+
+## visualization of the random intercepts with their 95% confidence intervals
+# Random effects: b_0i for i=1,...,234
+dotplot(ranef(fit_social_lmm_scaled, condVar=T))$NEW_VAR
+```
+
+### Assumptions check
+```{r}
+# normality of residuals
+fm = fit_social_lmm_scaled
+qqnorm(resid(fm))
+qqline(resid(fm), col='red', lwd=2)
+shapiro.test(resid(fm))
+# normality of random effects
+# case only interecept
+qqnorm(unlist(ranef(fm)$NEW_VAR),
+main='Normal Q-Q Plot - Random Effects on Intercept')
+qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
+# case interecept and slope
+boxplot(residuals(fm)~data$NEW_VAR,las=2)
+
+res = residuals(fm)
+hist(res)
+shapiro.test(log(res+abs(min(res))+1))
+```
+
+```{r}
+## raw residuals 
+plot(fm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
+# We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
+# but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
+
+plot(fm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
+bwplot(resid(fm) ~ NEW_VAR, pch = "|", data = data)
+# The boxand-whiskers plots clearly show an increasing variance of the residuals.
+
+## Pearson residuals 
+## Pearson residuals are obtained from the raw residuals by dividing the latter by an
+## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
+
+
+plot(fm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
+plot(fm,resid(., type = "pearson") ~ as.numeric(NEW_VAR)) 
+bwplot( resid(fm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
+        pch = "|", data = data)
+## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
+```
+
+
+Niente, sembra che il problema siano sempre le code dei residui, quindi magari 챔 questione di outliers?
+
+## [6.2] Rimuovendo outliers
+### Visual check
+```{r}
+data_woo = data # woo = [W]ith[O]ut [O]utliers
+
+for(i in 1:(length(vars)-1) )
+  boxplot(data_woo[,i],main=paste("Overall,",vars[i]))
+for(i in 1:(length(vars)-1) )
+  boxplot(data_woo[,i]~data_woo$CNT,main=paste("By state,",vars[i]),
+          col=colora(length(unique(data_woo$CNT))),las=2)
+# la funzione colora dovrebbe essere dentro Utilities
+```
+
+### Rimozione overall
+```{r}
+M = colMeans(data[,numerical_variables])
+S = cov(data[,numerical_variables])
+d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
+hist(d2,breaks = 300,xlim = c(0,300))
+
+data_woo = data[which(d2 <= 25), ]
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
+
+```
+
+### Rimozione by state
+```{r}
+# magari ci sta fare meno filtraggio overall al punto prima, cio챔 lasciare la soglia
+# pi첫 alta nella selezione sopra
+# e poi fare un "raffinamento" qui, togliendo outlier relativi non al comportamento
+# generale ma a quello che esce dal confronto tra gli stati
+```
+
+
+### Visual check after removing outliers
+```{r}
+for(i in 1:(length(vars)-1) )
+  boxplot(data[,i],data_woo[,i],main=paste("Overall,",vars[i],"before vs after"))
+for(i in 1:(length(vars)-1) )
+  boxplot(data_woo[,i]~data_woo$CNT,main=paste("By state,",vars[i]),
+          col=colora(length(unique(data_woo$CNT))),las=2)
+# la funzione colora dovrebbe essere dentro Utilities
+```
+
+
+### Fit sul nuovo dataset
+```{r}
+fit_social_lmm_woo = lmer(FORMULA_LMM,data=data_woo)
+fit_social_lmm_woo
+
+sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
+sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
+
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+print(paste("PVRE =",PVRE)) # 51% is very high!
+
+## visualization of the random intercepts with their 95% confidence intervals
+# Random effects: b_0i for i=1,...,234
+dotplot(ranef(fit_social_lmm_woo, condVar=T))$NEW_VAR
+```
+
+### Assumptions check
+```{r}
+# normality of residuals
+fm = fit_social_lmm_woo
+qqnorm(resid(fm))
+qqline(resid(fm), col='red', lwd=2)
+shapiro.test(resid(fm))
+# normality of random effects
+# case only interecept
+qqnorm(unlist(ranef(fm)$NEW_VAR),
+main='Normal Q-Q Plot - Random Effects on Intercept')
+qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
+# case interecept and slope
+boxplot(residuals(fm)~data_woo$NEW_VAR,las=2)
+
+res = residuals(fm)
+hist(res)
+shapiro.test(log(res+abs(min(res))+1))
+```
+
+
+
+## [6.3] Combinando le due idee
+Scaliamo e togliamo gli outliers.
+
+### Togliamo outliers
+```{r}
+M = colMeans(data[,numerical_variables])
+S = cov(data[,numerical_variables])
+d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
+hist(d2,breaks = 300,xlim = c(0,300))
+abline(v=50,col="red")
+
+data_woo = data[which(d2 <= 50), ]
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
+```
+
+### Scaliamo
+```{r}
+data_woo_scaled = data_woo
+data_woo_scaled[,c(numerical_variables)] =
+  data.frame(scale(data_woo_scaled[,c(numerical_variables)]))
+
+boxplot(data[,numerical_variables], main="old data",las=2)
+boxplot(data_woo_scaled[,numerical_variables],main="scaled and woo data",las=2)
+# magari dare qualche spuntatina manuale a proat6 e ratcmp1 che sembrano le peggiori
+```
+
+
+
+
+
+
+# ????????????????????????????????????????????
+
+#[1] Modello 2-Psychological.well.being
 ```{r}
 FORMULA_COMPLETE_PSICO = formula(Psychological.well.being~.-Social.well.being-CNT-IM_PUBLIC-NEW_VAR)
 fit_psico = lm(FORMULA_COMPLETE_PSICO,data=data)
@@ -290,7 +485,7 @@ nv_max = length(b)-1
 names(b)
 ```
 
-# **2** Variable selection
+# [2] Variable selection
 ## Best Subset Selection (exhaustive search) 
 ```{r, warning=FALSE, message=FALSE}
 regfit.full = regsubsets(FORMULA_COMPLETE_PSICO, data=data, nvmax=nv_max)
@@ -355,7 +550,7 @@ vars_chosen_psyc <- bwd[2:max_vars]
 # Salvataggio dei nomi nel file "nomi.txt"
 writeLines(vars_chosen_psyc, "../../data/lm_psico_vars.txt")
 ```
-# **3** fit final model
+# [3] fit final model
 ```{r}
 vars = c(bwd[2:max_vars],"CNT","IM_PUBLIC")
 formula_psyco <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
@@ -373,7 +568,7 @@ summary(formula_psyco_final)
 
 
 
-# **4** Analysis of residuals
+# [4] Analysis of residuals
 ```{r}
 par(mfrow=c(2,2))
 plot(formula_psyco_final)
@@ -389,7 +584,7 @@ for (i in 1:(dim(data)[2]-1)){
 ```
 
 
-# **5** Move to LMM
+# [5] Move to LMM
 ```{r}
 vars = c(bwd[2:max_vars],"(1|NEW_VAR)")
 FORMULA_LMM <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
@@ -402,7 +597,7 @@ sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm))
 sigma2_b <- as.numeric(get_variance_random(fit_social_lmm))
 
 PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-PVRE # 51% is very high!
+print(paste("PVRE =",PVRE)) # 51% is very high!
 
 ## visualization of the random intercepts with their 95% confidence intervals
 # Random effects: b_0i for i=1,...,234
@@ -454,7 +649,8 @@ bwplot( resid(fit_social_lmm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
         pch = "|", data = data)
 ## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
 ```
-# 같같같같같같같같같같같같같같같같같같같같같같�
+
+# ?????????????????????????????????????????????
 ## possibili soluzioni ai residui
 ```{r}
 library(robustlmm)
