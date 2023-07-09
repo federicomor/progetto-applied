@@ -76,7 +76,7 @@ fdict = [
 	# "sin(U)", # f6
 	# "abs(U)", # f7
 	"log(U+abs(minimum(U))+1)", # f8
-	"sqrt(abs(U))" # f9
+	# "sqrt(abs(U))" # f9
 ]
 
 funzioni = [
@@ -88,7 +88,7 @@ funzioni = [
 	# f6
 	# f7
 	f8
-	f9
+	# f9
 ]
 
 
@@ -104,7 +104,7 @@ end
 println("")
 ############# Random tests #############
 
-SOGLIA_PVALUE = 0.40
+SOGLIA_PVALUE = 0.80
 n_rand_tests = 100_000_000
 bestpval = 1e-16
 
@@ -132,6 +132,7 @@ for i in 1:n_rand_tests
 		println("\nFound something: ")
 		println(pval)
 		@show v
+		@show fit
 		for i in 1:length(covariate_fit)
 			println("x$i = ",
 				replace(fdict[v[i]],"U"=>"(data_woo\$$(covariate_fit[i]))"))
@@ -147,42 +148,3 @@ for i in 1:n_rand_tests
 		bestpval= max(bestpval,pval)
 		i%100==0 && print("Iteration $i | Pvalue: $pval | Min till now pvalue: $bestpval\r")
 end
-
-
-
-# fit = glm(formula, data, Normal(), IdentityLink())
-
-############# Sequential test (brute force) #############
-# n_tests = length(funzioni)^(length(covariate_fit)+1)
-# println("Doing $n_tests tests")
-
-## aggiornare il limite qui ECC:n_tests in base a dove siete arrivati a runnare
-# for i in 242_000:n_tests
-# 	X = ones(size(df)[1])
-# 	v=digits(i,base=length(funzioni)-1,pad=length(covariate_fit)+1)
-# 	covariate = covariate_fit
-# 	for j in 1:(length(v)-1)
-# 		X = [X funzioni[v[j]+1].(df[:,covariate[j]])]
-# 	end
-# 	y=funzioni[v[end]+1].(df[:,"Psychological well-being"])
-# 	fit=lm(X,y)
-# 	pval = normality(residuals(fit)).pval[1]
-# 	i%3000 == 0 && println(i)
-# 	# @show fit
-# 	if(pval>1e-20)
-# 		@show v i
-# 		println(pval)
-# 	end
-# end
-
-
-
-# covariate = covariate_fit
-# for combination in IterTools.subsets(covariate)
-# 	formula = FormulaTerm(Term(Symbol("Psychological well-being")), Tuple(Term.(Symbol.(combination))))
-# 	if length(combination) > 0
-# 	  fit=lm(formula, df)
-# 	  println(normality(residuals(fit)).pval[1])
-# 	end
-# 	# @show(formula)
-# end

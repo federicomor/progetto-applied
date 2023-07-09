@@ -414,31 +414,84 @@ hist(res)
 ```
 
 ### Modifiche suggerite da brute_force.jl
+```{r}
+minimum = min # funzione in julia, che qui si chiama solo min
+```
+
 
 ```{r}
+# pvalue 0.0527
 x1 = (data_woo$Approach.to.ICT)^2
 x2 = (data_woo$Use.of.ICT)
-x3 = log((data_woo$Teachers..degree)+abs(min((data_woo$Teachers..degree)))+1)
+x3 = (data_woo$Teachers..degree)^2
 x4 = (data_woo$Teacher.skill)^2
 x5 = (data_woo$ESCS)
-x6 = sqrt(abs((data_woo$RATCMP1)))
+x6 = (data_woo$RATCMP1)^2
 x7 = (data_woo$ICTSCH)^2
 x8 = (data_woo$HEDRES)^2
-x9 = (data_woo$STUBEHA)
-x10 = sqrt(abs((data_woo$ATTLNACT)))
+x9 = (data_woo$STUBEHA)^2
+x10 = (data_woo$ATTLNACT)^2
 x11 = (data_woo$JOYREAD)^2
-x12 = log((data_woo$PROAT6)+abs(min((data_woo$PROAT6)))+1)
+x12 = (data_woo$PROAT6)
 x13 = (data_woo$CLSIZE)
-x14 = (data_woo$EDUSHORT)
+x14 = (data_woo$EDUSHORT)^2
 x15 = (data_woo$STAFFSHORT)^2
 x16 = (data_woo$PV1MATH)^2
 x17 = (data_woo$PV1READ)
 y = (data_woo$Psychological.well.being)
+```
 
 
+```{r}
+# pvalue 0.04373
+x1 = (data_woo$Approach.to.ICT)^2
+x2 = (data_woo$Use.of.ICT)^2
+x3 = (data_woo$Teachers..degree)^2
+x4 = (data_woo$Teacher.skill)^2
+x5 = (data_woo$ESCS)
+x6 = log((data_woo$RATCMP1)+abs(minimum((data_woo$RATCMP1)))+1)
+x7 = (data_woo$ICTSCH)^2
+x8 = log((data_woo$HEDRES)+abs(minimum((data_woo$HEDRES)))+1)
+x9 = log((data_woo$STUBEHA)+abs(minimum((data_woo$STUBEHA)))+1)
+x10 = (data_woo$ATTLNACT)^2
+x11 = log((data_woo$JOYREAD)+abs(minimum((data_woo$JOYREAD)))+1)
+x12 = log((data_woo$PROAT6)+abs(minimum((data_woo$PROAT6)))+1)
+x13 = (data_woo$CLSIZE)
+x14 = (data_woo$EDUSHORT)
+x15 = (data_woo$STAFFSHORT)^2
+x16 = (data_woo$PV1MATH)
+x17 = (data_woo$PV1READ)^2
+y = (data_woo$Psychological.well.being)
+```
+
+
+```{r}
+# pvalue 0.05855
+x1 = (data_woo$Approach.to.ICT)^2
+x2 = (data_woo$Use.of.ICT)^2
+x3 = (data_woo$Teachers..degree)^2
+x4 = (data_woo$Teacher.skill)^2
+x5 = log((data_woo$ESCS)+abs(minimum((data_woo$ESCS)))+1)
+x6 = (data_woo$RATCMP1)
+x7 = (data_woo$ICTSCH)^2
+x8 = (data_woo$HEDRES)^2
+x9 = (data_woo$STUBEHA)^2
+x10 = (data_woo$ATTLNACT)^2
+x11 = (data_woo$JOYREAD)
+x12 = log((data_woo$PROAT6)+abs(minimum((data_woo$PROAT6)))+1)
+x13 = (data_woo$CLSIZE)
+x14 = log((data_woo$EDUSHORT)+abs(minimum((data_woo$EDUSHORT)))+1)
+x15 = log((data_woo$STAFFSHORT)+abs(minimum((data_woo$STAFFSHORT)))+1)
+x16 = (data_woo$PV1MATH)^2
+x17 = (data_woo$PV1READ)^2
+y = (data_woo$Psychological.well.being)
+```
+
+
+```{r}
 fit_social_lmm_woo = lmer(
-  y ~ x1 +x2 +x3 +x4 +x5 +x6 +x7 +x8 +x9 +x10 +x11 +x12 +x13 +x14 +x15 +x16 +x17+
-    (1|data_woo$NEW_VAR)
+y ~ x1 +x2 +x3 +x4 +x5 +x6 +x7 +x8 +x9 +x10 +x11 +x12 +x13 +x14 +x15 +x16 +x17 +
+    +(1|data_woo$NEW_VAR)
   )
 fit_social_lmm_woo
 
