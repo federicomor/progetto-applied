@@ -376,6 +376,7 @@ M = colMeans(data[,numerical_variables])
 S = cov(data[,numerical_variables])
 d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
 hist(d2,breaks = 300,xlim = c(0,300))
+abline(v=25,col="red")
 
 data_woo = data[which(d2 <= 25), ]
 print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
@@ -400,6 +401,19 @@ for(i in 1:(length(vars)-1) )
   boxplot(data_woo[,i]~data_woo$CNT,main=paste("By state,",vars[i]),
           col=colora(length(unique(data_woo$CNT))),las=2)
 # la funzione colora dovrebbe essere dentro Utilities
+```
+
+## Maybe more precise check about the filtering
+```{r}
+# cols = heat.colors(100)
+cols = gray.colors(100)
+
+image(cov(data_woo[,numerical_variables]),
+      breaks = quantile(cov(data_woo[,numerical_variables]),(0:100)/100),
+      col=cols)
+image(cov(data[,numerical_variables]),
+      breaks = quantile(cov(data[,numerical_variables]),(0:100)/100),
+      col=cols)
 ```
 
 
@@ -456,6 +470,7 @@ data_woo = data[which(d2 <= 28), ]
 print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
 print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
 ```
+
 
 ### Scaliamo
 ```{r}
