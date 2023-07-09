@@ -3,50 +3,59 @@ using StatsModels, DataFrames
 using Pingouin
 
 ############# Scoial well being #############
-df = DataFrame(CSV.File("../../data/pisa_scores_final.csv"))
-covariate_fit = [
-	"Approach to ICT"
-	"Use of ICT"
-	"Teachers' degree"
-	"Teacher skill"
-	# "ESCS"
-	"RATCMP1"
-	"ICTSCH"
-	# "ICTRES"
-	# "ENTUSE"
-	# "LM_MINS"
-	"HEDRES"
-	# "STUBEHA"
-	"ATTLNACT"
-	# "JOYREAD"
-	# "PROAT6"
-	# "TEACHBEHA"
-	# "STRATIO"
-	"CLSIZE"
-	# "EDUSHORT"
-	"STAFFSHORT"
-	"PV1MATH"
-	"PV1READ"
-	"CREACTIV"
-	# "CNT"
-	# "SCHLTYPE"
-	# "Social well-being"
-	# "Psychological well-being"
-	]
- 
-# formula_str = "\"Psychological well-being\" ~ "
-# iter=1
-# for cova in covariate_fit
-# 	global formula_str, iter
-# 	if iter==1
-# 		formula_str *= "\"$cova\""
-# 	else
-# 		formula_str *= " + \"$cova\""
-# 	end
-# 	iter=2
-# end
-# println(formula_str)
-# formula = @formula(formula_str)
+# df = DataFrame(CSV.File("../../data/pisa_scores_final.csv"))
+# covariate_fit = [
+# 	"Approach to ICT"
+# 	"Use of ICT"
+# 	"Teachers' degree"
+# 	"Teacher skill"
+# 	# # "ESCS"
+# 	"RATCMP1"
+# 	"ICTSCH"
+# 	# # "ICTRES"
+# 	# # "ENTUSE"
+# 	# # "LM_MINS"
+# 	"HEDRES"
+# 	# # "STUBEHA"
+# 	"ATTLNACT"
+# 	# # "JOYREAD"
+# 	# # "PROAT6"
+# 	# # "TEACHBEHA"
+# 	# # "STRATIO"
+# 	"CLSIZE"
+# 	# # "EDUSHORT"
+# 	"STAFFSHORT"
+# 	"PV1MATH"
+# 	"PV1READ"
+# 	"CREACTIV"
+# 	# "CNT"
+# 	# # "SCHLTYPE"
+# 	# # "Social well-being"
+# 	# # "Psychological well-being"
+# 	]
+Ytarget = "Psychological well-being" 
+
+df = DataFrame(CSV.File("data_woo.csv"))
+covariate_fit=[
+	"Approach.to.ICT"  
+	"Use.of.ICT"       
+	"Teachers..degree" 
+	"Teacher.skill"   
+	"ESCS"             
+	"RATCMP1"          
+	"ICTSCH"           
+	"HEDRES"          
+	"STUBEHA"          
+	"ATTLNACT"         
+	"JOYREAD"          
+	"PROAT6"          
+	"CLSIZE"           
+	"EDUSHORT"         
+	"STAFFSHORT"       
+	"PV1MATH"         
+	"PV1READ" 
+]
+Ytarget = "Psychological.well.being"
 
 f1(x) = x
 f2(x) = x^2
@@ -58,13 +67,23 @@ f7(x) = abs(x)
 f8(x) = log(x+abs(minimum(x))+1)
 f9(x) = sqrt(abs(x))
 
-println("## Performing random tests ##")
-############# Random tests #############
+fdict = [
+	"U", # f1
+	"U^2", # f2
+	# "U^3", # f3
+	# "exp(-U^2)", # f4
+	# "cos(U)", # f5
+	# "sin(U)", # f6
+	# "abs(U)", # f7
+	"log(U+abs(minimum(U))+1)", # f8
+	"sqrt(abs(U))" # f9
+]
+
 funzioni = [
 	f1 
 	f2 
-	f3 
-	f4
+	# f3 
+	# f4
 	# f5 
 	# f6
 	# f7
@@ -72,13 +91,26 @@ funzioni = [
 	f9
 ]
 
-SOGLIA_PVALUE = 1e-8
+
+println("## Performing random tests ##")
+println("Using as covariates:")
+for cova in covariate_fit
+	println(" :$cova")
+end
+println("And as functions:")
+for fun in fdict
+	println(" :$fun")
+end
+println("")
+############# Random tests #############
+
+SOGLIA_PVALUE = 0.40
 n_rand_tests = 100_000_000
-bestpval_ord = -80
+bestpval = 1e-16
 
 for i in 1:n_rand_tests
 	# print("Iteration $i\r")
-	global bestpval_ord
+	global bestpval
 	X = ones(size(df)[1])
 	# v=digits(i,base=length(funzioni)-1,pad=length(covariate_fit)+1)
 	v=rand(1:length(funzioni),length(covariate_fit)+1)
@@ -86,24 +118,34 @@ for i in 1:n_rand_tests
 	for j in 1:(length(v)-1)
 		X = [X funzioni[v[j]].(df[:,covariate[j]])]
 	end
-	y=funzioni[v[end]].(df[:,"Psychological well-being"])
+	y=funzioni[v[end]].(df[:,Ytarget])
 	
 	fit = ""
 	pval = ""
 	try
 		fit=lm(X,y)
 		pval = normality(residuals(fit)).pval[1]
-		# @show fit
 	catch e
 		@show e
 	end
 	if(pval>SOGLIA_PVALUE)
 		println("\nFound something: ")
+		println(pval)
 		@show v
-		# println("pvalue = $pval")
+		for i in 1:length(covariate_fit)
+			println("x$i = ",
+				replace(fdict[v[i]],"U"=>"(data_woo\$$(covariate_fit[i]))"))
+		end
+		println("y = ",replace(fdict[v[end]],"U"=>"(data_woo\$$Ytarget)"))
+		
+		print("y ~ ")
+		for i in 1:length(covariate_fit)
+			print("x$i +")
+		end
+		println("")
 	end
-		bestpval_ord = max(bestpval_ord,log10(pval))
-		i%100==0 && print("Iteration $i | Pvalue order: $(log10(pval)) | Min till now pvalue order: $bestpval_ord\r")
+		bestpval= max(bestpval,pval)
+		i%100==0 && print("Iteration $i | Pvalue: $pval | Min till now pvalue: $bestpval\r")
 end
 
 

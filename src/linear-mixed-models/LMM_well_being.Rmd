@@ -413,6 +413,66 @@ hist(res)
 
 ```
 
+### Modifiche suggerite da brute_force.jl
+
+```{r}
+x1 = (data_woo$Approach.to.ICT)^2
+x2 = (data_woo$Use.of.ICT)
+x3 = log((data_woo$Teachers..degree)+abs(min((data_woo$Teachers..degree)))+1)
+x4 = (data_woo$Teacher.skill)^2
+x5 = (data_woo$ESCS)
+x6 = sqrt(abs((data_woo$RATCMP1)))
+x7 = (data_woo$ICTSCH)^2
+x8 = (data_woo$HEDRES)^2
+x9 = (data_woo$STUBEHA)
+x10 = sqrt(abs((data_woo$ATTLNACT)))
+x11 = (data_woo$JOYREAD)^2
+x12 = log((data_woo$PROAT6)+abs(min((data_woo$PROAT6)))+1)
+x13 = (data_woo$CLSIZE)
+x14 = (data_woo$EDUSHORT)
+x15 = (data_woo$STAFFSHORT)^2
+x16 = (data_woo$PV1MATH)^2
+x17 = (data_woo$PV1READ)
+y = (data_woo$Psychological.well.being)
+
+
+fit_social_lmm_woo = lmer(
+  y ~ x1 +x2 +x3 +x4 +x5 +x6 +x7 +x8 +x9 +x10 +x11 +x12 +x13 +x14 +x15 +x16 +x17+
+    (1|data_woo$NEW_VAR)
+  )
+fit_social_lmm_woo
+
+sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
+sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
+
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+print(paste("PVRE =",PVRE))
+
+## visualization of the random intercepts with their 95% confidence intervals
+# Random effects: b_0i for i=1,...,234
+dotplot(ranef(fit_social_lmm_woo, condVar=T))
+```
+### Assumptions check
+```{r}
+# normality of residuals
+fm = fit_social_lmm_woo
+qqnorm(resid(fm))
+qqline(resid(fm), col='red', lwd=2)
+shapiro.test(resid(fm))
+# normality of random effects
+# case only interecept
+qqnorm(unlist(ranef(fm)),
+main='Normal Q-Q Plot - Random Effects on Intercept')
+qqline(unlist(ranef(fm)), col='red', lwd=2)
+# case interecept and slope
+boxplot(residuals(fm)~data_woo$NEW_VAR,las=2)
+
+res = residuals(fm)
+hist(res)
+
+```
+
+
 
 
 ## [6.3] Combinando le due idee
