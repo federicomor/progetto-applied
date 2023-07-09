@@ -145,48 +145,6 @@ vars_chosen_social <- bwd[2:max_vars]
 writeLines(vars_chosen_social,"../../data/lm_social_vars.txt")
 ```
 
-##  K-fold-cross-validation (exhaustive search)
-```{r, warning=FALSE, message=FALSE}
-p = nv_max
-k = 10
-folds = sample(1:k,nrow(data),replace=TRUE)
-table(folds)
-
-# Function that performs the prediction for regsubsets
-predict.regsubsets = function(object,newdata,id){
-  form  = as.formula(object$call[[2]])
-  mat   = model.matrix(form,newdata)
-  coefi = coef(object,id=id)
-  xvars = names(coefi)
-  mat[,xvars]%*%coefi
-}
-
-cv.errors = matrix(NA,k,p, dimnames=list(NULL, paste(1:nv_max)))
-
-for(j in 1:k){
-  best.fit = regsubsets(FORMULA_COMPLETE_SOCIAL,data=data[folds!=j,],nvmax=nv_max,really.big=T)
-  for(i in 1:p){
-    pred = predict(best.fit,data[folds==j,],id=i)
-    cv.errors[j,i] = mean( (data$Y[folds==j]-pred)^2 )
-  }
-}
-
-cv.errors
-
-root.mean.cv.errors = sqrt(apply(cv.errors,2,mean)) # average over the columns
-root.mean.cv.errors
-
-# Plot
-plot(root.mean.cv.errors,type='b')
-points(which.min(root.mean.cv.errors),
-       root.mean.cv.errors[which.min(root.mean.cv.errors)], col='red',pch=19)
-which.min(root.mean.cv.errors)
-
-# Estimation on the full dataset
-reg.best = regsubsets(FORMULA_COMPLETE_SOCIAL.,data=data, nvmax=nv_max)
-coef(reg.best,10)
-
-```
 
 # [3] Fit final model
 ```{r}
@@ -263,7 +221,7 @@ plot(fm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
 # but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
 
 plot(fm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
-bwplot(resid(fm_var) ~ NEW_VAR, pch = "|", data = data)
+bwplot(resid(fm) ~ NEW_VAR, pch = "|", data = data)
 # The boxand-whiskers plots clearly show an increasing variance of the residuals.
 
 ## Pearson residuals 
@@ -273,7 +231,7 @@ bwplot(resid(fm_var) ~ NEW_VAR, pch = "|", data = data)
 
 plot(fm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
 plot(fm,resid(., type = "pearson") ~ as.numeric(NEW_VAR)) 
-bwplot( resid(fm_var, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
+bwplot( resid(fm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
         pch = "|", data = data)
 ## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
 ```
@@ -329,7 +287,6 @@ boxplot(residuals(fm)~data$NEW_VAR,las=2)
 
 res = residuals(fm)
 hist(res)
-shapiro.test(log(res+abs(min(res))+1))
 ```
 
 ```{r}
@@ -450,7 +407,7 @@ boxplot(residuals(fm)~data_woo$NEW_VAR,las=2)
 
 res = residuals(fm)
 hist(res)
-shapiro.test(log(res+abs(min(res))+1))
+
 ```
 
 
@@ -533,7 +490,7 @@ boxplot(residuals(fm)~data_woo_scaled$NEW_VAR,las=2)
 
 res = residuals(fm)
 hist(res)
-shapiro.test(log(res+abs(min(res))+1))
+
 ```
 
 
