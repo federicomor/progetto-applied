@@ -921,3 +921,71 @@ res = residuals(fm)
 hist(res)
 shapiro.test(res)
 ```
+
+
+# PREDICTION
+```{r}
+linear_model_vars <- readLines("../../data/lm_social_vars.txt")
+filter <- function(category,var_lm) {
+  risultato <- c()
+  
+  for (elemento in category) {
+    if (elemento %in% var_lm) {
+      risultato <- c(risultato, elemento)
+    }
+  }
+  
+  return(risultato)
+}
+
+
+categories_variables_filtered=list()
+
+for(cat in cat_var_names ){
+  categories_variables_filtered[[cat]]=filter(categories_variables[[cat]],linear_model_vars)
+}
+
+categories_variables_filtered
+```
+```{r}
+fattori=c(tech=10,
+          teach=10,
+          school=20,
+          student=10,
+          family=30
+)
+fattori=fattori/100
+country_chosen="CZE"
+is_public = 0
+
+names_fattori = names(categories_variables_filtered)
+values_for_predict=list()
+for(i in 1:5){
+  temp=NULL
+  for(j in 1:length(categories_variables_filtered[[i]])){
+    covariate = data[,categories_variables_filtered[[i]][j]]
+    temp=c(temp,quantile(covariate,fattori[i]))
+  }
+  values_for_predict[[names_fattori[i]]]=temp
+}
+values_for_predict
+```
+
+```{r}
+new_data = data.frame(t(unlist(values_for_predict)))
+colnames(new_data)=linear_model_vars
+#new_data$CNT=country_chosen
+#new_data$IM_PUBLIC = is_public
+new_data$NEW_VAR = "CZE-0"
+new_data
+
+alpha = 0.05
+
+Pred = predict(fit_social_lmm, new_data, interval='prediction', level=1-alpha)
+Pred
+
+```
+
+
+
+
