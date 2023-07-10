@@ -21,8 +21,8 @@ tg = TelegramClient(BOT_API)
 cols_dict = Dict(
     "player_id"=>Int64(0),"player_name"=>"Pippo",
     "state"=>"ITA",
-    "tec"=>Float64(0),"psi"=>Float64(0),"clt"=>Float64(0),
-    "fam"=>Float64(0),"tch"=>Float64(0),"sch"=>Float64(0),
+    "tec"=>Float64(0),"tch"=>Float64(0),"sch"=>Float64(0),
+    "stu"=>Float64(0),"fam"=>Float64(0),
     "score"=>Float64(0),
     "zdone"=>Int64(0) ) # z to let it be at the end of the dataframe
 df = DataFrame(cols_dict)
@@ -51,6 +51,7 @@ include("const_variables.jl")
 
 ############# Include game functions #############
 include("game_functions.jl")
+
 
 println("Ready to play.")
 ############# Real program #############
@@ -130,7 +131,7 @@ function handle_command(msg)
                     chat_id=chat_id)
         else
             sendMessage(tg,
-                    text="*Danger zone!* You are about to confirm your game parameters, and so you won't be able to change them after that.\nIf your are sure, type \"/done yes\" to actually confirm them.",
+                    text="*Danger zone!*\nYou are about to confirm your game parameters, and so you won't be able to change them after that.\nIf your are sure, type \"/done yes\" to actually confirm them.",
                     chat_id=chat_id,
                     parse_mode="Markdown")
         end
@@ -207,19 +208,17 @@ function handle_command(msg)
 
     elseif msg_text == "/budget"
         to_send = """
-            Choose how you want to manage your budget. How much do you want to invest on the following categories? It is also indicated what will it mean to invest on a certain category.
+            Choose how you want to manage your budget. How much do you want to invest on the following categories?
             *tec* = technology
-            More expertise and knowledge in the informatic for children.
-            *psi* = psychology
-            More awareness in the psychological context in which the children live.
-            *clt* = culture
-            An improvement in the cultural ambient quality where the children live.
-            *fam* = family
-            More awareness in the children needs from the parents.
+            Make more available technology for children, increasing their contact with computers, at home and school, for studying, gaming, chatting, etc.
             *tch* = teacher
-            More awareness in the children needs from the teachers.
+            Invest in increasing teachers' skills, in hiring more qualified people, etc.
             *sch* = school
-            A general improvement in the school quality."""
+            Manage schools to have enough materials and personal, balance student/professors ratio, class sizes, introduce external activities, etc.
+            *stu* = culture
+            Make students spend more time studying, and in general enjoying cultural activities, like reading, playing small challenges, also toghether with their classmates, etc.
+            *fam* = family
+            Increase the educational resources that family can give to their children, and try to also support them financially, with bonuses, etc."""
         sendMessage(tg,
             text=to_send,
             chat_id = chat_id,

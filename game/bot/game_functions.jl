@@ -98,7 +98,15 @@ function process_keyword_value(text, player_id)
     elseif key == "play" && done==0
         if uppercase(val) in STATES || val in STATES
             set_player_data(player_id, :state, uppercase(val))
-            return "Game parameters updated.\nSee them with /summary."
+            # return "Game parameters updated.\nSee them with /summary."
+            str_summary = summary_player(player_id)
+            amount_invested = get_amount_invested(player_id)
+            str_return = "Total amount invested: $amount_invested "
+            if amount_invested>100
+                str_return *= "(amount>100, we will normalize everything later, dont worry) "
+            end
+            str_return *= "\n$str_summary"
+            return str_return
         else
             return "Error: give a correct state acronym.\nSee /state for the possibilities."
         end
@@ -113,7 +121,15 @@ function process_keyword_value(text, player_id)
         if 0<=val_num<=100
             set_player_data(player_id, Symbol(key), val_num)
             # normalize_player_data(player_id)
-            return "Game parameters updated.\nSee them with /summary."
+            # return "Game parameters updated.\nSee them with /summary."
+            str_summary = summary_player(player_id)
+            amount_invested = get_amount_invested(player_id)
+            str_return = "Total amount invested: $amount_invested "
+            if amount_invested>100
+                str_return *= "(amount>100, we will normalize everything later, dont worry, or fix nom by inserting lower amounts) "
+            end
+            str_return *= "\n$str_summary"
+            return str_return
         else
             return "Error: give a value in [0,100]."
         end

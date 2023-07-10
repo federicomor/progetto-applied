@@ -1,3 +1,2 @@
-clt,fam,player_id,player_name,psi,sch,score,state,tch,tec,zdone
-
-#==================== PARAMETERS ====================#
+fam,player_id,player_name,sch,score,state,stu,tch,tec,zdone
+0.0,641681765,Fede_Mor,10.0,0.0,missing,0.0,33.0,15.0,0

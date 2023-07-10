@@ -104,7 +104,7 @@ end
 println("")
 ############# Random tests #############
 
-SOGLIA_PVALUE = 0.80
+SOGLIA_PVALUE = 0.85
 n_rand_tests = 100_000_000
 bestpval = 1e-16
 
