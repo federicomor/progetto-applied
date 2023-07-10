@@ -197,8 +197,9 @@ for (col in 1:p){
       }
      
       inf = mean_lab_1[[col]][i]-mean_lab_1[[col]][j]-qT*sqrt(diag(W)[col]/(n-g) * (1/ng[i]+1/ng[j]))
+      mean= mean_lab_1[[col]][i]-mean_lab_1[[col]][j]
       sup = mean_lab_1[[col]][i]-mean_lab_1[[col]][j]+qT*sqrt(diag(W)[col]/(n-g) * (1/ng[i]+1/ng[j]))
-      INT = cbind("inf" = inf, "sup"=sup)
+      INT = cbind("inf" = inf, "mean"=mean,"sup"=sup)
       #rownames(INT)=colnames(data)
       CI_temp = rbind(CI_temp,INT)
     }
@@ -207,6 +208,51 @@ for (col in 1:p){
   CI[[colnames(measures)[col]]]=CI_temp
 }
 ```
+```{r}
+for(j in 1:p){
+  boxplot(measures[,j]~data$label_1, main=paste(colnames(measures)[j]),
+          ylim=c(round(min(measures[,j])),
+          round(max(measures[,j]))), col = rainbow(g))
+   abline(h=0)
+}
+# Order boxes by median
+
+
+
+
+### cambia nome titolo
+for(k in 1:p){
+    group_ordered <- with(data,                      
+                      reorder(data$label_1,
+                              measures[,k],
+                              median))
+  boxplot(measures[,k]~group_ordered, main=paste(colnames(measures)[k]),las=2,
+          ylim=c(round(min(measures[,k])),
+          round(max(measures[,k]))), col = rainbow(g))
+   abline(h=0)
+   
+   
+  plot(c(1,g*(g-1)/2),ylim=c(min(unlist(CI[[k]])),max(unlist(CI[[k]]))), xlim=c(c(1,g*(g-1)/2)), pch='',
+       xlab='pairs treat', ylab=paste('CI tau',colnames(measures)[k]), main=paste('CI tau',colnames(measures)[k]))
+    abline(h=0)
+  
+ for(i in 1:(g-1)) {
+  for(j in (i+1):g) {
+    ind <- (i-1)*g-i*(i-1)/2+(j-i)
+
+    if(CI[[k]][ind,1]*CI[[k]][ind,3]>0){
+        lines (c(ind,ind), c(CI[[k]][ind,1],CI[[k]][ind,3])); 
+        points(ind, CI[[k]][ind,2], col="black", pch=16); 
+        points(ind, CI[[k]][ind,1], col=rainbow(g)[j], pch=16); 
+        points(ind, CI[[k]][ind,3], col=rainbow(g)[i], pch=16); 
+    }
+
+   }
+  }
+}
+  
+```
+
 # which variables produce the most difference
 ```{r}
 counter=list()
@@ -222,3 +268,44 @@ for ( col in 1:p){
 counter
 ```
 
+
+# IM_PUBLIC
+```{r, warning=FALSE, message=FALSE}
+k = p*b*(b-1)/2
+n = dim(data)[1]
+
+CI_2 = list()
+confronti=NULL
+for (col in 1:p){
+  CI_temp = NULL
+  for (i in 1:(b-1)){
+    for (j in (i+1):b){
+      if(col==1){
+         confronti = c(confronti,(paste(factor2[i],"-",factor2[j])))
+      }
+     
+      inf = mean_lab_2[[col]][i]-mean_lab_2[[col]][j]-qT*sqrt(diag(W)[col]/(n-g) * (1/nb[i]+1/nb[j]))
+      sup = mean_lab_2[[col]][i]-mean_lab_2[[col]][j]+qT*sqrt(diag(W)[col]/(n-g) * (1/nb[i]+1/nb[j]))
+      INT = cbind("inf" = inf, "sup"=sup)
+      #rownames(INT)=colnames(data)
+      CI_temp = rbind(CI_temp,INT)
+    }
+  }
+  rownames(CI_temp)=confronti
+  CI_2[[colnames(measures)[col]]]=CI_temp
+}
+```
+# which variables produce the most difference
+```{r}
+counter_2=list()
+for ( col in 1:p){
+  temp = CI[[colnames(measures)[col]]]
+  count=0
+  for(i in 1:(b*(b-1)/2)){
+    if(temp[i,1]*temp[i,2]>0)
+      count=count+1
+  }
+  counter_2[[colnames(measures)[col]]]=count
+}
+counter_2
+```
