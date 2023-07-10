@@ -158,6 +158,44 @@ summary(fit_social_final)
 
 
 
+## Test comparison with model in julia (for the bot)
+```{r}
+fit_social_final_woo = lm(formula_social,data=data_woo)
+summary(fit_social_final_woo)
+new_obs = c(
+    "Approach.to.ICT" = -0.302220835650176,
+    "Use.of.ICT" = -0.28601714192945127,
+    "Teachers..degree" = 0.030637217864519915,
+    "Teacher.skill" = -0.11987012301766596,
+    "ESCS" = -1.8796,
+    "RATCMP1" = 0.4,
+    "ICTSCH" = 5.754853884629829,
+    "HEDRES" = -1.21101666666667,
+    "STUBEHA" = -3.3785,
+    "ATTLNACT" = -1.12032240720721,
+    "JOYREAD" = -1.06053157894737,
+    "PROAT6" = 0.0179,
+    "CLSIZE" = 18.0,
+    "EDUSHORT" = -0.6884,
+    "STAFFSHORT" = -1.4551,
+    "PV1MATH" = 299.5306,
+    "PV1READ" = 299.869,
+  "CNT" = "ESP",
+  "IM_PUBLIC" = 1)
+data.frame(new_obs)
+data.frame(t(new_obs))
+new_data = data.frame(t(new_obs))
+new_data[,1:17] = as.numeric(new_data[,1:17])
+new_data$CNT = as.factor(new_data$CNT)
+new_data
+
+predict(fit_social_final_woo,new_data)
+# julia> predict(lmodel,new_obs)
+# 1-element Vector{Float64}:
+# -1.5243554235967274
+```
+
+
 # [4] Analysis of residuals
 ```{r}
 par(mfrow=c(2,2))

@@ -42,9 +42,9 @@ end
 # 	CSV.write("df.csv", data)
 # end
 
-
 sort!(data,:score,rev=true)
 # ora il dataset è ordinato
+@show data
 
 ############# Scoreboard 1 #############
 # println("Writing scoreboard 1...")
