@@ -16,5 +16,5 @@ FULL_STATES = Dict(
     "SVN"=>"Slovenia",
     "ESP"=>"Spain" )
 
-CATEGORIES = ["tec" "psi" "clt" "fam" "tch" "sch"]
-KEYWORDS = ["callme" "play" "tec" "psi" "clt" "fam" "tch" "sch"]
+CATEGORIES = ["tec" "tch" "sch" "stu" "fam"]
+KEYWORDS = ["callme" "play" "tec" "tch" "sch" "stu" "fam"]
