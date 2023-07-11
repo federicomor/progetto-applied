@@ -52,6 +52,12 @@ linear_model_vars <- readLines("../../data/lm_social_vars.txt")
 ## **2.** Exploration
 ```{r, warning=FALSE, message=FALSE}
 p =length(linear_model_vars)
+add_well_being = 1
+if(add_well_being){
+  linear_model_vars = c(linear_model_vars,"Social.well.being","Psychological.well.being")
+  p=p+2
+}
+
 measures <- data[,linear_model_vars]
 
 Label_1 <- as.factor(data[,"CNT"])
@@ -221,47 +227,42 @@ for (col in 1:p){
   CI[[colnames(measures)[col]]]=CI_temp
 }
 ```
+
+
+
 ```{r}
-for(j in 1:p){
-  boxplot(measures[,j]~data$label_1, main=paste(colnames(measures)[j]),
-          ylim=c(round(min(measures[,j])),
-          round(max(measures[,j]))), col = rainbow(g))
-   abline(h=0)
-}
-# Order boxes by median
-
-
-
-
-### cambia nome titolo
+gruoup_ordered_list = list()
+livelli_fittizzi = c(rep("low",5),rep("medium",5),rep("high",4))
 for(k in 1:p){
     group_ordered <- with(data,                      
                       reorder(data$label_1,
                               measures[,k],
                               median))
-  boxplot(measures[,k]~group_ordered, main=paste(colnames(measures)[k]),las=2,
+    boxplot(measures[,k]~group_ordered, main=paste(colnames(measures)[k]),las=2,
           ylim=c(round(min(measures[,k])),
           round(max(measures[,k]))), col = rainbow(g))
-   abline(h=0)
-   
-   
-  plot(c(1,g*(g-1)/2),ylim=c(min(unlist(CI[[k]])),max(unlist(CI[[k]]))), xlim=c(c(1,g*(g-1)/2)), pch='',
-       xlab='pairs treat', ylab=paste('CI tau',colnames(measures)[k]), main=paste('CI tau',colnames(measures)[k]))
     abline(h=0)
+   
+    plot(c(1,g*(g-1)/2),ylim=c(min(unlist(CI[[k]])),max(unlist(CI[[k]]))), xlim=c(c(1,g*(g-1)/2)),
+         pch='',xlab='pairs treat', ylab=paste('CI tau',colnames(measures)[k]), 
+         main=paste('CI tau',colnames(measures)[k]))
+    abline(h=0)
+    
+    gruoup_ordered_list[[colnames(measures)[k]]] = data.frame(levels(group_ordered),livelli_fittizzi)
+    gruoup_ordered_list[[colnames(measures)[k]]]$livelli_fittizzi=as.factor( gruoup_ordered_list[[colnames(measures)[k]]]$livelli_fittizzi)
   
- for(i in 1:(g-1)) {
-  for(j in (i+1):g) {
-    ind <- (i-1)*g-i*(i-1)/2+(j-i)
-
-    if(CI[[k]][ind,1]*CI[[k]][ind,3]>0){
-        lines (c(ind,ind), c(CI[[k]][ind,1],CI[[k]][ind,3])); 
-        points(ind, CI[[k]][ind,2], col="black", pch=16); 
-        points(ind, CI[[k]][ind,1], col=rainbow(g)[j], pch=16); 
-        points(ind, CI[[k]][ind,3], col=rainbow(g)[i], pch=16); 
+    for(i in 1:(g-1)) {
+      for(j in (i+1):g) {
+        ind <- (i-1)*g-i*(i-1)/2+(j-i)
+      
+        if(CI[[k]][ind,1]*CI[[k]][ind,3]>0){
+            lines (c(ind,ind), c(CI[[k]][ind,1],CI[[k]][ind,3])); 
+            points(ind, CI[[k]][ind,2], col="black", pch=16); 
+            points(ind, CI[[k]][ind,1], col=rainbow(g)[j], pch=16); 
+            points(ind, CI[[k]][ind,3], col=rainbow(g)[i], pch=16); 
+        }
+     }
     }
-
-   }
-  }
 }
   
 ```
@@ -322,6 +323,8 @@ for ( col in 1:p){
 }
 counter_2
 ```
+
+# DATA PREP FOR MAPS
 ```{r}
 all_countries <- c("AUT", "BEL", "BGR", "CYP", "CZE", "DEU", "DNK", "ESP", "EST", "FIN", "FRA", "GRC", "HRV", "HUN", "IRL", "ITA", "LTU", "LUX", "LVA", "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "SWE")
 
@@ -331,15 +334,12 @@ sf_use_s2(FALSE)
 centroids <- st_centroid(europe_map)
 
 europe_map <- cbind(europe_map, st_coordinates(st_centroid(europe_map$geometry)))
-
-
-
 ```
 
-
+# CONTINUOUS MAPS
 ```{r}
 
-for (k in 1:3){
+for (k in 1:1){
     means = data.frame(mean_lab_1[[k]],names(mean_lab_1[[k]]))
     colnames(means)=c("mean_value","adm0_a3")
     for (country in all_countries) {
@@ -372,13 +372,62 @@ for (k in 1:3){
       scale_x_continuous(limits = c(-10, 35)) +
       scale_y_continuous(limits = c(35, 68))+
       theme_void()+
-      geom_text(aes(x = X, y = Y, label = name),
+      geom_text_repel(aes(x = X, y = Y, label = name),
                 data = subset(europe_joined, !is.na(mean_value)),
-                size = 3.5)
-  ) 
+                size = 3.5,                   # Increase the size of the labels
+                colour = "black",          # Set the color of the labels
+                fontface = "bold",          # Set the font weight to bold
+                label.padding = unit(0.5, "lines"),   # Add padding around the label
+                label.r = unit(0.2, "lines"),         # Set the radius of the label's rounded corners
+                label.color = "black",                 # Set the color of the label's border
+                label.size = 0.8,                      # Set the size of the label's border
+                label.fill = "white"                    # Set the color of the label's background
+                ) 
     
-    
+    )
 }
 
 ```
+#DISCRETE MAPS
+```{r}
+
+for (k in 1:p){
+    means = gruoup_ordered_list[[k]]
+    means = data.frame(gruoup_ordered_list[[k]][,2],gruoup_ordered_list[[k]][,1])
+    colnames(means)=c("mean_value","adm0_a3")
+    for (country in all_countries) {
+      # Check if the country is already in the dataset
+      if (!(country %in% means$adm0_a3)) {
+        # If not, add the country to the dataset with a value of 0
+        means <- rbind(means, data.frame(adm0_a3 = country, mean_value = NA))
+      }
+    }
+
+    europe_joined <- merge(europe_map, means, by = c("adm0_a3"))
+    
+    print(
+      europe_joined %>% ggplot(aes(fill = mean_value)) +
+      geom_sf(size = 0.2, color = "black") + # border line
+    scale_fill_manual(
+    values = c("low" = "royalblue", "medium" = "forestgreen", "high" = "darkorange"),
+    na.value = "white"  # Specify the color for NA values
+  ) +
+      labs(
+        title =colnames(measures)[k],
+        subtitle = "MANOVA") +
+      scale_x_continuous(limits = c(-10, 35)) +
+      scale_y_continuous(limits = c(35, 68))+
+      theme_void()+
+      geom_text_repel(aes(x = X, y = Y, label = name),
+                data = subset(europe_joined, !is.na(mean_value)),
+                size = 3.5,                   # Increase the size of the labels
+                colour = "black",          # Set the color of the labels
+                fontface = "bold",          # Set the font weight to bold
+                ) 
+    
+    )
+}
+
+```
+
 
