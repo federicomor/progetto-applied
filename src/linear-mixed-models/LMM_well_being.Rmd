@@ -1,6 +1,6 @@
 ---
 title: "R Notebook"
-output: html_notebook
+# output: html_notebook
 editor_options:
   chunk_output_type: inline
 ---
@@ -456,75 +456,7 @@ hist(res)
 minimum = min # funzione in julia, che qui si chiama solo min
 ```
 
-
-```{r}
-# pvalue 0.0527
-x1 = (data_woo$Approach.to.ICT)^2
-x2 = (data_woo$Use.of.ICT)
-x3 = (data_woo$Teachers..degree)^2
-x4 = (data_woo$Teacher.skill)^2
-x5 = (data_woo$ESCS)
-x6 = (data_woo$RATCMP1)^2
-x7 = (data_woo$ICTSCH)^2
-x8 = (data_woo$HEDRES)^2
-x9 = (data_woo$STUBEHA)^2
-x10 = (data_woo$ATTLNACT)^2
-x11 = (data_woo$JOYREAD)^2
-x12 = (data_woo$PROAT6)
-x13 = (data_woo$CLSIZE)
-x14 = (data_woo$EDUSHORT)^2
-x15 = (data_woo$STAFFSHORT)^2
-x16 = (data_woo$PV1MATH)^2
-x17 = (data_woo$PV1READ)
-y = (data_woo$Psychological.well.being)
-```
-
-
-```{r}
-# pvalue 0.04373
-x1 = (data_woo$Approach.to.ICT)^2
-x2 = (data_woo$Use.of.ICT)^2
-x3 = (data_woo$Teachers..degree)^2
-x4 = (data_woo$Teacher.skill)^2
-x5 = (data_woo$ESCS)
-x6 = log((data_woo$RATCMP1)+abs(minimum((data_woo$RATCMP1)))+1)
-x7 = (data_woo$ICTSCH)^2
-x8 = log((data_woo$HEDRES)+abs(minimum((data_woo$HEDRES)))+1)
-x9 = log((data_woo$STUBEHA)+abs(minimum((data_woo$STUBEHA)))+1)
-x10 = (data_woo$ATTLNACT)^2
-x11 = log((data_woo$JOYREAD)+abs(minimum((data_woo$JOYREAD)))+1)
-x12 = log((data_woo$PROAT6)+abs(minimum((data_woo$PROAT6)))+1)
-x13 = (data_woo$CLSIZE)
-x14 = (data_woo$EDUSHORT)
-x15 = (data_woo$STAFFSHORT)^2
-x16 = (data_woo$PV1MATH)
-x17 = (data_woo$PV1READ)^2
-y = (data_woo$Psychological.well.being)
-```
-
-
-```{r}
-# pvalue 0.05855
-x1 = (data_woo$Approach.to.ICT)^2
-x2 = (data_woo$Use.of.ICT)^2
-x3 = (data_woo$Teachers..degree)^2
-x4 = (data_woo$Teacher.skill)^2
-x5 = log((data_woo$ESCS)+abs(minimum((data_woo$ESCS)))+1)
-x6 = (data_woo$RATCMP1)
-x7 = (data_woo$ICTSCH)^2
-x8 = (data_woo$HEDRES)^2
-x9 = (data_woo$STUBEHA)^2
-x10 = (data_woo$ATTLNACT)^2
-x11 = (data_woo$JOYREAD)
-x12 = log((data_woo$PROAT6)+abs(minimum((data_woo$PROAT6)))+1)
-x13 = (data_woo$CLSIZE)
-x14 = log((data_woo$EDUSHORT)+abs(minimum((data_woo$EDUSHORT)))+1)
-x15 = log((data_woo$STAFFSHORT)+abs(minimum((data_woo$STAFFSHORT)))+1)
-x16 = (data_woo$PV1MATH)^2
-x17 = (data_woo$PV1READ)^2
-y = (data_woo$Psychological.well.being)
-```
-
+Da sistemare scegliendo trasformazioni 
 
 ```{r}
 fit_social_lmm_woo = lmer(
@@ -767,18 +699,18 @@ vars = c(bwd[2:max_vars],"(1|NEW_VAR)")
 FORMULA_LMM <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
 FORMULA_LMM
 
-fit_social_lmm = lmer(FORMULA_LMM,data=data)
-fit_social_lmm
+fit_psych_lmm = lmer(FORMULA_LMM,data=data)
+fit_psych_lmm
 
-sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm))
-sigma2_b <- as.numeric(get_variance_random(fit_social_lmm))
+sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm))
+sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm))
 
 PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
 print(paste("PVRE =",PVRE))
 
 ## visualization of the random intercepts with their 95% confidence intervals
 # Random effects: b_0i for i=1,...,234
-dotplot(ranef(fit_social_lmm, condVar=T))$NEW_VAR
+dotplot(ranef(fit_psych_lmm, condVar=T))$NEW_VAR
 ```
 
 
@@ -788,30 +720,30 @@ dotplot(ranef(fit_social_lmm, condVar=T))$NEW_VAR
 ### assumptions check
 ```{r}
 # normality of residuals
-qqnorm(resid(fit_social_lmm))
-qqline(resid(fit_social_lmm), col='red', lwd=2)
-shapiro.test(resid(fit_social_lmm))
+qqnorm(resid(fit_psych_lmm))
+qqline(resid(fit_psych_lmm), col='red', lwd=2)
+shapiro.test(resid(fit_psych_lmm))
 # normality of random effects
 # case only interecept
-qqnorm(unlist(ranef(fit_social_lmm)$NEW_VAR),
+qqnorm(unlist(ranef(fit_psych_lmm)$NEW_VAR),
 main='Normal Q-Q Plot - Random Effects on Intercept')
-qqline(unlist(ranef(fit_social_lmm)$NEW_VAR), col='red', lwd=2)
+qqline(unlist(ranef(fit_psych_lmm)$NEW_VAR), col='red', lwd=2)
 # case interecept and slope
-boxplot(residuals(fit_social_lmm)~data$NEW_VAR,las=2)
+boxplot(residuals(fit_psych_lmm)~data$NEW_VAR,las=2)
 
-res = residuals(fit_social_lmm)
+res = residuals(fit_psych_lmm)
 hist(res)
 shapiro.test(log(res+abs(min(res))+1))
 ```
 
 ```{r}
 ## raw residuals
-plot(fit_social_lmm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
+plot(fit_psych_lmm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
 # We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
 # but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
 
-plot(fit_social_lmm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
-bwplot(resid(fit_social_lmm) ~ NEW_VAR, pch = "|", data = data)
+plot(fit_psych_lmm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
+bwplot(resid(fit_psych_lmm) ~ NEW_VAR, pch = "|", data = data)
 # The boxand-whiskers plots clearly show an increasing variance of the residuals.
 
 ## Pearson residuals
@@ -819,9 +751,9 @@ bwplot(resid(fit_social_lmm) ~ NEW_VAR, pch = "|", data = data)
 ## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
 
 
-plot(fit_social_lmm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
-plot(fit_social_lmm,resid(., type = "pearson") ~ as.numeric(NEW_VAR))
-bwplot( resid(fit_social_lmm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
+plot(fit_psych_lmm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
+plot(fit_psych_lmm,resid(., type = "pearson") ~ as.numeric(NEW_VAR))
+bwplot( resid(fit_psych_lmm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
         pch = "|", data = data)
 ## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
 ```
@@ -1022,10 +954,424 @@ new_data
 
 alpha = 0.05
 
-Pred = predict(fit_social_lmm, new_data, interval='prediction', level=1-alpha)
+Pred = predict(fit_psych_lmm, new_data, interval='prediction', level=1-alpha)
 Pred
 
 ```
+
+
+# ????????????????????????????????????????????
+
+# Definzione precisa data_woo
+```{r}
+FORMULA_SOCIAL = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
+
+FORMULA_SOCIAL_LMM  = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
+
+FORMULA_PSYCH = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
+
+FORMULA_PSYCH_LMM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
+```
+
+
+```{r}
+data
+colnames(data)
+numerical_variables = c(1:15,17:22) # selected from the two above formula
+# quindi tutte le numeriche tranne teachbea che non c'è in entrambe
+# e anche tranne creactiv per lo stesso motivo
+
+M = colMeans(data[,numerical_variables])
+S = cov(data[,numerical_variables])
+d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
+hist(d2,breaks = 300,xlim = c(0,300))
+#==========================#
+SOGLIA = 25
+#==========================#
+abline(v=SOGLIA,col="red")
+
+data_woo = data[which(d2 <= SOGLIA), ]
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
+```
+
+
+```{r}
+  fit_social_lmm_woo = lmer(FORMULA_SOCIAL_LMM,data=data_woo);
+  # fit_social_lmm_woo
+  sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
+  sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
+  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+  print(paste("PVRE social =",PVRE))
+  # PVRE_social = c(PVRE_social,PVRE)
+  
+  fit_psych_lmm_woo = lmer(FORMULA_PSYCH_LMM,data=data_woo);
+  # fit_psych_lmm_woo
+  sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm_woo))
+  sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm_woo))
+  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+  print(paste("PVRE psych =",PVRE))
+  # PVRE_psych = c(PVRE_psych,PVRE)
+  
+  shapiro.test(resid(fit_social_lmm_woo))$p
+  shapiro.test(resid(fit_psych_lmm_woo))$p
+```
+
+
+
+```{r}
+pvalues_social = NULL
+pvalues_psych = NULL
+PVRE_social = NULL
+PVRE_psych = NULL
+
+for (soglia in seq(10,40,by=0.5) ){
+  data_woo = data[which(d2 <= soglia), ]
+  
+  fit_social_lmm_woo = lmer(FORMULA_SOCIAL_LMM,data=data_woo);
+  # fit_social_lmm_woo
+  sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
+  sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
+  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+  # print(paste("PVRE social =",PVRE))
+  PVRE_social = c(PVRE_social,PVRE)
+  
+  fit_psych_lmm_woo = lmer(FORMULA_PSYCH_LMM,data=data_woo);
+  # fit_psych_lmm_woo
+  sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm_woo))
+  sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm_woo))
+  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+  # print(paste("PVRE psych =",PVRE))
+  PVRE_psych = c(PVRE_psych,PVRE)
+  
+  pvalues_social = c(pvalues_social, shapiro.test(resid(fit_social_lmm_woo))$p)
+  pvalues_psych = c(pvalues_psych, shapiro.test(resid(fit_psych_lmm_woo))$p)
+}
+```
+
+
+```{r}
+plot(pvalues_psych)
+plot(pvalues_social)
+```
+
+
+
+
+Escono troppo bassi, occorre lavorare con due dataset diversi quindi.
+
+## Definizione data_woo per social
+```{r}
+FORMULA_SOCIAL = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
+
+FORMULA_SOCIAL_LMM  = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
+
+data
+colnames(data)
+# numerical_variables = c(1:7,11:15,18:22) # selected from the two above formula
+# quindi tutte le numeriche tranne teachbea che non c'è in entrambe
+# e anche tranne creactiv per lo stesso motivo
+
+numerical_variables = c(1:23,25,26)
+
+M = colMeans(data[,numerical_variables])
+S = cov(data[,numerical_variables])
+d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
+hist(d2,breaks = 300,xlim = c(0,300))
+#==========================#
+SOGLIA = 24.3
+#==========================#
+abline(v=SOGLIA,col="red")
+
+data_woo = data[which(d2 <= SOGLIA), ]
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
+```
+
+
+```{r}
+fit_social_lmm_woo = lmer(FORMULA_SOCIAL_LMM,data=data_woo);
+# fit_social_lmm_woo
+sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
+sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+print(paste("PVRE social =",PVRE))
+# PVRE_social = c(PVRE_social,PVRE)
+
+shapiro.test(resid(fit_social_lmm_woo))$p
+
+```
+
+```{r}
+for (soglia in seq(24,30,by=0.1) ){
+  data_woo = data[which(d2 <= soglia), ]
+  
+  suppressWarnings({fit_social_lmm_woo = lmer(FORMULA_SOCIAL_LMM,data=data_woo)})
+  # fit_social_lmm_woo
+  sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
+  sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
+  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+  # print(paste("PVRE social =",PVRE))
+
+  pval=round(shapiro.test(resid(fit_social_lmm_woo))$p,digits=4)
+  if(pval>0.04){
+    print(paste0(
+      "% sopravvissuta = ",round(dim(data_woo)[1]/dim(data)[1]*100,digits=2),
+      # "PVRE = ",PVRE,
+      " soglia = ",soglia,
+      " pvalue = ",pval))
+  }
+}
+```
+
+### best model
+```{r}
+BEST_SOGLIA = 24.3
+SOGLIA = BEST_SOGLIA
+data_woo = data[which(d2 <= SOGLIA), ]
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
+```
+
+
+```{r}
+data_model = data_woo
+
+want_to_scale = 0
+if(want_to_scale == 1){
+data_woo_scaled = data_woo
+data_woo_scaled[,c(numerical_variables)] =
+  data.frame(scale(data_woo_scaled[,c(numerical_variables)]))
+data_model = data_woo_scaled
+}
+
+fit_social_lmm_woo = lmer(FORMULA_SOCIAL_LMM,data=data_model)
+```
+
+
+```{r}
+# fit_social_lmm_woo
+sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
+sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+print(paste("PVRE social =",PVRE))
+# PVRE_social = c(PVRE_social,PVRE)
+```
+
+### assumptions check
+```{r}
+fm = fit_social_lmm_woo
+# normality of residuals
+qqnorm(resid(fm))
+qqline(resid(fm), col='red', lwd=2)
+shapiro.test(resid(fm))
+# normality of random effects
+# case only interecept
+qqnorm(unlist(ranef(fm)$NEW_VAR),
+main='Normal Q-Q Plot - Random Effects on Intercept')
+qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
+# case interecept and slope
+boxplot(residuals(fm)~data_model$NEW_VAR,las=2)
+
+res = residuals(fm)
+hist(res)
+```
+
+
+Scaled
+```
+     (Intercept)  Approach.to.ICT       Use.of.ICT Teachers..degree    Teacher.skill 
+    -0.199368845      0.126690620     -0.153775855      0.022852237      0.117411941 
+            ESCS          RATCMP1           ICTSCH           HEDRES          STUBEHA 
+    -0.005431636     -0.010919875      0.043147147      0.164142405     -0.018113104 
+        ATTLNACT          JOYREAD           PROAT6           CLSIZE         EDUSHORT 
+     0.228333604     -0.063665649      0.029177540      0.013154044      0.001380781 
+      STAFFSHORT          PV1MATH          PV1READ 
+     0.019524602     -0.074537790      0.266441346
+```
+
+
+Not scaled
+```
+     (Intercept)  Approach.to.ICT       Use.of.ICT Teachers..degree    Teacher.skill 
+    -3.287993255      0.367664466     -0.504001278      0.056342494      0.227827586 
+            ESCS          RATCMP1           ICTSCH           HEDRES          STUBEHA 
+    -0.018745507     -0.037013983      0.078451227      0.783359918     -0.033694487 
+        ATTLNACT          JOYREAD           PROAT6           CLSIZE         EDUSHORT 
+     1.226341748     -0.301855094      1.393288844      0.003857746      0.002445155 
+      STAFFSHORT          PV1MATH          PV1READ 
+     0.034308617     -0.002439291      0.007973519 
+```
+
+
+```{r}
+fixef(fm)
+shapiro.test(resid(fm))$p*100
+shapiro.test(unlist(ranef(fm)$NEW_VAR))$p*100
+
+write.csv(data_model,"data_social_woo.csv") # not scaled
+```
+
+
+
+
+
+## Definizione data_woo per psych
+```{r}
+FORMULA_PSYCH = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
+
+FORMULA_PSYCH_LMM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
+
+data
+colnames(data)
+# numerical_variables = c(1:7,11:15,18:22) # selected from the two above formula
+# quindi tutte le numeriche tranne teachbea che non c'è in entrambe
+# e anche tranne creactiv per lo stesso motivo
+
+numerical_variables = c(1:23,25,26)
+
+M = colMeans(data[,numerical_variables])
+S = cov(data[,numerical_variables])
+d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
+hist(d2,breaks = 300,xlim = c(0,300))
+#==========================#
+SOGLIA = 24.3
+#==========================#
+abline(v=SOGLIA,col="red")
+
+data_woo = data[which(d2 <= SOGLIA), ]
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
+```
+
+
+```{r}
+fit_psych_lmm_woo = lmer(FORMULA_PSYCH_LMM,data=data_woo);
+# fit_psych_lmm_woo
+sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm_woo))
+sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm_woo))
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+print(paste("PVRE social =",PVRE))
+# PVRE_social = c(PVRE_social,PVRE)
+
+shapiro.test(resid(fit_psych_lmm_woo))$p
+
+```
+
+```{r}
+# for (soglia in seq(20,40,by=1) ){
+for (soglia in seq(23,25,by=0.02) ){
+  data_woo = data[which(d2 <= soglia), ]
+  
+  suppressWarnings({fit_psych_lmm_woo = lmer(FORMULA_PSYCH_LMM,data=data_woo)})
+  # fit_psych_lmm_woo
+  sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm_woo))
+  sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm_woo))
+  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+  # print(paste("PVRE social =",PVRE))
+
+  pval=round(shapiro.test(resid(fit_psych_lmm_woo))$p,digits=4)
+  if(pval>0.05){
+    print(paste0(
+      "% sopravvissuta = ",round(dim(data_woo)[1]/dim(data)[1]*100,digits=2),
+      # "PVRE = ",PVRE,
+      " soglia = ",soglia,
+      " pvalue = ",pval))
+  }
+}
+```
+
+### best model
+```{r}
+BEST_SOGLIA = 24.26
+SOGLIA = BEST_SOGLIA
+data_woo = data[which(d2 <= SOGLIA), ]
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
+```
+
+
+```{r}
+data_model = data_woo
+
+want_to_scale = 0
+if(want_to_scale == 1){
+data_woo_scaled = data_woo
+data_woo_scaled[,c(numerical_variables)] =
+  data.frame(scale(data_woo_scaled[,c(numerical_variables)]))
+data_model = data_woo_scaled
+}
+
+fit_psych_lmm_woo = lmer(FORMULA_PSYCH_LMM,data=data_model)
+```
+
+
+```{r}
+# fit_psych_lmm_woo
+sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm_woo))
+sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm_woo))
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+print(paste("PVRE social =",PVRE))
+# PVRE_social = c(PVRE_social,PVRE)
+```
+
+### assumptions check
+```{r}
+fm = fit_psych_lmm_woo
+# normality of residuals
+qqnorm(resid(fm))
+qqline(resid(fm), col='red', lwd=2)
+shapiro.test(resid(fm))
+# normality of random effects
+# case only interecept
+qqnorm(unlist(ranef(fm)$NEW_VAR),
+main='Normal Q-Q Plot - Random Effects on Intercept')
+qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
+# case interecept and slope
+boxplot(residuals(fm)~data_model$NEW_VAR,las=2)
+
+res = residuals(fm)
+hist(res)
+```
+
+
+Scaled
+```
+(Intercept) Approach.to.ICT      Use.of.ICT   Teacher.skill            ESCS 
+   -0.068740566     0.171277369    -0.021421992     0.114250817     0.008705117 
+        RATCMP1          ICTSCH          ICTRES          ENTUSE         LM_MINS 
+   -0.003013407     0.065572530    -0.010822162     0.042731858     0.034305910 
+         HEDRES        ATTLNACT          PROAT6          CLSIZE        EDUSHORT 
+    0.173643835     0.205770361     0.008805429    -0.007243754     0.024780221 
+        PV1MATH         PV1READ 
+    0.011984683    -0.184866977 
+```
+
+Not scaled
+```
+   (Intercept) Approach.to.ICT      Use.of.ICT   Teacher.skill            ESCS 
+   1.3966919035    0.4463443221   -0.0631028543    0.1990957006    0.0269954472 
+        RATCMP1          ICTSCH          ICTRES          ENTUSE         LM_MINS 
+  -0.0091736668    0.1070234545   -0.0415369770    0.2835025426    0.0011681602 
+         HEDRES        ATTLNACT          PROAT6          CLSIZE        EDUSHORT 
+   0.7439079067    0.9925179380    0.3774292470   -0.0019182000    0.0394189652 
+        PV1MATH         PV1READ 
+   0.0003523595   -0.0049700909 
+```
+
+
+```{r}
+shapiro.test(resid(fm))$p*100
+shapiro.test(unlist(ranef(fm)$NEW_VAR))$p*100
+
+write.csv(data_model,"data_psych_woo.csv") # not scaled
+```
+
+
+
+
+
+
 
 
 
