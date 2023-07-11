@@ -5,26 +5,26 @@ using UnicodePlots
 using Dates
 
 ############# paramteri importanti #############
-CALLING_FROM_TERMINAL = 0
+CALLING_FROM_TERMINAL = 1
 FILTER_DONE = 0
 
 ############# parametri meno importanti #############
-# NEED_TO_COMPUTE_SCORE = 0
-# WRITE_NEW_DF = 0
+NEED_TO_COMPUTE_SCORE = 1
+WRITE_NEW_DF_scored = 1
 
 
 data=Any
 
 if CALLING_FROM_TERMINAL==1
-	df = DataFrame(CSV.File("df.csv",stringtype=String))
+	df = DataFrame(CSV.File("df.csv")) #,stringtype=String))
 	include("dataframe_functions.jl")
 	include("const_variables.jl")
 
-	# if NEED_TO_COMPUTE_SCORE==1
-	# 	for idd in df.player_id
-	# 		compute_score(idd)
-	# 	end
-	# end
+	if NEED_TO_COMPUTE_SCORE==1
+		for idd in df.player_id
+			compute_score(idd)
+		end
+	end
 	data=df
 
 	if FILTER_DONE==1 && sum(isequal.(df.zdone,1))>=1
@@ -38,9 +38,9 @@ else
 	end
 end
 
-# if WRITE_NEW_DF==1
-# 	CSV.write("df.csv", data)
-# end
+if WRITE_NEW_DF_scored==1
+	CSV.write("df.csv", data)
+end
 
 sort!(data,:score,rev=true)
 # ora il dataset è ordinato

@@ -33,7 +33,8 @@ empty!(df)
 describe(df)
 
 # maybe this should always be done
-if ("rec" in ARGS)
+ALWAYS_RECOVER = true
+if ("rec" in ARGS || ALWAYS_RECOVER)
     println("Recovering the previous dataframe.")
     df = DataFrame(CSV.File("df.csv")) #,stringtype=String))
     @show df

@@ -23,7 +23,7 @@ function print_help(chat_id)
     - "tec 40" selects to invest 40% of your budget on category technology
     - "callme Jhonny" selects your username to be Jhonny
 
-    Keywords are: _callme, play, tec, psi, clt, fam, tch, sch_.
+    Keywords are: _callme, play, tec, stu, clt, fam, tch, sch_.
     Values should be: a string (for the state and callme) or a number (for the budget).
     All is case-insensitive, so callme or Callme or CallMe will all work.
     """
