@@ -140,7 +140,7 @@ function handle_command(msg)
     elseif msg_text == "/done yes"
         if get_player_data(player_id,:state) == "missing"
             sendMessage(tg,
-                text="Please choose the state before confirming your parameters.",
+                text="Please choose the state before confirming your parameters. See the options with /state.",
                 chat_id=chat_id)
         else
             if get_player_data(player_id,:zdone) == 1
@@ -196,7 +196,9 @@ function handle_command(msg)
             *POL* = Poland
             *SVK* = Slovakia
             *SVN* = Slovenia
-            *ESP* = Spain"""
+            *ESP* = Spain
+            
+            Remember how to provide parameters: keyword value, so type _play ACRONYM_."""
         sendMessage(tg,
             text=to_send,
             chat_id = chat_id,
@@ -218,7 +220,9 @@ function handle_command(msg)
             *stu* = culture
             Make students spend more time studying, and in general enjoying cultural activities, like reading, playing small challenges, also toghether with their classmates, etc.
             *fam* = family
-            Increase the educational resources that family can give to their children, and try to also support them financially, with bonuses, etc."""
+            Increase the educational resources that family can give to their children, and try to also support them financially, with bonuses, etc.
+
+            Remember how to provide parameters: keyword value, so type _category VALUE_ (where category is tec, tch, and so on)."""
         sendMessage(tg,
             text=to_send,
             chat_id = chat_id,

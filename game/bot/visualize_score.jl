@@ -89,7 +89,7 @@ write(f,"```R\n")
 # P = barplot(string.(data[:,:player_name]," [",string.(data[:,:state]),"] ",1:size(data)[1] ), # con anche lo stato scelto
 # P = barplot(string.(data[:,:player_name]," [",string.(data[:,:state]),"] ",lpad.(1:size(data)[1],3)), # con spazio uguale tra stringhe e cifre
 P = barplot(string.(data[:,:player_name]," ",1:size(data)[1] ),
-	round.(data[:,:score],digits=2),
+	round.(data[:,:score],digits=4),
 	# width=:auto,
 	width = 30, # così stretta che forse dal telefono si vede meglio
 	# nevermind si può scorrere

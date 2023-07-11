@@ -174,7 +174,8 @@ function compute_score(player_id)
     new_obs = [new_obs quantile(data.IM_PUBLIC,1-get_player_data(player_id,"sch")) ]
 
     score = predict(lmodel,new_obs)[1]
-    score += 2*abs(minumum(data.Social_well_being))
+    score += 2*abs(minimum(data.Social_well_being))
+    score *= 100
     # shift perché lo scoreboard non riesce a plottare valori negativi
     ############# end #############
     set_player_data(player_id,:score,score)
