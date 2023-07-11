@@ -16,7 +16,18 @@ library(gbm) #boosting
 
 library(caret) #tuner for ML algorithms
 
-library(MixRF)
+library(glmnet)
+library(lme4)
+library(nlmeU) ## --> for the dataset
+library(nlme)  ## --> for models implementation
+
+
+
+library(corrplot)
+library(lattice)
+library(plot.matrix)
+
+library(insight)
 ```
 
 ```{r}
@@ -43,6 +54,10 @@ transformed_data$SCHLTYPE <- pisa_data$SCHLTYPE #adding SCHLTYPE column
 
 pisa_data <- transformed_data
 rm(transformed_data)
+
+pisa_data$X <- NULL
+#check on data 
+boxplot(select_if(pisa_data,is.numeric),las=2)
 ```
 
 # Fitting the Random Forest
@@ -65,13 +80,12 @@ Tuning mtry
 
 ```{r}
 # Create model with default paramters
-control <- trainControl(method="repeatedcv", 
-                        number=5, #number of folder in K-fold CV
-                        repeats=1, #number of repetitions
+control <- trainControl(method="oob", 
+                        number=1, #number of folder in K-fold CV #number of repetitions
                         verboseIter = TRUE)
 
 # grid
-tunegrid <- expand.grid(.mtry = c(2,3,4))
+tunegrid <- expand.grid(.mtry = c(4,5))
 
 # training
 rf_training <- train(as.formula(formula_str),
@@ -92,14 +106,18 @@ final_rf <- rf_training$finalModel
 
 ```{r}
 #contribution of the regressors
-importance(final_rf)
+randomForest::importance(final_rf)
 varImpPlot(final_rf)
 ```
 
 ```{r}
-partialPlot(final_rf,
-            pred.data = pisa_data,
-            x.var="ESCS")
+for(reg in final_rf$xNames){
+  partialPlot(final_rf,
+              pred.data = pisa_data,
+              x.var = as.character(reg),
+              main = paste("Dependence on",reg)
+              )
+}
 ```
 
 ## Random effect
@@ -131,7 +149,6 @@ dotplot(ranef(lme_fit, condVar=T))
 Only Fixed effect
 
 ```{r}
-
 R2 <- 1 - var(final_rf$y - final_rf$predicted) / var(final_rf$y) 
 R2
 ```
