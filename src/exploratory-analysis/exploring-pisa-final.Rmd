@@ -1,0 +1,131 @@
+---
+title: "R Notebook"
+output: 
+editor_options: 
+  chunk_output_type: inline
+---
+
+# EXPLORATORY ANALYSIS: Pisa scores final
+
+In this notebook I collect some useful plots made across the other notebooks that help better understanding the dataset grouped by schools
+
+# Settings
+
+```{r}
+#libraries
+library(GGally) #for ggcorr
+library(ggplot2)
+library(dplyr)
+library(rlang) #to select variables to be plugged into a formula object
+```
+
+```{r, setup}
+#DIRECTORIES
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/pisa_scores_final.csv",sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_path)
+```
+
+```{r}
+#some adjustments on the data
+pisa_data$CNT <- as.factor(pisa_data$CNT)
+```
+
+# Correlation
+
+```{r}
+ggcorr(select_if(pisa_data,is.numeric),label=TRUE,label_size = 2)
+```
+
+# Numerosity by country
+
+```{r}
+ggplot(pisa_data, aes(x = CNT)) +
+  geom_bar()
+```
+
+# Boxplots
+
+Boxplots for the full dataset
+
+```{r}
+#Here we see that the variability in LMINS and MMINS is very high
+boxplot(select_if(pisa_data,is.numeric),las=2,cex.axis=0.8)
+```
+
+Boxplots by country
+
+```{r}
+data <- subset(pisa_data,select=-c(LM_MINS,PV1MATH,PV1READ, CREACTIV,SCHLTYPE))
+#by country for each variable
+for(variable in colnames(data)){
+  if(variable != "CNT"){
+    formula_str <- paste(variable,"CNT", sep = "~")
+    boxplot(formula = as.formula(formula_str), data = data, las=2,cex.axis=0.8, main = variable)
+  }
+}
+```
+
+# HISTOGRAMS: DISTRIBUTION FOR EACH VARIABLE
+
+Full dataset:
+
+```{r}
+for(variable in colnames(pisa_data)){
+    if(variable != "SCHLTYPE" && variable != "CNT"){
+      hist(pisa_data[,variable],main = variable)
+    }
+}
+```
+
+By country:
+
+```{r,fig.show='hide'}
+countries = unique(pisa_data$CNT)
+#plotting the histograms
+for(cntry in countries){
+  for(variable in colnames(pisa_data)){
+    if(variable != "SCHLTYPE" && variable != "CNT"){
+      hist(pisa_data[which(pisa_data$CNT==cntry),variable],main = paste(variable,cntry))
+    }
+  }
+}
+```
+
+# VARIANCES
+
+To see which variables have the higher variance
+
+fig \<- ggplot(data = as.data.frame(diag(S)), aes(x=)) + geom_bar() + labs(title = "Variance") + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+fig
+
+```{r}
+#computing the variances
+variances <- apply(select_if(pisa_data,is.numeric), 2, var)
+var_df <- data.frame(variable = names(variances), variance = variances)
+
+#plotting
+ggplot(data = var_df, aes(x = variable, y = variance)) + 
+  geom_bar(stat = "identity", fill = "steelblue") + 
+  labs(title = "Variances of Dataframe") +
+  xlab("Variable") +
+  ylab("Variance") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+soglia_varianza = 1
+
+high_variance_vars = var_df[which(var_df$variance>soglia_varianza),]$variable
+high_variance_vars
+ggplot(data = var_df[!(var_df$variable %in% high_variance_vars),], aes(x = variable, y = variance)) + 
+  geom_bar(stat = "identity", fill = "steelblue") + 
+  labs(title = "Variances of Dataframe") +
+  xlab("Variable") +
+  ylab("Variance") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```

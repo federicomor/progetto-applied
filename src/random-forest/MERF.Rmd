@@ -1,0 +1,145 @@
+# Mixed Effect Random Forest
+
+## Settings
+
+```{r}
+#loaded librarires
+library(dplyr)
+library(car) #to apply transformations
+library(MVN) #to perform multivariate gaussianity check
+
+library(GGally) #for ggcorr
+library(ggplot2)
+
+library(randomForest) #bagging
+library(gbm) #boosting
+
+library(caret) #tuner for ML algorithms
+
+library(MixRF)
+```
+
+```{r}
+set.seed(42)
+#DIRECTORIES
+root_proj_dir = "../../"
+dataset_dir = paste(root_proj_dir,"/data/pisa_scores_final.csv",sep="")
+include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_dir)
+#IMPORTING THE DATASET
+pisa_data <- read.csv(file=dataset_dir)
+```
+
+```{r}
+#some adjustments on the data
+pisa_data$CNT <- as.factor(pisa_data$CNT)
+pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
+
+#standardizing
+transformed_data <- as.data.frame(scale(select_if(pisa_data,is.numeric)))
+transformed_data$CNT <- pisa_data$CNT #adding CNT column
+transformed_data$SCHLTYPE <- pisa_data$SCHLTYPE #adding SCHLTYPE column
+
+pisa_data <- transformed_data
+rm(transformed_data)
+```
+
+# Fitting the Random Forest
+
+## Fixed effect
+
+Constructing the formula object
+
+```{r}
+#regressors
+regressors <- names(pisa_data)
+to_discard <- c("CNT", "Social.well.being", "Psychological.well.being", "SCHLTYPE")
+regressors <- regressors[!regressors %in% to_discard]
+
+#formula object
+formula_str <- paste("Social.well.being", paste(regressors, collapse = "+"), sep ="~")
+```
+
+Tuning mtry
+
+```{r}
+# Create model with default paramters
+control <- trainControl(method="repeatedcv", 
+                        number=5, #number of folder in K-fold CV
+                        repeats=1, #number of repetitions
+                        verboseIter = TRUE)
+
+# grid
+tunegrid <- expand.grid(.mtry = c(2,3,4))
+
+# training
+rf_training <- train(as.formula(formula_str),
+                     data = pisa_data, 
+                     method = "rf", 
+                     metric = "Rsquared", 
+                     tuneGrid=tunegrid, 
+                     trControl=control)
+
+#printing the training results
+print(rf_training)
+
+#to see what's inside the method used to fit
+getModelInfo(model = "rf", regex = FALSE)
+
+final_rf <- rf_training$finalModel
+```
+
+```{r}
+#contribution of the regressors
+importance(final_rf)
+varImpPlot(final_rf)
+```
+
+```{r}
+partialPlot(final_rf,
+            pred.data = pisa_data,
+            x.var="ESCS")
+```
+
+## Random effect
+
+```{r}
+fix_effect.pred <- final_rf$predicted
+
+#including random effects in the formula
+random_intercepts <- c("(1|CNT)","(1|SCHLTYPE)")
+ME_formula_str <- paste("fix_effect.pred", paste(random_intercepts,collapse="+"), sep="~")
+```
+
+```{r}
+lme_fit <- lmer(ME_formula_str, data=pisa_data)
+
+sigma2_eps <- as.numeric(get_variance_residual(lme_fit))
+sigma2_b <- as.numeric(get_variance_random(lme_fit))
+
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+print(paste("PVRE =",PVRE))
+
+## visualization of the random intercepts with their 95% confidence intervals
+# Random effects: b_0i for i=1,...,234
+dotplot(ranef(lme_fit, condVar=T))
+```
+
+# Evaluation
+
+Only Fixed effect
+
+```{r}
+
+R2 <- 1 - var(final_rf$y - final_rf$predicted) / var(final_rf$y) 
+R2
+```
+
+Random effect part included
+
+```{r}
+library(MuMIn)
+
+r.squaredGLMM(lme_fit)
+```
