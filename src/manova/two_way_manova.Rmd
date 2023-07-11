@@ -409,14 +409,17 @@ for (k in 1:p){
       europe_joined %>% ggplot(aes(fill = mean_value)) +
       geom_sf(size = 0.2, color = "black") + # border line
     scale_fill_manual(
-    values = c("low" = "royalblue", "medium" = "forestgreen", "high" = "darkorange"),
-    na.value = "white"  # Specify the color for NA values
-  ) +
+      name = "legend", 
+      breaks = c("high", "medium","low"),
+      values = c("high" = "darkgreen","medium" = "#32CD32","low" = "green"),
+      labels = c("high", "medium", "low"),
+      na.value = "white"  # Specify the color for NA values
+      ) +
       labs(
         title =colnames(measures)[k],
         subtitle = "MANOVA") +
-      scale_x_continuous(limits = c(-10, 35)) +
-      scale_y_continuous(limits = c(35, 68))+
+      scale_x_continuous(limits = c(-10, 30)) +
+      scale_y_continuous(limits = c(35, 70))+
       theme_void()+
       geom_text_repel(aes(x = X, y = Y, label = name),
                 data = subset(europe_joined, !is.na(mean_value)),
