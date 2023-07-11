@@ -69,8 +69,8 @@ f9(x) = sqrt(abs(x))
 
 fdict = [
 	"U", # f1
-	"U^2", # f2
-	# "U^3", # f3
+	# "U^2", # f2
+	"U^3", # f3
 	# "exp(-U^2)", # f4
 	# "cos(U)", # f5
 	# "sin(U)", # f6
@@ -81,8 +81,8 @@ fdict = [
 
 funzioni = [
 	f1 
-	f2 
-	# f3 
+	# f2 
+	f3 
 	# f4
 	# f5 
 	# f6

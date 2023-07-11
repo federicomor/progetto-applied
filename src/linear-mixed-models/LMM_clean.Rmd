@@ -1,0 +1,144 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+```{r}
+library(mvtnorm)
+library(MASS)
+library(car)
+library(rgl)
+library(leaps)
+library(ISLR)
+library(glmnet)
+library(lme4)
+library(nlmeU) ## --> for the dataset
+library(nlme)  ## --> for models implementation
+
+library(corrplot)
+library(lattice)
+library(plot.matrix)
+
+library(insight)
+```
+
+```{r}
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/pisa_score_woo_social.csv",sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+include_path_2 = paste(root_proj_dir,"data/pisa_score_woo_psycho.csv",sep="")
+
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+data_socio <- read.csv(file=dataset_path)
+data_psycho <- read.csv(file=include_path_2) 
+head(data)
+```
+
+
+# [0] DATA PREP
+```{r}
+data$X <- NULL
+data$CNT <- as.factor(data$CNT)
+```
+
+# SELECTED COVARIATES
+```{r}
+linear_model_vars <- readLines("../../data/lm_social_vars.txt")
+```
+
+# GROUPS OF VARIABLES- ignorabile
+```{r}
+filter <- function(category,var_lm) {
+  risultato <- c()
+  
+  for (elemento in category) {
+    if (elemento %in% var_lm) {
+      risultato <- c(risultato, elemento)
+    }
+  }
+  
+  return(risultato)
+}
+
+
+categories_variables_filtered=list()
+
+for(cat in cat_var_names ){
+  categories_variables_filtered[[cat]]=filter(categories_variables[[cat]],linear_model_vars)
+}
+
+categories_variables_filtered
+```
+
+# Modello base-lineare semplice
+```{r}
+vars = c(linear_model_vars,"CNT","IM_PUBLIC")
+formula_social <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
+formula_social
+
+fit_social_final = lm(formula_social,data=data)
+summary(fit_social_final)
+```
+
+
+#  LMM solo intercetta
+```{r}
+vars = c(bwd[2:max_vars],"(1|NEW_VAR)")
+FORMULA_LMM <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
+FORMULA_LMM
+
+fit_social_lmm = lmer(FORMULA_LMM,data=data)
+fit_social_lmm
+
+sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm))
+sigma2_b <- as.numeric(get_variance_random(fit_social_lmm))
+
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+print(paste("PVRE =",PVRE))
+
+## visualization of the random intercepts with their 95% confidence intervals
+# Random effects: b_0i for i=1,...,234
+dotplot(ranef(fit_social_lmm, condVar=T))$NEW_VAR
+```
+
+
+### assumptions check
+```{r}
+# normality of residuals
+fm = fit_social_lmm
+qqnorm(resid(fm))
+qqline(resid(fm), col='red', lwd=2)
+shapiro.test(resid(fm))
+# normality of random effects
+# case only interecept
+qqnorm(unlist(ranef(fm)$NEW_VAR),
+main='Normal Q-Q Plot - Random Effects on Intercept')
+qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
+# case interecept and slope
+boxplot(residuals(fm)~data$NEW_VAR,las=2)
+
+
+## raw residuals
+plot(fm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
+# We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
+# but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
+
+plot(fm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
+bwplot(resid(fm) ~ NEW_VAR, pch = "|", data = data)
+# The boxand-whiskers plots clearly show an increasing variance of the residuals.
+
+## Pearson residuals
+## Pearson residuals are obtained from the raw residuals by dividing the latter by an
+## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
+
+
+plot(fm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
+plot(fm,resid(., type = "pearson") ~ as.numeric(NEW_VAR))
+bwplot( resid(fm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
+        pch = "|", data = data)
+## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
+```
+

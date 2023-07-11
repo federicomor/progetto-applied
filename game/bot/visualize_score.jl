@@ -1,30 +1,33 @@
+println("Loading libaries.")
 using DataFrames
 using CSV
 using UnicodePlots
 # using Plots
 using Dates
+using Random
 
 ############# paramteri importanti #############
-CALLING_FROM_TERMINAL = 0
+CALLING_FROM_TERMINAL = 1
 FILTER_DONE = 0
 
 ############# parametri meno importanti #############
-# NEED_TO_COMPUTE_SCORE = 0
-# WRITE_NEW_DF = 0
+NEED_TO_COMPUTE_SCORE = 1
+WRITE_NEW_DF_scored = 1
 
 
 data=Any
 
 if CALLING_FROM_TERMINAL==1
-	df = DataFrame(CSV.File("df.csv",stringtype=String))
+	df = DataFrame(CSV.File("df.csv")) #,stringtype=String))
 	include("dataframe_functions.jl")
 	include("const_variables.jl")
 
-	# if NEED_TO_COMPUTE_SCORE==1
-	# 	for idd in df.player_id
-	# 		compute_score(idd)
-	# 	end
-	# end
+	println("Computing the score.")
+	if NEED_TO_COMPUTE_SCORE==1
+		for idd in df.player_id
+			compute_score(idd)
+		end
+	end
 	data=df
 
 	if FILTER_DONE==1 && sum(isequal.(df.zdone,1))>=1
@@ -38,13 +41,25 @@ else
 	end
 end
 
-# if WRITE_NEW_DF==1
-# 	CSV.write("df.csv", data)
-# end
+println("Writing the new df filled with scores.")
+if WRITE_NEW_DF_scored==1
+	CSV.write("df.csv", data)
+end
 
-
+println("Sorting the data.")
 sort!(data,:score,rev=true)
 # ora il dataset è ordinato
+@show data
+
+correzione_punteggio = 0
+if minimum(data.score)<0
+	shift = abs(minimum(data.score))
+	pietà = 1+rand((MersenneTwister(34))) # punteggio minimo
+	correzione_punteggio = (shift+pietà)*100
+else
+	correzione_punteggio = 0
+end
+
 
 ############# Scoreboard 1 #############
 # println("Writing scoreboard 1...")
@@ -89,7 +104,7 @@ write(f,"```R\n")
 # P = barplot(string.(data[:,:player_name]," [",string.(data[:,:state]),"] ",1:size(data)[1] ), # con anche lo stato scelto
 # P = barplot(string.(data[:,:player_name]," [",string.(data[:,:state]),"] ",lpad.(1:size(data)[1],3)), # con spazio uguale tra stringhe e cifre
 P = barplot(string.(data[:,:player_name]," ",1:size(data)[1] ),
-	round.(data[:,:score],digits=2),
+	round.(data[:,:score] .* 100 .+ correzione_punteggio,digits=4),
 	# width=:auto,
 	width = 30, # così stretta che forse dal telefono si vede meglio
 	# nevermind si può scorrere
@@ -99,6 +114,8 @@ P = barplot(string.(data[:,:player_name]," ",1:size(data)[1] ),
 	)
 
 savefig(P,"plot.txt")
+
+println(P)
 
 for line in eachline("plot.txt")
 	write(f,"$(replace("$line\n", r".*[┌|└].*" => ""))")
