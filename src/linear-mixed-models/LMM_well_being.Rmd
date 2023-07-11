@@ -608,6 +608,8 @@ boxplot(data_woo_scaled[,numerical_variables],main="scaled and woo data, after s
 
 print(paste("From",old_dim,"obs we moved to",new_dim))
 print(paste("Percentuale di dati sopravvissuti:",new_dim/old_dim*100,"%"))
+
+write.csv(data_woo_scaled,"../../data/pisa_score_woo_social.csv")
 ```
 
 
@@ -885,6 +887,7 @@ data_woo = data[which(d2 <= 30), ]
 print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
 print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
 
+write.csv(data_woo_scaled,"../../data/pisa_score_woo_psycho.csv")
 ```
 
 ### Rimozione by state
