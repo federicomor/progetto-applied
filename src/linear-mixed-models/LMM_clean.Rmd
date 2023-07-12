@@ -152,13 +152,15 @@ for(i in 1:(n-3)){    #-3 per togliere CNT,IM_PUBLIC,NEW_VAR (già in NEW_VAR)
   print(paste("Modello con slope su ",slopevar))
   
   #per pvalues di anova tra modello con solo intercetta e modello con slope
-  comp=anova(fit_social_lmm_scaled, fit_social_lmm_slo)$'Pr(>Chisq)'
+  comp=anova(fit_social_lmm_scaled, fit_social_lmm_slo)$'Pr(>Chisq)'[2]
   
-  print(paste("Rsquared",r.squaredGLMM(fit_social_lmm_slo)))
+  print(paste("Rsquared-marginal = ",r.squaredGLMM(fit_social_lmm_slo)[1]))
+    print(paste("Rsquared-conditional = ",r.squaredGLMM(fit_social_lmm_slo)[2]))
   #prints marginal and conditional Rsquared
   
   print(paste("PVRE =",PVRE_slo[i]))
   print(paste("P-valueAnova =",comp))
+  print("----")
 
 }
 
