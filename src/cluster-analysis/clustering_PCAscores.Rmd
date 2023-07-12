@@ -51,7 +51,7 @@ head(data)
 ```
 # Define grouped variables, dimension too big to do complete
 ```{r}
-linear_model_vars <- readLines("../../data/lm_social_vars.txt")
+linear_model_vars <- readLines("../../data/non csv//lm_social_vars.txt")
 
 filter <- function(category,var_lm) {
   risultato <- c()
@@ -87,7 +87,7 @@ for(cat in cat_var_names ){
 }
 categories_variables_filtered[["WELL-BEING"]] = c("Social.well.being","Psychological.well.being")
 categories_variables_filtered
-#categories_variables=categories_variables_filtered
+categories_variables=categories_variables_filtered
 ```
 ```{r}
 k=1
@@ -129,7 +129,7 @@ head(data_grezzi)
 
 (I put the commented code in a chunk to test it. I set eval=FALSE and include=FALSE not toI run it when I use the "run all" command)
 
-```{r echo=FALSE}
+```{r echo=FALSE,eval=FALSE, include=FALSE}
 #looping over the categories of variables
 for(k in 1:length(categories_variables)){ 
   #selecting the group of variables
@@ -206,40 +206,24 @@ for (k in categories_variables){
   measures = data_grezzi[,k]
   head(measures)
   
-  # methods: "euclidean", "manhattan", "canberra"
   name_dist_chosen <- "manhattan"
-  # linkages: "single", "average", "complete", "ward", "ward.D2"
+  # linkages: "average", "complete", "ward", "ward.D2"
   name_linkage_chosen <- 'ward.D2'
-  #computing the dissimilarity matrix
+
   data.dist = dist(measures, method=name_dist_chosen)
-  #applying hierarchical clustering with the computed dissimilarity matrix and the selected      linkage
   data.hclust = hclust(data.dist, method=name_linkage_chosen)
 
-  #Inside data.hclust
-  #   $merge -> order of aggregation
-  #   $height -> distance at which we have aggregation
-  #   $order -> ordering that allows to avoid intersection in the dendrogram
-
-  # Plotting the dendogram
-  k_chosen = 3
+  k_chosen = 2
   plot(data.hclust, main=paste(name_dist_chosen,name_linkage_chosen), hang=-0.1, xlab='',        labels=F, cex=0.6, sub='')
   rect.hclust(data.hclust, k=k_chosen)
   
-  # How to cut a dendrogram?
-  # We generate vectors of labels through the command cutree()
   cluster.cutree = cutree(data.hclust, k=k_chosen)
   table(cluster.cutree)
 
-  ## How good is the clustering?
-  # Cophenetic Matrices
   coph.mat <- cophenetic(data.hclust)
-  # Cophenetic Coefficients
   coph.coeff = cor(data.dist, coph.mat)
-  coph.coeff
+  print(coph.coeff)
 
-
-  #plot(measures[,1],measures[,3],col=cluster.cutree+1)
-  #plot3d(measures, size=3, col=cluster.cutree+1, aspect = F)
   
   ## **2.** Saving the clustering as factors
   
@@ -254,7 +238,7 @@ head(data_clustered)
 
 ```{r}
 country_names <- unique(data_clustered$CNT)
-g=14
+g=length(country_names)
 indeces = list()
 for (jj in 1:g){
     indeces[jj] <- list(which(data_clustered$CNT == country_names[jj]))
@@ -292,14 +276,12 @@ for(k in cat_var_names){ # categories
 ```
 
 ```{r}
-for(i in 1:3){
-  x11()
+
   plot(measures[,1],measures[,2],col=cluster.cutree+1)
-}
 ```
 
 ```{r}
-#pdf("cluster_country_proportions.pdf")
+pdf("cluster_country_proportions.pdf")
 
 for(kk in 1:6){
 # Create sample data
@@ -324,20 +306,21 @@ for(i in country_names){
   }
 }
   
-x11()
+
 # Create stacked bar chart
-ggplot(df, aes(x = country, y = percentage, fill = group)) +
+print(ggplot(df, aes(x = country, y = percentage, fill = group)) +
   geom_bar(stat = "identity") +
-  labs(title = "Proportion of Schools in Each Group by Country",
+  labs(title = paste("Proportion of Schools in Each Group by Country-",cat_var_names[kk]),
        x = "Country",
        y = "Proportion") +
   scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73"),
                     labels = groups_names) +
-  geom_text(aes(label = paste0(round(percentage,2), "%")), 
+  geom_text(aes(label = round(percentage,2)), 
             position = position_stack(vjust = 0.5))
+  )
 
 }
-#dev.off()
+dev.off()
 ```
 
 

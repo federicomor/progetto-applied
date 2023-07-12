@@ -1,5 +1,7 @@
 ---
 title: 'Hierarchical clustering'
+editor_options: 
+  chunk_output_type: inline
 ---
 
 # Settings
@@ -23,20 +25,23 @@ include_dir = "../include/Utilities.R"
 #including utilities
 source(include_dir)
 #importing the dataset
-pisa_data <- read.csv(file=paste(dataset_dir,"pisa_wPV_grouped_bysch.csv",sep=""))
+pisa_data <- read.csv(file=paste(dataset_dir,"pisa_scores_final.csv",sep=""))
 ```
 
 ```{r}
+categories_variables[["TECH"]] = c("Approach.to.ICT","ICTSCH","ICTRES" ,"Use.of.ICT","RATCMP1","ENTUSE" )
+
+categories_variables[["TEACH"]] = c("Teacher.skill","TEACHBEHA","Teachers..degree","PROAT6")
+
+categories_variables[["WELL-BEING"]] = c("Social.well.being","Psychological.well.being")
+
+categories_variables[["SCHOOL"]] = c("EDUSHORT","STAFFSHORT","STRATIO","CLSIZE","CREACTIV")
+
+categories_variables[["STUDENT"]] = c("LM_MINS","ATTLNACT","PV1READ", "PV1MATH" ,"STUBEHA","JOYREAD"  )
+
+categories_variables[["FAMILY"]] = c("ESCS", "HEDRES")
 #variabili finite nel dataset
-grouped_variables <-list()
-#list of grouped variables
-grouped_variables[["ICT available at school"]] <- c("ICTSCH","RATCMP1")
-grouped_variables[["tec"]] <- c("ICTCLASS","ICTHOME","ICTOUTSIDE","ICTRES","AUTICT","COMPICT","INTICT","ENTUSE","HOMESCH","USESCH", "ICTSCH","RATCMP1")
-grouped_variables[["psi"]] <- c("ATTLNACT","EMOSUPS","COMPETE","EUDMO","GFOFAIL","SWBP","RESILIENCE","BELONG","BEINGBULLIED","PERFEED")
-grouped_variables[["clt"]] <- c("JOYREAD","CULTPOSS","HEDRES","SCREADCOMP","LMINS","MMINS")
-grouped_variables[["fam"]] <- c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI","CULTPOSS","HEDRES","ICTHOME")
-grouped_variables[["tch"]] <- c("TEACHINT","TEACHSUP","STIMREAD")
-grouped_variables[["sch"]] <- c("PERCOMP","PERCOOP","ICTSCH","RATCMP1")
+grouped_variables <-categories_variables
 
 group_list <- names(grouped_variables)
 ```
@@ -72,10 +77,9 @@ for(k in 1:length(grouped_variables)){
   #computing dissimiliraties measures for each group of variables
   diss_mat.e = dist(measures, method="euclidean") 
   diss_mat.m = dist(measures, method="manhattan") 
-  diss_mat.c = dist(measures, method="canberra")
   #storing the dissimilarity matrices in a list
-  distances = list(diss_mat.e,diss_mat.m,diss_mat.c) 
-  names = c("euclidean","manhattan","canberra")
+  distances = list(diss_mat.e,diss_mat.m) 
+  names = c("euclidean","manhattan")
 
   #EXPERIMENTING DIFFERENT LINKAGES
   i <- 1 
