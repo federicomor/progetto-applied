@@ -27,7 +27,7 @@ library(insight)
 root_proj_dir = "../../"
 dataset_path = paste(root_proj_dir,"data/pisa_score_woo_social.csv",sep="")
 include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
-include_path_2 = paste(root_proj_dir,"data/pisa_score_woo_psycho.csv",sep="")
+include_path_2 = paste(root_proj_dir,"data/data_psych_woo.csv",sep="")
 
 #INCLUDING UTILITIES
 source(include_path)
@@ -42,6 +42,8 @@ head(data)
 ```{r}
 data$X <- NULL
 data$CNT <- as.factor(data$CNT)
+data$IM_PUBLIC <- as.factor(data$IM_PUBLIC)
+data$NEW_VAR <- as.factor(data$NEW_VAR)
 ```
 
 # SELECTED COVARIATES
