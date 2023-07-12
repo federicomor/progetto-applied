@@ -71,7 +71,7 @@ Blabel = factor(df_social$IM_PUBLIC)
 GBlabel = factor(df_social$NEW_VAR)
 ```
 
-## Anova with CNT
+## [1] Anova with CNT
 ```{r}
 for (i in 1:length(model_variables) ){
 	Xtarget = data.frame(df_social[,model_variables[i]])
@@ -81,7 +81,9 @@ for (i in 1:length(model_variables) ){
 	print(summary.aov(fit_complete))
 }
 ```
-## View on maps
+
+## View on boxplot and maps
+
 ```{r}
 all_countries <- c(
 	"AUT", "BEL", "BGR", "CYP", "CZE", "DEU", "DNK", "ESP", "EST", "FIN",
@@ -114,7 +116,7 @@ for (i in 1:length(model_variables) ){
 			ylim=c(round(min(df_social[,model_variables[i]])),
 				   round(max(df_social[,model_variables[i]]))),
 			col = rev(colora(length(levels(Glabel)),43)))
-	abline(h=0)
+	abline(h=mean(df_social[,model_variables[i]]))
 
 	
 	#### Map stuff
@@ -152,22 +154,196 @@ for (i in 1:length(model_variables) ){
       scale_y_continuous(limits = c(35, 68))+
       theme_void()+
       geom_text_repel(aes(x = X, y = Y, label = name),
-                data = subset(europe_joined, !is.na(mean_value)),
-                size = 3.5,                   # Increase the size of the labels
-                colour = "gray20",          # Set the color of the labels
-                fontface = "bold",          # Set the font weight to bold
-                label.padding = unit(0.5, "lines"),   # Add padding around the label
-                label.r = unit(0.2, "lines"),         # Set the radius of the label's rounded corners
-                label.color = "black",                 # Set the color of the label's border
-                label.size = 0.8,                      # Set the size of the label's border
-                label.fill = "black"                    # Set the color of the label's background
-                ) 
+        data = subset(europe_joined, !is.na(mean_value)),
+        size = 3,                   # Increase the size of the labels
+        colour = "gray20",          # Set the color of the labels
+        position = position_dodge(width = 0),
+        fontface = "bold",          # Set the font weight to bold
+        # label.padding = unit(0.5, "lines"),   # Add padding around the label
+        # label.r = unit(0.2, "lines"),         # Set the radius of the label's rounded corners
+        # label.color = "black",                 # Set the color of the label's border
+        # label.size = 0.8,                      # Set the size of the label's border
+        # label.fill = "black"                    # Set the color of the label's background
+                )
+    
     
     )})
 }
 ```
 
 
+## BSCIs for the difference in the groups
+
+```{r}
+# If we reject H0, which supplement is responsible for this? We
+# do g*(g-1)/2 comparisons (all the pairs in g groups, g choose 2).
+# We use Bonferroni as we look simultaneously at the intervals
+g = length(levels(Glabel))
+k = g*(g-1)/2
+n = dim(df_social)[1]
+treat = levels(Glabel)
+alpha = 0.05
+ng = table(Glabel) # number of obs in each group
+
+for (k in 1:length(model_variables) ){
+		
+	Xtarget = data.frame(df_social[,model_variables[k]])
+	fit = aov(as.matrix(Xtarget) ~ Glabel)
+	Mediag = tapply(df_social[,model_variables[k]], df_social$CNT, mean) # group-wise means
+	SSres = sum(residuals(fit)^2)
+	S = SSres/(n-g)
+	ICrange=NULL
+	for(i in 1:(g-1)) {
+	for(j in (i+1):g) {
+	# print(paste(treat[i],"-",treat[j]))
+	# print(as.numeric(c(Mediag[i]-Mediag[j] - qt(1-alpha/(2*k), n-g) * sqrt(S * ( 1/ng[i] + 1/ng[j])), Mediag[i]-Mediag[j] + qt(1-alpha/(2*k), n-g) * sqrt(S * ( 1/ng[i] + 1/ng[j])))))
+	ICrange=rbind(ICrange,as.numeric(c(Mediag[i]-Mediag[j]
+	- qt(1-alpha/(2*k), n-g) * sqrt(S * (1/ng[i] + 1/ng[j])),
+	Mediag[i]-Mediag[j]
+	+ qt(1-alpha/(2*k), n-g) * sqrt(S * (1/ng[i] + 1/ng[j])))))
+	}
+	}
+	# ICrange
+	# par(mfrow=c(1,2))
+	# plot(df_social$CNT, df_social[,model_variables[i]], xlab='', ylab='Discriminant variable',
+		 # col = colori_fun(g), las=2)
+	h = 1
+	plot(c(1,g*(g-1)/2),range(ICrange), pch='',
+		 xlab='Pairs treatment', ylab='CI tau target variable',
+		 main = model_variables[k])
+	for(i in 1:(g-1)) {
+	for(j in (i+1):g) {
+	ind = (i-1)*g-i*(i-1)/2+(j-i)
+	lines (c(h,h), c(ICrange[ind,1],ICrange[ind,2]), col='grey55');
+	# points(h, Mediag[i]-Mediag[j], pch=16, col='grey55');
+	points(h, ICrange[ind,1], col=colori_fun(g)[j], pch=16);
+	points(h, ICrange[ind,2], col=colori_fun(g)[i], pch=16);
+	h = h+1
+	}}
+	abline(h=0)
+	legend("topright",treat,fill=colori_fun(g),bty="n",cex=0.6)
+}
+```
+
+
+
+## [2] Anova with IM_PUBLIC
+```{r}
+for (i in 1:length(model_variables) ){
+	Xtarget = data.frame(df_social[,model_variables[i]])
+	# fit_complete = aov(as.matrix(Xtarget) ~ Glabel + Blabel + Glabel:Blabel)
+	fit_complete = aov(as.matrix(Xtarget) ~ Blabel)
+	print(model_variables[i])
+	print(summary.aov(fit_complete))
+}
+```
+## View on boxplot
+```{r}
+for (i in 1:length(model_variables) ){
+# for (i in 1:4 ){
+	
+	#### Classic boxplot
+	group_ordered <- with(df_social,                      
+                  reorder(df_social$IM_PUBLIC,
+                          df_social[,model_variables[i]],
+                          FUN=mean,
+                  		decreasing = T))
+	boxplot(df_social[,model_variables[i]] ~group_ordered,
+			main=paste(model_variables[i],"ordered by mean"),las=2,
+			ylim=c(round(min(df_social[,model_variables[i]])),
+				   round(max(df_social[,model_variables[i]]))),
+			col = rev(colora(length(levels(Blabel)),43)))
+	abline(h=0)
+}
+```
+
+## [3] Anova with NEW_VAR
+```{r}
+for (i in 1:length(model_variables) ){
+	Xtarget = data.frame(df_social[,model_variables[i]])
+	# fit_complete = aov(as.matrix(Xtarget) ~ Glabel + Blabel + Glabel:Blabel)
+	fit_complete = aov(as.matrix(Xtarget) ~ GBlabel)
+	print(model_variables[i])
+	print(summary.aov(fit_complete))
+}
+```
+
+## View on boxplot
+
+```{r}
+for (i in 1:length(model_variables) ){
+# for (i in 1:4 ){
+	
+	#### Classic boxplot
+	group_ordered <- with(df_social,                      
+                  reorder(df_social$NEW_VAR,
+                          df_social[,model_variables[i]],
+                          FUN=mean,
+                  		decreasing = T))
+	boxplot(df_social[,model_variables[i]] ~group_ordered,
+			main=paste(model_variables[i],"ordered by mean"),las=2,
+			ylim=c(round(min(df_social[,model_variables[i]])),
+				   round(max(df_social[,model_variables[i]]))),
+			col = rev(colora(length(levels(GBlabel)),43)))
+	abline(h=0)
+}
+```
+
+
+## BSCIs for the difference in the groups
+
+```{r}
+# If we reject H0, which supplement is responsible for this? We
+# do g*(g-1)/2 comparisons (all the pairs in g groups, g choose 2).
+# We use Bonferroni as we look simultaneously at the intervals
+g = length(levels(GBlabel))
+k = g*(g-1)/2
+n = dim(df_social)[1]
+treat = levels(GBlabel)
+alpha = 0.05
+ng = table(GBlabel) # number of obs in each group
+
+for (k in 1:length(model_variables) ){
+		
+	Xtarget = data.frame(df_social[,model_variables[k]])
+	fit = aov(as.matrix(Xtarget) ~ GBlabel)
+	Mediag = tapply(df_social[,model_variables[k]], df_social$NEW_VAR, mean) # group-wise means
+	SSres = sum(residuals(fit)^2)
+	S = SSres/(n-g)
+	ICrange=NULL
+	for(i in 1:(g-1)) {
+	for(j in (i+1):g) {
+	# print(paste(treat[i],"-",treat[j]))
+	# print(as.numeric(c(Mediag[i]-Mediag[j] - qt(1-alpha/(2*k), n-g) * sqrt(S * ( 1/ng[i] + 1/ng[j])), Mediag[i]-Mediag[j] + qt(1-alpha/(2*k), n-g) * sqrt(S * ( 1/ng[i] + 1/ng[j])))))
+	ICrange=rbind(ICrange,as.numeric(c(Mediag[i]-Mediag[j]
+	- qt(1-alpha/(2*k), n-g) * sqrt(S * (1/ng[i] + 1/ng[j])),
+	Mediag[i]-Mediag[j]
+	+ qt(1-alpha/(2*k), n-g) * sqrt(S * (1/ng[i] + 1/ng[j])))))
+	}
+	}
+	# ICrange
+	# par(mfrow=c(1,2))
+	# plot(df_social$CNT, df_social[,model_variables[i]], xlab='', ylab='Discriminant variable',
+		 # col = colori_fun(g), las=2)
+	h = 1
+	plot(c(1,g*(g-1)/2),range(ICrange), pch='',
+		 xlab='Pairs treatment', ylab='CI tau target variable',
+		 main = model_variables[k])
+	for(i in 1:(g-1)) {
+	for(j in (i+1):g) {
+	ind = (i-1)*g-i*(i-1)/2+(j-i)
+	if( (ICrange[ind,1]<0 && ICrange[ind,2]<0) || (ICrange[ind,1]>0 && ICrange[ind,2]>0) ){
+		lines (c(h,h), c(ICrange[ind,1],ICrange[ind,2]), col='grey55');
+		# points(h, Mediag[i]-Mediag[j], pch=16, col='grey55');
+		points(h, ICrange[ind,1], col=colori_fun(g,1)[j], pch=16);
+		points(h, ICrange[ind,2], col=colori_fun(g,1)[i], pch=16);
+	}
+	h = h+1
+	}}
+	abline(h=0)
+	legend("topright",treat,fill=colori_fun(g,1),bty="n",cex=0.4)
+}
+```
 
 
 
