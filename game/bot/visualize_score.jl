@@ -1,19 +1,21 @@
-println("Loading libaries.")
+############# paramteri importanti #############
+CALLING_FROM_TERMINAL = 1
+FILTER_DONE = 0
+
+############# parametri meno importanti #############
+NEED_TO_COMPUTE_SCORE = 0
+WRITE_NEW_DF_scored = 0
+
+if CALLING_FROM_TERMINAL==1
+	println("Loading libaries.")
+end
+
 using DataFrames
 using CSV
 using UnicodePlots
 # using Plots
 using Dates
 using Random
-
-############# paramteri importanti #############
-CALLING_FROM_TERMINAL = 1
-FILTER_DONE = 0
-
-############# parametri meno importanti #############
-NEED_TO_COMPUTE_SCORE = 1
-WRITE_NEW_DF_scored = 1
-
 
 data=Any
 
@@ -22,8 +24,8 @@ if CALLING_FROM_TERMINAL==1
 	include("dataframe_functions.jl")
 	include("const_variables.jl")
 
-	println("Computing the score.")
 	if NEED_TO_COMPUTE_SCORE==1
+		println("Computing the score.")
 		for idd in df.player_id
 			compute_score(idd)
 		end
@@ -41,21 +43,22 @@ else
 	end
 end
 
-println("Writing the new df filled with scores.")
 if WRITE_NEW_DF_scored==1
+	println("Writing the new df filled with scores.")
 	CSV.write("df.csv", data)
 end
 
-println("Sorting the data.")
+# println("Sorting the data.")
 sort!(data,:score,rev=true)
 # ora il dataset è ordinato
-@show data
+println(data)
 
 correzione_punteggio = 0
 if minimum(data.score)<0
 	shift = abs(minimum(data.score))
-	pietà = 1+rand((MersenneTwister(34))) # punteggio minimo
-	correzione_punteggio = (shift+pietà)*100
+	pietà = 10+rand((MersenneTwister(34))) # punteggio minimo
+	correzione_punteggio = shift*100 + pietà
+	# correzione_punteggio = (shift+pietà)*100
 else
 	correzione_punteggio = 0
 end

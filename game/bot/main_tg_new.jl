@@ -153,9 +153,17 @@ function handle_command(msg)
                     text="Game parameters confirmed! Now you can't change them anymore.\nWe are now normalizing your parameters (so that they sum up to 100), and then computing your score. Type /results to see your ranking in the scoreboard!",
                     chat_id=chat_id)
             
-                set_player_data(player_id, :zdone, 1)
+                try
+                    set_player_data(player_id, :zdone, 1)
+                catch e
+                    @show e
+                end
                 # normalize_player_data(player_id) # normalizza già nella compute_score
-                compute_score(player_id)
+                try
+                    compute_score(player_id)
+                catch e
+                    @show e
+                end
                 include("visualize_score.jl")
             end
         end
