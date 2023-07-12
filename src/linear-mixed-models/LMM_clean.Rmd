@@ -114,7 +114,7 @@ print(paste("PVRE =",PVRE))
 dotplot(ranef(fit_social_lmm, condVar=T))$NEW_VAR
 ```
 
-Ciclo for per aggiungere le varie slopes
+#  Ciclo for per aggiungere le varie slopes
 ```{r}
 #ciclare sulle variabili per vedere quale miglior PVRE come slope rispetto a sola intercetta NEW_VAR
 #confronto tra modello con solo intercetta e modello con una slope
