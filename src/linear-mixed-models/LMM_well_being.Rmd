@@ -1368,7 +1368,19 @@ write.csv(data_model,"data_psych_woo.csv") # not scaled
 ```
 
 
+# ????????????????????????????????????????????
 
+# Analisi degli outliers
+
+Se qualcuno vuole indagare cosa/se hanno di speciale i dati che abbiamo scartato considerandoli outliers, per far riottenere tutte le assunzioni al modello LM e LMM.
+Tipo se appartengono a poche classi di stati, se sono outliers perché troppo migliori o troppo peggiori, ecc.
+
+Questi sarebbero i dati da analizzare:
+
+```{r}
+data_outl_social = data[which(d2 > 24.3), ]
+data_outl_psych = data[which(d2 > 24.26), ]
+```
 
 
 
