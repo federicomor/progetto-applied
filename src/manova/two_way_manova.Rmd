@@ -45,7 +45,7 @@ IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
 data$IM_PUBLIC = as.factor(IM_PUBLIC)
 data$SCHLTYPE <- NULL
 head(data)
-linear_model_vars <- readLines("../../data/lm_social_vars.txt")
+linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
 ```
 
 
@@ -170,9 +170,7 @@ for( j in 1:2){
 # for which the groups differ.
 ```
 
-## **7.** Bonferroni: symmetric design assumption (n1 = n2 = n), change if needed
-We want to know the level (of the labels) that introduces the difference.
-##  SSres vs W??
+## statistic preparation
 ```{r, warning=FALSE, message=FALSE}
 W = summary.manova(fit2.int)$SS$Residuals
 Gdl <- n-g-b+1
@@ -199,8 +197,26 @@ for(j in 1:p){
   mean_lab_2[j]<-list(tapply(measures[[j]],Label_2,mean))
 }
 ```
+# line plot of the mean
+```{r}
+for(i in 1:p){
+  fdx <- vector(length = g)
+  ordered_mean = mean_lab_1[[i]][order(mean_lab_1[[i]])]
+  plot(1:g,ordered_mean,type="b",pch =16,main=colnames(measures)[i])
+  for (j in 2:(g-1)) {
+    fdx[j] <- (ordered_mean[j] - ordered_mean[j-1]) 
+  }
+  plot(1:g,fdx,type="b",pch =16,main=paste(colnames(measures)[j],"discrete derivative"))
+  
+}
 
 
+  # Iterate through the values using the forward differencing method
+
+```
+
+
+## BONFERRONI CI
 ```{r, warning=FALSE, message=FALSE}
 k = p*g*(g-1)/2
 n = dim(data)[1]
@@ -237,32 +253,73 @@ for(k in 1:p){
     group_ordered <- with(data,                      
                       reorder(data$label_1,
                               measures[,k],
-                              median))
-    boxplot(measures[,k]~group_ordered, main=paste(colnames(measures)[k]),las=2,
+                              FUN=median))
+    boxplot(measures[,k]~group_ordered, main=paste(colnames(measures)[k],"ordered by median"),las=2,
           ylim=c(round(min(measures[,k])),
           round(max(measures[,k]))), col = rainbow(g))
     abline(h=0)
    
-    plot(c(1,g*(g-1)/2),ylim=c(min(unlist(CI[[k]])),max(unlist(CI[[k]]))), xlim=c(c(1,g*(g-1)/2)),
+
+    
+    ###### 
+    #         plot(c(1,g*(g-1)/2),ylim=c(min(unlist(CI[[k]])),max(unlist(CI[[k]]))), xlim=c(c(1,g*(g-1)/2)),
+    #      pch='',xlab='pairs treat', ylab=paste('CI tau',colnames(measures)[k]), 
+    #      main=paste('CI tau',colnames(measures)[k]))
+    # abline(h=0)
+    # 
+    # for(i in 1:(g-1)) {
+    #   for(j in (i+1):g) {
+    #     ind <- (i-1)*g-i*(i-1)/2+(j-i)
+    #   
+    #     if(CI[[k]][ind,1]*CI[[k]][ind,3]>0){
+    #         lines (c(ind,ind), c(CI[[k]][ind,1],CI[[k]][ind,3])); 
+    #         points(ind, CI[[k]][ind,2], col="black", pch=16); 
+    #         points(ind, CI[[k]][ind,1], col=rainbow(g)[j], pch=16); 
+    #         points(ind, CI[[k]][ind,3], col=rainbow(g)[i], pch=16); 
+    #     }
+    #  }
+    # }
+######
+
+    plot(c(1,g),ylim=c(min(unlist(CI[[k]])),max(unlist(CI[[k]]))),
+         xlim=c(1,g),
          pch='',xlab='pairs treat', ylab=paste('CI tau',colnames(measures)[k]), 
          main=paste('CI tau',colnames(measures)[k]))
     abline(h=0)
     
-    gruoup_ordered_list[[colnames(measures)[k]]] = data.frame(levels(group_ordered),livelli_fittizzi)
-    gruoup_ordered_list[[colnames(measures)[k]]]$livelli_fittizzi=as.factor( gruoup_ordered_list[[colnames(measures)[k]]]$livelli_fittizzi)
-  
-    for(i in 1:(g-1)) {
-      for(j in (i+1):g) {
-        ind <- (i-1)*g-i*(i-1)/2+(j-i)
+    factor_ord = order(mean_lab_1[[p]])
+    country_ordered = factor1[factor_ord[1]]
+    livelli_final = 0
+    lev=0
+    for(i in 2:g){
       
-        if(CI[[k]][ind,1]*CI[[k]][ind,3]>0){
-            lines (c(ind,ind), c(CI[[k]][ind,1],CI[[k]][ind,3])); 
-            points(ind, CI[[k]][ind,2], col="black", pch=16); 
-            points(ind, CI[[k]][ind,1], col=rainbow(g)[j], pch=16); 
-            points(ind, CI[[k]][ind,3], col=rainbow(g)[i], pch=16); 
-        }
-     }
+      if(factor1[factor_ord[i-1]]<factor1[factor_ord[i]]){
+        row = paste(factor1[factor_ord[i-1]],"-",factor1[factor_ord[i]])
+      }
+      else{
+        row = paste(factor1[factor_ord[i]],"-",factor1[factor_ord[i-1]])
+      }
+      if(CI[[k]][row,1]*CI[[k]][row,3]>0 && lev<8){
+        lev=lev+1
+        lines (c(i,i), c(CI[[k]][row,1],CI[[k]][row,3])); 
+        points(i, CI[[k]][row,2], col="black", pch=16); 
+        points(i, CI[[k]][row,1], col=rainbow(g)[i-1], pch=16); 
+        points(i, CI[[k]][row,3], col=rainbow(g)[i], pch=16); 
+        
+      }
+
+      
+      livelli_final = c(livelli_final,lev)
+      country_ordered = c(country_ordered,factor1[factor_ord[i]])
     }
+    print(livelli_final)
+    
+    column = colnames(measures)[k]
+    gruoup_ordered_list[[column]] = data.frame(country_ordered,livelli_final)
+    gruoup_ordered_list[[column]]$livelli_final=as.factor(
+      gruoup_ordered_list[[column]]$livelli_final)
+    
+
 }
   
 ```
@@ -281,6 +338,9 @@ for ( col in 1:p){
 }
 counter
 ```
+
+
+
 
 
 # IM_PUBLIC
@@ -390,7 +450,6 @@ for (k in 1:1){
 ```
 #DISCRETE MAPS
 ```{r}
-
 for (k in 1:p){
     means = gruoup_ordered_list[[k]]
     means = data.frame(gruoup_ordered_list[[k]][,2],gruoup_ordered_list[[k]][,1])
@@ -410,9 +469,9 @@ for (k in 1:p){
       geom_sf(size = 0.2, color = "black") + # border line
     scale_fill_manual(
       name = "legend", 
-      breaks = c("high", "medium","low"),
-      values = c("high" = "darkgreen","medium" = "#32CD32","low" = "green"),
-      labels = c("high", "medium", "low"),
+      breaks = levels(means$mean_value),
+      values =brewer.pal(n = length(levels(means$mean_value)), name = "Blues"),
+      #labels = c("high", "medium", "low"),
       na.value = "white"  # Specify the color for NA values
       ) +
       labs(
