@@ -77,12 +77,6 @@ function normalize_player_data(player_id)
     end
 end
 
-function score_fun(proposto,giusto,method::String)
-    if method=="canberra"
-        return 1 - abs((proposto-giusto)/(proposto+giusto))
-        # max punteggio 6, min punteggio dipende
-    end
-end
 
 ############# Creazione fit #############
 data = DataFrame(CSV.File("data_woo.csv"))
@@ -136,6 +130,7 @@ lmodel = lm(FORMULA_social,data)
 
 
 function compute_score(player_id)
+    global lmodel, data
     normalize_player_data(player_id)
     if get_player_data(player_id,:zdone)==0
         set_player_data(player_id,:zdone,1)
@@ -189,10 +184,19 @@ function compute_score(player_id)
 end
 
 
+
+
 function summary_player(player_id)
     df_player = df[findfirst(isequal.(df.player_id,player_id)),:]
-        # player_id = $(df_player[3])
+    
+    amount_invested = get_amount_invested(player_id)
+    str_return = "Total amount invested: $(round(amount_invested,digits=2)) "
+    if amount_invested>100
+        str_return *= "(amount>100, we will normalize everything later, dont worry, or fix nom by inserting lower amounts) "
+    end
+
     to_send = """
+        $str_return
         player_name = $(df_player[3] =="missing" ? "NA" : df_player[3])
         state = $(df_player[6]=="missing" ? "NA" : df_player[6])
         tec = $(round(df_player[9],digits=3))
