@@ -55,7 +55,7 @@ data$NEW_VAR <- as.factor(data$NEW_VAR)
 
 # SELECTED COVARIATES
 ```{r}
-linear_model_vars <- readLines("src/linear-mixed-models/lm_social_vars.txt")
+linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
 ```
 
 # GROUPS OF VARIABLES- ignorabile
@@ -115,7 +115,7 @@ dotplot(ranef(fit_social_lmm, condVar=T))$NEW_VAR
 ```
 
 #  Ciclo for per aggiungere le varie slopes
-```{r}
+```{r,warning=FALSE,message=FALSE}
 #ciclare sulle variabili per vedere quale miglior PVRE come slope rispetto a sola intercetta NEW_VAR
 #confronto tra modello con solo intercetta e modello con una slope
 #codice abbastanza flessibile per aggiungere ulteriori slopes

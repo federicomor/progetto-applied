@@ -207,8 +207,8 @@ for (k in categories_variables){
   head(measures)
   
   name_dist_chosen <- "manhattan"
-  # linkages: "average", "complete", "ward", "ward.D2"
-  name_linkage_chosen <- 'ward.D2'
+  # linkages: "average", "complete", "ward.D2"
+  name_linkage_chosen <- 'average'
 
   data.dist = dist(measures, method=name_dist_chosen)
   data.hclust = hclust(data.dist, method=name_linkage_chosen)

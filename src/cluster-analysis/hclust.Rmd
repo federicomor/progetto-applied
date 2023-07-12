@@ -213,7 +213,7 @@ for(i in 1:3){
 ```
 
 ```{r}
-#pdf("cluster_country_proportions.pdf")
+pdf("cluster_country_proportions.pdf")
 
 for(kk in 1:6){
 # Create sample data
@@ -238,9 +238,9 @@ for(i in country_names){
   }
 }
   
-x11()
+
 # Create stacked bar chart
-ggplot(df, aes(x = country, y = percentage, fill = group)) +
+print(ggplot(df, aes(x = country, y = percentage, fill = group)) +
   geom_bar(stat = "identity") +
   labs(title = "Proportion of Schools in Each Group by Country",
        x = "Country",
@@ -248,8 +248,8 @@ ggplot(df, aes(x = country, y = percentage, fill = group)) +
   scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73"),
                     labels = groups_names) +
   geom_text(aes(label = paste0(round(percentage,2), "%")), 
-            position = position_stack(vjust = 0.5))
+            position = position_stack(vjust = 0.5)))
 
 }
-#dev.off()
+dev.off()
 ```
