@@ -21,24 +21,31 @@ library(lattice)
 library(plot.matrix)
 
 library(insight)
+
+library(MuMIn)
 ```
 
 ```{r}
 root_proj_dir = "../../"
-dataset_path = paste(root_proj_dir,"data/pisa_score_woo_social.csv",sep="")
+dataset_path = paste(root_proj_dir,"data/data_social_woo.csv",sep="")
 include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
 include_path_2 = paste(root_proj_dir,"data/data_psych_woo.csv",sep="")
 
 #INCLUDING UTILITIES
 source(include_path)
 #IMPORTING THE DATASET
-data_socio <- read.csv(file=dataset_path)
+data_socio <- read.csv(dataset_path)
 data_psycho <- read.csv(file=include_path_2) 
-head(data)
 ```
 
 
 # [0] DATA PREP
+```{r}
+data=data_socio
+head(data)
+```
+
+
 ```{r}
 data$X <- NULL
 data$CNT <- as.factor(data$CNT)
@@ -48,7 +55,7 @@ data$NEW_VAR <- as.factor(data$NEW_VAR)
 
 # SELECTED COVARIATES
 ```{r}
-linear_model_vars <- readLines("../../data/lm_social_vars.txt")
+linear_model_vars <- readLines("src/linear-mixed-models/lm_social_vars.txt")
 ```
 
 # GROUPS OF VARIABLES- ignorabile
@@ -88,7 +95,8 @@ summary(fit_social_final)
 
 #  LMM solo intercetta
 ```{r}
-vars = c(bwd[2:max_vars],"(1|NEW_VAR)")
+#vars = c(bwd[2:max_vars],"(1|NEW_VAR)")
+vars=c(vars,"(1|NEW_VAR)")
 FORMULA_LMM <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
 FORMULA_LMM
 
@@ -105,6 +113,74 @@ print(paste("PVRE =",PVRE))
 # Random effects: b_0i for i=1,...,234
 dotplot(ranef(fit_social_lmm, condVar=T))$NEW_VAR
 ```
+
+Ciclo for per aggiungere le varie slopes
+```{r}
+#ciclare sulle variabili per vedere quale miglior PVRE come slope rispetto a sola intercetta NEW_VAR
+#confronto tra modello con solo intercetta e modello con una slope
+#codice abbastanza flessibile per aggiungere ulteriori slopes
+
+n=length(vars)
+PVRE_slo=rep(0,n-3)
+
+#dà warning e richiede di scalare variabili
+scaled_data=data
+ind=sapply(data, is.numeric)
+scaled_data[ind]=lapply(data[ind], scale)
+
+#affinchè anche il modello di partenza sia calcolato sul medesimo dataset scalato
+fit_social_lmm_scaled = lmer(FORMULA_LMM,data=scaled_data)
+
+
+for(i in 1:(n-3)){    #-3 per togliere CNT,IM_PUBLIC,NEW_VAR (già in NEW_VAR)
+  slopevar=vars[i]
+  varsfor=c(vars,paste("(",paste(slopevar),"|NEW_VAR)",collapse=""))
+  FORMULA_LMM_slo <- paste(paste("Social.well.being","~"), paste(varsfor, collapse = "+"))
+  FORMULA_LMM_slo
+
+  fit_social_lmm_slo = lmer(FORMULA_LMM_slo,data=scaled_data)
+  fit_social_lmm_slo
+  
+  #lasciare pvre a 0 se singular (random non ha effetto significativo su modello, non vale la pena considerarlo)
+  if(!isSingular(fit_social_lmm_slo, tol = 1e-4)){
+    sigma2_eps_slo <- as.numeric(get_variance_residual(fit_social_lmm_slo))
+    sigma2_b_slo <- as.numeric(get_variance_random(fit_social_lmm_slo))
+
+    PVRE_slo[i] <- sigma2_b_slo/(sigma2_b_slo+sigma2_eps_slo)
+  }
+  
+  print(paste("Modello con slope su ",slopevar))
+  
+  #per pvalues di anova tra modello con solo intercetta e modello con slope
+  comp=anova(fit_social_lmm_scaled, fit_social_lmm_slo)$'Pr(>Chisq)'
+  
+  print(paste("Rsquared",r.squaredGLMM(fit_social_lmm_slo)))
+  #prints marginal and conditional Rsquared
+  
+  print(paste("PVRE =",PVRE_slo[i]))
+  print(paste("P-valueAnova =",comp))
+
+}
+
+
+#pvre -> anche quelli non a 0 molto molto bassi 
+#random slope non migliora situazione varianza spiegata
+#alcuni modelli sembrano addirittura non convergere
+
+#anova invece sembra segnalare miglioramento per alcuni modelli
+#(pvalue che conta è il secondo)
+#ATTLNACT, JOYREAD e PV1READ sembrano promettenti
+
+#molti warning per singolarità e refitting per fare anova
+#su internet dice potrebbe dipendere da complessità modello (?)
+
+```
+
+
+
+
+
+
 
 
 ### assumptions check
