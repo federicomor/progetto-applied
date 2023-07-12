@@ -1,6 +1,6 @@
 ---
 title: "R Notebook"
-output: html_notebook
+# output: html_notebook
 editor_options: 
   chunk_output_type: inline
 ---
@@ -31,6 +31,7 @@ include_path = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 source(include_path)
 #importing the dataset
 data <- read.csv(file=dataset_path)
+
 head(data)
 ```
 
@@ -107,13 +108,33 @@ for ( i in 1:p){
 ## **3.** Model Assumptions
 ```{r, warning=FALSE, message=FALSE}
 # Note that: if we have to remove rows -> one at the time
-
 # Assumptions
+
 # 1) Gaussianity
 treat = levels(Label_1_2)
+treat
 gb = length(treat)
+gb
+```
 
 
+```{r, warning=FALSE, message=FALSE}
+for (i in 1:gb){
+  if(dim(measures[Label_1_2==treat[i],])[1]>7){
+    print(paste("On", dim(measures[Label_1_2==treat[i],])[1],"samples:",
+                "pvalue for normality",treat[i],"=",
+              mvn(measures[Label_1_2==treat[i],])$multivariateNormality$"p value"))
+  }else
+    print(paste("On", dim(measures[Label_1_2==treat[i],])[1],"samples:",
+                "not enough samples for checking",treat[i]))
+}
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+library(MVN)
+library(car)
+library(heplots)
 # 2) homogeneity of the covariance (qualitatively)
 S_list = list()
 for ( i in 1:gb){
@@ -121,7 +142,18 @@ for ( i in 1:gb){
 }
 
 S_bind <- do.call(rbind, S_list)
+```
 
+
+```{r, warning=FALSE, message=FALSE}
+summary(boxM(measures,Label_1_2))
+
+cols = gray.colors(100)
+for (i in 1:gb)
+image(cov(measures[Label_1_2==treat[i],]),
+      breaks = quantile(cov(measures[Label_1_2==treat[i],]),(0:100)/100),
+      col=cols)
+# 'nsomma
 ```
  
 ##**5.** Models 
@@ -470,7 +502,10 @@ for (k in 1:p){
     scale_fill_manual(
       name = "legend", 
       breaks = levels(means$mean_value),
-      values =brewer.pal(n = length(levels(means$mean_value)), name = "Blues"),
+      ############### COLORI
+      # values =brewer.pal(n = length(levels(means$mean_value)), name = "Blues"),
+      values =colora(length(levels(means$mean_value))),
+      ############### COLORI
       #labels = c("high", "medium", "low"),
       na.value = "white"  # Specify the color for NA values
       ) +

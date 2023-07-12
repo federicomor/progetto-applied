@@ -1,0 +1,175 @@
+---
+title: "R Notebook"
+# output: html_notebook
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r}
+library(car)
+library(MVN)
+library(mvtnorm)
+library(mvnormtest)
+
+library(ggplot2)
+library(grid)
+library(sf)
+library(dplyr)
+library(rnaturalearth)
+
+library(sp)
+
+library(ggrepel)
+library(tmap)
+library(knitr)
+
+```
+
+
+```{r}
+root_proj_dir = "../../"
+path_social = paste(root_proj_dir,"data/data_social_woo.csv",sep="")
+path_psych = paste(root_proj_dir,"data/data_psych_woo.csv",sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+df_social <- read.csv(file=path_social)
+df_psych <- read.csv(file=path_psych)
+```
+
+# On social
+```{r}
+colnames(df_social)
+covariates = c(
+	"Approach.to.ICT",
+	"Use.of.ICT",
+	"Teachers..degree",
+	"Teacher.skill",
+	"ESCS",
+	"RATCMP1",
+	"ICTSCH",
+	"HEDRES",
+	"STUBEHA",
+	"ATTLNACT",
+	"JOYREAD",
+	"PROAT6",
+	"CLSIZE",
+	"EDUSHORT",
+	"STAFFSHORT",
+	"PV1MATH",
+	"PV1READ"
+)
+targets = c(
+	"Social.well.being",
+	"Psychological.well.being"
+)
+
+model_variables = c(covariates,targets)
+Glabel = factor(df_social$CNT)
+Blabel = factor(df_social$IM_PUBLIC)
+GBlabel = factor(df_social$NEW_VAR)
+```
+
+## Anova with CNT
+```{r}
+for (i in 1:length(model_variables) ){
+	Xtarget = data.frame(df_social[,model_variables[i]])
+	# fit_complete = aov(as.matrix(Xtarget) ~ Glabel + Blabel + Glabel:Blabel)
+	fit_complete = aov(as.matrix(Xtarget) ~ Glabel)
+	print(model_variables[i])
+	print(summary.aov(fit_complete))
+}
+```
+## View on maps
+```{r}
+all_countries <- c(
+	"AUT", "BEL", "BGR", "CYP", "CZE", "DEU", "DNK", "ESP", "EST", "FIN",
+	"FRA", "GRC", "HRV", "HUN", 
+	# "IRL", # IRL non c'è quindi magari possiamo toglierla e avere spazio?
+	"ITA", "LTU", "LUX", "LVA", "MLT",
+	"NLD", "POL", "PRT", "ROU", "SVK", "SVN", "SWE", 
+	"BIH", "ALB","MNE" # queste erano per chiudere la mappa
+	)
+
+europe_map <- ne_countries( scale=50,returnclass = 'sf',continent = "europe")
+sf_use_s2(FALSE)
+centroids <- st_centroid(europe_map)
+
+europe_map <- cbind(europe_map, st_coordinates(st_centroid(europe_map$geometry)))
+```
+
+```{r}
+for (i in 1:length(model_variables) ){
+# for (i in 1:4 ){
+	
+	#### Classic boxplot
+	group_ordered <- with(df_social,                      
+                  reorder(df_social$CNT,
+                          df_social[,model_variables[i]],
+                          FUN=mean,
+                  		decreasing = T))
+	boxplot(df_social[,model_variables[i]] ~group_ordered,
+			main=paste(model_variables[i],"ordered by mean"),las=2,
+			ylim=c(round(min(df_social[,model_variables[i]])),
+				   round(max(df_social[,model_variables[i]]))),
+			col = rev(colora(length(levels(Glabel)),43)))
+	abline(h=0)
+
+	
+	#### Map stuff
+	mean_lab_1<-tapply(df_social[,model_variables[i]],Glabel,mean)
+    means = data.frame(mean_lab_1,names(mean_lab_1))
+    colnames(means)=c("mean_value","adm0_a3")
+    for (country in all_countries) {
+      # Check if the country is already in the dataset
+      if (!(country %in% means$adm0_a3)) {
+        # If not, add the country to the dataset with a value of 0
+        means <- rbind(means, data.frame(adm0_a3 = country, mean_value = NA))
+      }
+    }
+
+    europe_joined <- merge(europe_map, means, by = c("adm0_a3"))
+    
+    suppressWarnings({print(
+      europe_joined %>% ggplot(aes(fill = mean_value)) +
+      geom_sf(size = 0.2, color = "black") + # border line
+     scale_fill_continuous(
+      type = "viridis",
+      name = "score",                  # title of the legend
+      na.value = "white",  # Specify the color for NA values
+      guide = guide_colorbar(
+        direction = "vertical",             # vertical colorbar
+        title.position = "top",             # title displayed at the top
+        label.position = "right",           # labels displayed at the right side
+        barwidth = unit(0.4, "cm"),         # width of the colorbar
+        barheight = unit(7, "cm"),          # height of the colorbar
+        ticks = TRUE))+
+      labs(
+        title =model_variables[i],
+        subtitle = "ANOVA") +
+      scale_x_continuous(limits = c(-10, 35)) +
+      scale_y_continuous(limits = c(35, 68))+
+      theme_void()+
+      geom_text_repel(aes(x = X, y = Y, label = name),
+                data = subset(europe_joined, !is.na(mean_value)),
+                size = 3.5,                   # Increase the size of the labels
+                colour = "gray20",          # Set the color of the labels
+                fontface = "bold",          # Set the font weight to bold
+                label.padding = unit(0.5, "lines"),   # Add padding around the label
+                label.r = unit(0.2, "lines"),         # Set the radius of the label's rounded corners
+                label.color = "black",                 # Set the color of the label's border
+                label.size = 0.8,                      # Set the size of the label's border
+                label.fill = "black"                    # Set the color of the label's background
+                ) 
+    
+    )})
+}
+```
+
+
+
+
+
+
+
