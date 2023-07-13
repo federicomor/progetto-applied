@@ -1238,22 +1238,86 @@ shapiro.test(unlist(ranef(fm)))$p*100
 
 ## [UP] Confronto valori con&senza asunzioni
 ```{r}
+numerical_variables = c(1:23,25,26)
 lmm_social = lmer(FORMULA_SOCIAL_LMM,data=data)
 lmm_social_woo = lmer(FORMULA_SOCIAL_LMM,data=data_woo)
 
+data_scaled = data
+data_scaled[,numerical_variables] = data.frame(scale(data_scaled[,numerical_variables]))
+data_woo_scaled = data_woo
+data_woo_scaled[,numerical_variables] = data.frame(scale(data_woo_scaled[,numerical_variables]))
+
+lmm_social_scaled = lmer(FORMULA_SOCIAL_LMM,data=data_scaled)
+lmm_social_woo_scaled = lmer(FORMULA_SOCIAL_LMM,data=data_woo_scaled)
+```
+
+
+```{r}
 for (i in 1:length(fixef(lmm_social)))
   print(fixef(lmm_social)[[i]]-fixef(lmm_social_woo)[[i]])
+```
+
+```{r}
+for (i in 1:length(fixef(lmm_social)))
+  print(fixef(lmm_social)[[i]]-fixef(lmm_social_scaled)[[i]])
+```
+
+
+```{r}
+for (i in 1:length(fixef(lmm_social)))
+  print(fixef(lmm_social_scaled)[[i]]-fixef(lmm_social_woo_scaled)[[i]])
+
 # tutte intorno allo zero => coefficienti molto simili
+```
+
+```{r}
+for (i in 1:length(fixef(lmm_social)))
+  print(paste(levels(data$NEW_VAR)[i], ":",
+              ranef(lmm_social)$NEW_VAR[[1]][i]-ranef(lmm_social_scaled)$NEW_VAR[[1]][i]))
 ```
 
 
 ```{r}
 for (i in 1:length(fixef(lmm_social)))
   print(paste(levels(data$NEW_VAR)[i], ":",
-              ranef(lmm_social)$NEW_VAR[[1]][i]-ranef(lmm_social_woo)$NEW_VAR[[1]][i]))
+              ranef(lmm_social_scaled)$NEW_VAR[[1]][i]-ranef(lmm_social_woo_scaled)$NEW_VAR[[1]][i]))
+```
 
+```{r}
+for (i in 1:length(fixef(lmm_social)))
+  print(paste(levels(data$NEW_VAR)[i], ":",
+              ranef(lmm_social)$NEW_VAR[[1]][i]-ranef(lmm_social_woo)$NEW_VAR[[1]][i]))
+```
+
+
+```{r}
 dotplot(ranef(lmm_social, condVar=T))$NEW_VAR
 dotplot(ranef(lmm_social_woo, condVar=T))$NEW_VAR
+dotplot(ranef(lmm_social_scaled, condVar=T))$NEW_VAR
+dotplot(ranef(lmm_social_woo_scaled, condVar=T))$NEW_VAR
+```
+
+
+Assumptions:
+```{r}
+print("lmm_social")
+shapiro.test(resid(lmm_social))$p*100
+shapiro.test(unlist(ranef(lmm_social)))$p*100
+print("lmm_social_woo")
+shapiro.test(resid(lmm_social_woo))$p*100
+shapiro.test(unlist(ranef(lmm_social_woo)))$p*100
+print("lmm_social_scaled")
+shapiro.test(resid(lmm_social_scaled))$p*100
+shapiro.test(unlist(ranef(lmm_social_scaled)))$p*100
+print("lmm_social_woo_scaled")
+shapiro.test(resid(lmm_social_woo_scaled))$p*100
+shapiro.test(unlist(ranef(lmm_social_woo_scaled)))$p*100
+
+```
+
+```{r}
+ranef(lmm_social)
+ranef(lmm_social_woo)
 ```
 
 
@@ -1297,15 +1361,6 @@ SVK-1 -0.39041740  SVK-1 -0.24548464
 SVN-1  0.15708389  SVN-1  0.10991974 
 ```
 
-
-```{r}
-shapiro.test(resid(lmm_social))$p*100
-shapiro.test(unlist(ranef(lmm_social)))$p*100
-
-shapiro.test(resid(lmm_social_woo))$p*100
-shapiro.test(unlist(ranef(lmm_social_woo)))$p*100
-
-```
 
 
 
