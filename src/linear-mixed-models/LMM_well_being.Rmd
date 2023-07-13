@@ -73,6 +73,8 @@ colnames(data)
 
 
 # [1] Definizione formule
+Please tenete questa sezione alla fine delle vostre analisi, mi serve per avere le formule definitive da usare nei modelli per calcolare il punteggio del gioco nel bot. Grazie! :)
+
 ```{r}
 FORMULA_SOCIAL = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
 
@@ -94,10 +96,12 @@ hist(d2,breaks = 300,xlim = c(0,300))
 ```
 
 
+
+# [2.1] Soglie migliori trovate
 ## Social
 ```{r}
-BEST_SOGLIA = 24.3
-SOGLIA = BEST_SOGLIA
+BEST_SOGLIA_SOCIAL = 24.3
+SOGLIA = BEST_SOGLIA_SOCIAL
 data_social_woo = data[which(d2 <= SOGLIA), ]
 print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
 print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
@@ -105,16 +109,55 @@ print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*1
 
 ## Psych
 ```{r}
-BEST_SOGLIA = 24.26
-SOGLIA = BEST_SOGLIA
+BEST_SOGLIA_PSYCH = 24.26
+SOGLIA = BEST_SOGLIA_PSYCH
 data_psych_woo = data[which(d2 <= SOGLIA), ]
 print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
 print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
 ```
 
+# [2.2] Se volete provare ancora
+```{r}
+##########################
+FORMULA = FORMULA_SOCIAL_LMM
+# FORMULA = FORMULA_PSYCH_LMM
+SOGLIA_RANGE = seq(20,40,by=1)
+SOGLIA_PVALUE_INTERESSANTI = 0.05
+##########################
+
+for (soglia in SOGLIA_RANGE ){
+  data_woo = data[which(d2 <= soglia), ]
+  
+  suppressWarnings({fit = lmer(FORMULA_SOCIAL_LMM,data=data_woo)})
+  # fit
+  sigma2_eps <- as.numeric(get_variance_residual(fit))
+  sigma2_b <- as.numeric(get_variance_random(fit))
+  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+  # print(paste("PVRE social =",PVRE))
+
+  pval=round(shapiro.test(resid(fit))$p,digits=4)
+  if(pval>SOGLIA_PVALUE_INTERESSANTI){
+    print(paste0(
+      "% rimasta = ",round(dim(data_woo)[1]/dim(data)[1]*100,digits=2),
+      # "PVRE = ",PVRE,
+      "  soglia = ",soglia,
+      "  pvalue = ",pval))
+  }
+}
+```
+
 
 
 # [3] Creazione dei fit
+
+## Ripresa dati_woo ufficiali
+Ufficiali per ora.
+```{r}
+data_social_woo = read.csv("data_social_woo.csv")
+data_psych_woo = read.csv("data_psych_woo.csv")
+```
+
+
 ```{r}
 fit_social_lm = lm(FORMULA_SOCIAL,data=data_social_woo)
 fit_psych_lm = lm(FORMULA_PSYCH,data=data_psych_woo)
@@ -131,7 +174,6 @@ fixef(fit_social_lmm)
 
 
 # [4] Assumptions LM
-## Social or Psych
 ```{r}
 #############################
 fit = fit_social_lm
@@ -141,9 +183,7 @@ df = data_social_woo
 #############################
 res = fit$residuals
 alpha = 0.05
-```
 
-```{r}
 shapiro.test(res)$p
 print(paste("Normality of residuals?",shapiro.test(res)$p>alpha))
 qqnorm(res)
@@ -156,7 +196,6 @@ boxplot(res ~ df$CNT,las=2)
 
 
 # [5] Assumptions LMM
-## Social or Psych
 ```{r}
 #############################
 fit = fit_social_lmm
@@ -167,9 +206,7 @@ df = data_social_woo
 res = residuals(fit)
 raneff = unlist(ranef(fit))
 alpha = 0.05
-```
 
-```{r}
 shapiro.test(res)$p
 shapiro.test(raneff)$p
 print(paste("Normality of residuals?",shapiro.test(res)$p>alpha))
@@ -187,7 +224,6 @@ boxplot(res ~ df$CNT,las=2)
 
 
 # [6] Random effects
-## Social or Psych
 ```{r}
 #############################
 fit = fit_social_lmm
@@ -195,16 +231,31 @@ fit = fit_social_lmm
 #############################
 
 dotplot(ranef(fit, condVar=T))$NEW_VAR
+ranef(fit)
 ```
 
 
 # [7] Analisi outliers
 ```{r}
-data_outl_social = data[which(d2 > 24.3), ]
-data_outl_psych = data[which(d2 > 24.26), ]
+data_out_social = data[which(d2 > BEST_SOGLIA_SOCIAL), ]
+data_out_psych = data[which(d2 > BEST_SOGLIA_PSYCH), ]
 ```
 
+## Social or Psych
+```{r}
+###########################
+df = data_out_social 
+# df = data_out_psych 
+###########################
 
+for (i in 1:length(STATES)) { # STATES sta in Utilities
+	print(paste(STATES[i],":",sum(df_out_social$CNT==STATES[i]),"outliers out of",
+		  sum(data$CNT==STATES[i]),"obs originally  %lost =",
+					sum(df_out_social$CNT==STATES[i])/sum(data$CNT==STATES[i])*100))
+}
+
+
+```
 
 
 
