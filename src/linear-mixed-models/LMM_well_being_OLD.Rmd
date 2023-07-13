@@ -782,13 +782,7 @@ Rimuoviamo gli outleirs solo in base alle covariate interessanti per il modello.
 
 Sennò magari outliers su covariate che poi non ci interessano potrebbero eliminare osservazioni invece interessanti forse.
 ```{r}
-vars
-numerical_relevant_variables = NULL
-for (i in 1:(length(vars)-1) ) # -1 perché il rand effect non è in data
-  numerical_relevant_variables = c(numerical_relevant_variables,
-                                   which(colnames(data)==vars[i]))
-numerical_relevant_variables
-length(numerical_relevant_variables) == length(vars)-1 # check
+
 
 M = colMeans(data[,numerical_relevant_variables])
 S = cov(data[,numerical_relevant_variables])

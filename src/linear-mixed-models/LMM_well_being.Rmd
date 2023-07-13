@@ -46,7 +46,6 @@ IM_PUBLIC = rep(0,dim(data)[1])
 IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
 data$IM_PUBLIC = as.factor(IM_PUBLIC)
 data$SCHLTYPE <- NULL
-
 ```
 ### creazione unico factor combinato
 ```{r}
@@ -85,6 +84,21 @@ FORMULA_PSYCH = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.s
 FORMULA_PSYCH_LMM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
 ```
 
+```{r}
+linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
+
+vars = c(linear_model_vars,"CNT","IM_PUBLIC")
+FORMULA_SOCIAL <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
+```
+
+```{r}
+linear_model_vars <- readLines("../../data/non csv/lm_psico_vars.txt")
+
+vars = c(linear_model_vars,"CNT","IM_PUBLIC")
+FORMULA_PSYCH <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
+```
+
+
 # [2] Gestione outliers
 
 ```{r}
@@ -94,7 +108,6 @@ S = cov(data[,numerical_variables])
 d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
 hist(d2,breaks = 300,xlim = c(0,300))
 ```
-
 
 
 # [2.1] Soglie migliori trovate
@@ -127,7 +140,7 @@ SOGLIA_PVALUE_INTERESSANTI = 0.05
 
 for (soglia in SOGLIA_RANGE ){
   data_woo = data[which(d2 <= soglia), ]
-  
+
   suppressWarnings({fit = lmer(FORMULA_SOCIAL_LMM,data=data_woo)})
   # fit
   sigma2_eps <- as.numeric(get_variance_residual(fit))
@@ -159,7 +172,7 @@ data_psych_woo = read.csv("data_psych_woo.csv")
 
 
 ```{r}
-fit_social_lm = lm(FORMULA_SOCIAL,data=data_social_woo)
+fit_social_lm = lm(FORMULA_SOCIAL,data=data_psych_woo)
 fit_psych_lm = lm(FORMULA_PSYCH,data=data_psych_woo)
 
 fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo)
@@ -171,6 +184,39 @@ fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=data_psych_woo)
 fit_social_lm$coefficients
 fixef(fit_social_lmm)
 ```
+
+# Linear hypothesis
+```{r}
+fm = fit_social_lm
+summary(fm)
+b=coefficients(fm)
+```
+
+# SOCIAL
+```{r}
+vars_to_discard = c("CLSIZE",
+                    "ESCS",
+                    "STAFFSHORT",
+                    "STUBEHA",
+                    "EDUSHORT",
+                    "PROAT6"
+
+                    )
+check_beta <- which(names(b)%in%vars_to_discard)
+C <- c()
+for( i in 1: length(check_beta)){
+  vect <- rep(0,fm$rank)
+  vect[check_beta[i]] <- 1
+  C <- rbind(C,vect)
+}
+linearHypothesis(fm, C, rep(0,length(check_beta)))
+
+```
+# PSYCHO
+```{r}
+
+```
+
 
 
 # [4] Assumptions LM
@@ -244,8 +290,8 @@ data_out_psych = data[which(d2 > BEST_SOGLIA_PSYCH), ]
 ## Social or Psych
 ```{r}
 ###########################
-df = data_out_social 
-# df = data_out_psych 
+df = data_out_social
+# df = data_out_psych
 ###########################
 
 for (i in 1:length(STATES)) { # STATES sta in Utilities
@@ -256,7 +302,3 @@ for (i in 1:length(STATES)) { # STATES sta in Utilities
 
 
 ```
-
-
-
-
