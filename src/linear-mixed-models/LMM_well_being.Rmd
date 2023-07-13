@@ -84,6 +84,16 @@ FORMULA_PSYCH_LMM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teach
 ```
 
 # [2] Gestione outliers
+
+```{r}
+numerical_variables = c(1:23,25,26)
+M = colMeans(data[,numerical_variables])
+S = cov(data[,numerical_variables])
+d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
+hist(d2,breaks = 300,xlim = c(0,300))
+```
+
+
 ## Social
 ```{r}
 BEST_SOGLIA = 24.3
@@ -111,7 +121,12 @@ fit_psych_lm = lm(FORMULA_PSYCH,data=data_psych_woo)
 
 fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo)
 fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=data_psych_woo)
+```
 
+
+```{r}
+fit_social_lm$coefficients
+fixef(fit_social_lmm)
 ```
 
 
