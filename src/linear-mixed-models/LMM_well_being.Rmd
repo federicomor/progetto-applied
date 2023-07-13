@@ -46,7 +46,6 @@ IM_PUBLIC = rep(0,dim(data)[1])
 IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
 data$IM_PUBLIC = as.factor(IM_PUBLIC)
 data$SCHLTYPE <- NULL
-
 ```
 ### creazione unico factor combinato
 ```{r}
