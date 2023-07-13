@@ -1,5 +1,5 @@
 ############# paramteri importanti #############
-CALLING_FROM_TERMINAL = 1
+CALLING_FROM_TERMINAL = 0
 FILTER_DONE = 0
 
 ############# parametri meno importanti #############
@@ -17,7 +17,7 @@ using UnicodePlots
 using Dates
 using Random
 
-data=Any
+score_data=Any
 
 if CALLING_FROM_TERMINAL==1
 	df = DataFrame(CSV.File("df.csv")) #,stringtype=String))
@@ -30,32 +30,32 @@ if CALLING_FROM_TERMINAL==1
 			compute_score(idd)
 		end
 	end
-	data=df
+	score_data=df
 
 	if FILTER_DONE==1 && sum(isequal.(df.zdone,1))>=1
-		data = data[isequal.(df.zdone,1),:]
+		score_data = score_data[isequal.(df.zdone,1),:]
 	end
 else
 	if FILTER_DONE==1
-		data = df[isequal.(df.zdone,1),:]
+		score_data = df[isequal.(df.zdone,1),:]
 	else
-		data=df
+		score_data=df
 	end
 end
 
 if WRITE_NEW_DF_scored==1
 	println("Writing the new df filled with scores.")
-	CSV.write("df.csv", data)
+	CSV.write("df.csv", score_data)
 end
 
 # println("Sorting the data.")
-sort!(data,:score,rev=true)
+sort!(score_data,:score,rev=true)
 # ora il dataset è ordinato
-println(data)
+println(score_data)
 
 correzione_punteggio = 0
-if minimum(data.score)<0
-	shift = abs(minimum(data.score))
+if minimum(score_data.score)<0
+	shift = abs(minimum(score_data.score))
 	pietà = 10+rand((MersenneTwister(34))) # punteggio minimo
 	correzione_punteggio = shift*100 + pietà
 	# correzione_punteggio = (shift+pietà)*100
@@ -106,8 +106,8 @@ write(f,"```R\n")
 
 # P = barplot(string.(data[:,:player_name]," [",string.(data[:,:state]),"] ",1:size(data)[1] ), # con anche lo stato scelto
 # P = barplot(string.(data[:,:player_name]," [",string.(data[:,:state]),"] ",lpad.(1:size(data)[1],3)), # con spazio uguale tra stringhe e cifre
-P = barplot(string.(data[:,:player_name]," ",1:size(data)[1] ),
-	round.(data[:,:score] .* 100 .+ correzione_punteggio,digits=4),
+P = barplot(string.(score_data[:,:player_name]," ",1:size(score_data)[1] ),
+	round.(score_data[:,:score] .* 100 .+ correzione_punteggio,digits=4),
 	# width=:auto,
 	width = 30, # così stretta che forse dal telefono si vede meglio
 	# nevermind si può scorrere
