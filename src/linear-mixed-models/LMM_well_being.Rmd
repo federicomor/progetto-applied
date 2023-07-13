@@ -131,7 +131,7 @@ print(paste("From",dim(data)[1],"obs we moved to",dim(data_psych_woo)[1]))
 print(paste("Percentuale di dati sopravvissuti:",dim(data_psych_woo)[1]/dim(data)[1]*100,"%"))
 ```
 
-# [2.2] Se volete provare ancora
+# [2.2] For per la scelta soglia
 ```{r}
 ##########################
 FORMULA = FORMULA_SOCIAL_LMM
@@ -162,7 +162,7 @@ for (soglia in SOGLIA_RANGE ){
 ```
 
 
-# Salvataggio dataset
+# Salvataggio dataset versione-1
 ```{r}
 write.csv(data_social_woo,"../../data/data_social_woo.csv")
 write.csv(data_psych_woo,"../../data/data_psych_woo.csv")
@@ -286,7 +286,7 @@ summary(fit_fin)
 
 
 ```
-# Salvataggio dataset
+# Salvataggio dataset versione-2
 ```{r}
 write.csv(dati_soc_woo,"../../data/dati_soc_woo.csv")
 #write.csv(data_ps_woo,"../../data/dati_ps_woo.csv")
@@ -304,6 +304,32 @@ write.csv(dati_soc_woo_scaled,"../../data/dati_soc_woo_scaled.csv")
 ```
 
 
+# Assumptions LMM con i nuovi dati
+```{r}
+#############################
+fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=dati_soc_woo)
+fit = fit_social_lmm
+df = dati_soc_woo
+#############################
+res = residuals(fit)
+raneff = unlist(ranef(fit))
+alpha = 0.05
+
+print(paste("pvalue residuals =",shapiro.test(res)$p))
+print(paste("pvalue rand effects =",shapiro.test(raneff)$p))
+print(paste("Normality of residuals?",shapiro.test(res)$p>alpha))
+print(paste("Normality of rand effects?",shapiro.test(raneff)$p>alpha))
+qqnorm(res)
+qqline(res,col="red")
+qqnorm(raneff)
+qqline(raneff,col="red")
+
+# homoschedasticity
+boxplot(res ~ df$NEW_VAR,las=2)
+boxplot(res ~ df$CNT,las=2)
+
+dotplot(ranef(fit, condVar=T))$NEW_VAR
+```
 
 
 
@@ -329,24 +355,26 @@ data_psych_woo_scaled = read.csv("../../data/data_psych_woo_scaled.csv")
 fit_social_lm = lm(FORMULA_SOCIAL,data=data_psych_woo)
 fit_psych_lm = lm(FORMULA_PSYCH,data=data_psych_woo)
 
-fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo)
-fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=data_psych_woo)
+fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo_scaled)
+fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=data_psych_woo_scaled)
 ```
 
+Forse questo interessante ma ci mette molto a runnare.
 ```{r}
-library(influence.ME)
-suppressWarnings({infl <- influence(fit_social_lmm, obs = TRUE) })
-cooks.distance(infl)
-plot(infl, which = "cook")
-
+# library(influence.ME)
+# # suppressWarnings({
+# 	infl = influence(fit_social_lmm, obs = TRUE)
+# # })
+# cooks.distance(infl)
+# plot(infl, which = "cook")
 ```
 
 
+Confronto beta LM e LMM, sono molto simili.
 ```{r}
 fit_social_lm$coefficients
 fixef(fit_social_lmm)
 ```
-
 
 
 
