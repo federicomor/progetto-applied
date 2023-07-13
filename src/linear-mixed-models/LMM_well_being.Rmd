@@ -289,7 +289,7 @@ summary(fit_fin)
 # Salvataggio dataset versione-2
 ```{r}
 ## Sovrascriviamo quelli della versione-1
-write.csv(dati_soc_woo,"../../data/dati_social_woo.csv")
+write.csv(dati_soc_woo,"../../data/data_social_woo.csv")
 # write.csv(dati_soc_woo,"../../data/dati_soc_woo.csv")
 # write.csv(data_ps_woo,"../../data/dati_ps_woo.csv")
 
@@ -301,7 +301,7 @@ dati_soc_woo_scaled[,numerical_variables] = scale(dati_soc_woo_scaled[,numerical
 #dati_ps_woo_scaled = dati_ps_woo
 #dati_ps_woo_scaled[,numerical_variables] = scale(data_psych_woo_scaled[,numerical_variables])
 
-write.csv(dati_soc_woo_scaled,"../../data/dati_social_woo_scaled.csv")
+write.csv(dati_soc_woo_scaled,"../../data/data_social_woo_scaled.csv")
 #write.csv(dati_ps_woo_scaled,"../../data/dati_ps_woo_scaled.csv")
 ```
 
