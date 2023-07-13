@@ -290,8 +290,10 @@ data_out_psych = data[which(d2 > BEST_SOGLIA_PSYCH), ]
 ## Social or Psych
 ```{r}
 ###########################
-df = data_out_social
+df_out = data_out_social
+target = "Social.well.being"
 # df = data_out_psych
+# target = "Psychological.well.being"
 ###########################
 
 for (i in 1:length(STATES)) { # STATES sta in Utilities
@@ -299,6 +301,18 @@ for (i in 1:length(STATES)) { # STATES sta in Utilities
 		  sum(data$CNT==STATES[i]),"obs originally  %lost =",
 					sum(df_out_social$CNT==STATES[i])/sum(data$CNT==STATES[i])*100))
 }
+```
 
 
+Social:
+CZE, FIN, LTU, POL, SVK => sono peggiori della medie dei dati "normali"
+ESP, LUX => sono migliori della medie dei dati "normali"
+
+Forse ci sta, già ESP era lo stato migliore secondo il LMM, e LUX è uno stato molto ricco.
+Quindi magari togliendo gli outliers sono state rimosse scuole fin troppo belle nella già bella SPA, e lo stesso vale per LUX.
+
+```{r}
+mean_target_woo = mean(data_social_woo[,target])
+boxplot(df_out[,target] ~ df_out[,"CNT"],col = colora(14),las=2)
+abline(h=mean_target_woo)
 ```
