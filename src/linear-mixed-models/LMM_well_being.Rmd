@@ -162,8 +162,23 @@ for (soglia in SOGLIA_RANGE ){
 ```
 
 
+# Salvataggio dataset
+```{r}
+write.csv(data_social_woo,"../../data/data_social_woo.csv")
+write.csv(data_psych_woo,"../../data/data_psych_woo.csv")
+numerical_variables
 
-<<<<<<< Updated upstream
+data_social_woo_scaled = data_social_woo
+data_social_woo_scaled[,numerical_variables] = scale(data_social_woo_scaled[,numerical_variables])
+data_psych_woo_scaled = data_psych_woo
+data_psych_woo_scaled[,numerical_variables] = scale(data_psych_woo_scaled[,numerical_variables])
+
+write.csv(data_social_woo_scaled,"../../data/data_social_woo_scaled.csv_scaled")
+write.csv(data_psych_woo_scaled,"../../data/data_psych_woo_scale_scaledd.csv")
+```
+
+
+
 # [3] Creazione dei fit
 
 ## Ripresa dati_woo ufficiali
