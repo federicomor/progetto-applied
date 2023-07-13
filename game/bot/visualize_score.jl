@@ -3,7 +3,7 @@ CALLING_FROM_TERMINAL = 0
 FILTER_DONE = 0
 
 ############# parametri meno importanti #############
-NEED_TO_COMPUTE_SCORE = 0
+NEED_TO_COMPUTE_SCORE = 1
 WRITE_NEW_DF_scored = 0
 
 if CALLING_FROM_TERMINAL==1
@@ -23,25 +23,28 @@ if CALLING_FROM_TERMINAL==1
 	df = DataFrame(CSV.File("df.csv")) #,stringtype=String))
 	include("dataframe_functions.jl")
 	include("const_variables.jl")
-
-	if NEED_TO_COMPUTE_SCORE==1
-		println("Computing the score.")
-		for idd in df.player_id
-			compute_score(idd)
-		end
-	end
 	score_data=df
-
-	if FILTER_DONE==1 && sum(isequal.(df.zdone,1))>=1
-		score_data = score_data[isequal.(df.zdone,1),:]
-	end
 else
-	if FILTER_DONE==1
-		score_data = df[isequal.(df.zdone,1),:]
-	else
-		score_data=df
-	end
+	score_data=df
 end
+
+if NEED_TO_COMPUTE_SCORE==1
+	println("Computing the score.")
+	for idd in df.player_id
+		compute_score(idd)
+	end
+score_data=df
+end
+
+if FILTER_DONE==1 && sum(isequal.(df.zdone,1))>=1
+	score_data = score_data[isequal.(df.zdone,1),:]
+end
+if FILTER_DONE==1
+	score_data = df[isequal.(df.zdone,1),:]
+else
+	score_data=df
+end
+
 
 if WRITE_NEW_DF_scored==1
 	println("Writing the new df filled with scores.")

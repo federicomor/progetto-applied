@@ -108,6 +108,7 @@ FORMULA_social_LMM = @formula(
 
 lmodel = lm(FORMULA_social_LM,data)
 lmmodel = fit(MixedModel, FORMULA_social_LMM, data)
+raneff = DataFrame(only(raneftables(lmmodel)))
 ############# end #############
 
 
@@ -120,6 +121,7 @@ function compute_score(player_id)
 
     score = 0
     ############# start prediction #############
+    # usare mean(data[:,:ECC]) se vogliamo scartare le variabili che non riteniamo controllabili
 
     nobs_LMM = Dict(
         "Social_well_being" => 345,
@@ -144,50 +146,48 @@ function compute_score(player_id)
     )
     nobs_LMM = DataFrame(nobs_LMM)
 
-    # new_obs = [new_obs mean(data[:,:STUBEHA])
-    # se vogliamo scartare le variabili che non riteniamo controllabili
-    new_obs = 1 # intercetta
-    new_obs = [new_obs quantile(data[:,:Approach_to_ICT],get_player_data(player_id,"tec")/100) ]
-    new_obs = [new_obs quantile(data[:,:Use_of_ICT],get_player_data(player_id,"tec")/100) ]
-    new_obs = [new_obs quantile(data[:,:Teachers__degree],get_player_data(player_id,"tch")/100) ]
-    new_obs = [new_obs quantile(data[:,:Teacher_skill],get_player_data(player_id,"tch")/100) ]
-    new_obs = [new_obs quantile(data[:,:ESCS],get_player_data(player_id,"fam")/100) ]
-    new_obs = [new_obs quantile(data[:,:RATCMP1],get_player_data(player_id,"tec")/100) ]
-    new_obs = [new_obs quantile(data[:,:ICTSCH],get_player_data(player_id,"tec")/100) ]
-    new_obs = [new_obs quantile(data[:,:HEDRES],get_player_data(player_id,"fam")/100) ]
-    new_obs = [new_obs quantile(data[:,:STUBEHA],get_player_data(player_id,"stu")/100) ]
-    new_obs = [new_obs quantile(data[:,:ATTLNACT],get_player_data(player_id,"stu")/100) ]
-    new_obs = [new_obs quantile(data[:,:JOYREAD],get_player_data(player_id,"stu")/100) ]
-    new_obs = [new_obs quantile(data[:,:PROAT6],get_player_data(player_id,"tch")/100) ]
-    new_obs = [new_obs quantile(data[:,:CLSIZE],get_player_data(player_id,"sch")/100) ]
-    new_obs = [new_obs quantile(data[:,:EDUSHORT],get_player_data(player_id,"sch")/100) ]
-    new_obs = [new_obs quantile(data[:,:STAFFSHORT],get_player_data(player_id,"sch")/100) ]
-    new_obs = [new_obs quantile(data[:,:PV1MATH],get_player_data(player_id,"stu")/100) ]
-    new_obs = [new_obs quantile(data[:,:PV1READ],get_player_data(player_id,"stu")/100) ]
-    new_obs = [new_obs get_player_data(player_id,"state") == "DNK"]
-    new_obs = [new_obs get_player_data(player_id,"state") == "ESP"]
-    new_obs = [new_obs get_player_data(player_id,"state") == "EST"]
-    new_obs = [new_obs get_player_data(player_id,"state") == "FIN"]
-    new_obs = [new_obs get_player_data(player_id,"state") == "FRA"]
-    new_obs = [new_obs get_player_data(player_id,"state") == "GRC"]
-    new_obs = [new_obs get_player_data(player_id,"state") == "HRV"]
-    new_obs = [new_obs get_player_data(player_id,"state") == "HUN"]
-    new_obs = [new_obs get_player_data(player_id,"state") == "LTU"]
-    new_obs = [new_obs get_player_data(player_id,"state") == "LUX"]
-    new_obs = [new_obs get_player_data(player_id,"state") == "POL"]
-    new_obs = [new_obs get_player_data(player_id,"state") == "SVK"]
-    new_obs = [new_obs get_player_data(player_id,"state") == "SVN"]
-    new_obs = [new_obs quantile(data[:,:IM_PUBLIC],1-get_player_data(player_id,"sch")/100) ]
+    # new_obs = 1 # intercetta
+    # new_obs = [new_obs quantile(data[:,:Approach_to_ICT],get_player_data(player_id,"tec")/100) ]
+    # new_obs = [new_obs quantile(data[:,:Use_of_ICT],get_player_data(player_id,"tec")/100) ]
+    # new_obs = [new_obs quantile(data[:,:Teachers__degree],get_player_data(player_id,"tch")/100) ]
+    # new_obs = [new_obs quantile(data[:,:Teacher_skill],get_player_data(player_id,"tch")/100) ]
+    # new_obs = [new_obs quantile(data[:,:ESCS],get_player_data(player_id,"fam")/100) ]
+    # new_obs = [new_obs quantile(data[:,:RATCMP1],get_player_data(player_id,"tec")/100) ]
+    # new_obs = [new_obs quantile(data[:,:ICTSCH],get_player_data(player_id,"tec")/100) ]
+    # new_obs = [new_obs quantile(data[:,:HEDRES],get_player_data(player_id,"fam")/100) ]
+    # new_obs = [new_obs quantile(data[:,:STUBEHA],get_player_data(player_id,"stu")/100) ]
+    # new_obs = [new_obs quantile(data[:,:ATTLNACT],get_player_data(player_id,"stu")/100) ]
+    # new_obs = [new_obs quantile(data[:,:JOYREAD],get_player_data(player_id,"stu")/100) ]
+    # new_obs = [new_obs quantile(data[:,:PROAT6],get_player_data(player_id,"tch")/100) ]
+    # new_obs = [new_obs quantile(data[:,:CLSIZE],get_player_data(player_id,"sch")/100) ]
+    # new_obs = [new_obs quantile(data[:,:EDUSHORT],get_player_data(player_id,"sch")/100) ]
+    # new_obs = [new_obs quantile(data[:,:STAFFSHORT],get_player_data(player_id,"sch")/100) ]
+    # new_obs = [new_obs quantile(data[:,:PV1MATH],get_player_data(player_id,"stu")/100) ]
+    # new_obs = [new_obs quantile(data[:,:PV1READ],get_player_data(player_id,"stu")/100) ]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "DNK"]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "ESP"]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "EST"]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "FIN"]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "FRA"]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "GRC"]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "HRV"]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "HUN"]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "LTU"]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "LUX"]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "POL"]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "SVK"]
+    # new_obs = [new_obs get_player_data(player_id,"state") == "SVN"]
+    # new_obs = [new_obs quantile(data[:,:IM_PUBLIC],1-get_player_data(player_id,"sch")/100) ]
 
-    score_LM = predict(lmodel,new_obs)[1]
-    score_LMM = predict(lmmodel,nobs)[1]
+    # score_LM = predict(lmodel,new_obs)[1]
+    score_LMM = predict(lmmodel,nobs_LMM)[1]
 
     # score += 2*abs(minimum(data[:,:Social_well_being]))
     # score *= 100
     ## shift perché lo scoreboard non riesce a plottare valori negativi
     ## Update: aggiusta tutto dopo quando fa il grafico
     ############# end #############
-    return score
+    return score_LMM
 end
 
 
