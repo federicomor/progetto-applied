@@ -3,6 +3,7 @@ using StatsModels
 using Statistics
 using CSV
 using DataFrames
+using MixedModels
 
 function is_player_registered(player_id)
     return player_id in df.player_id
@@ -72,10 +73,11 @@ function normalize_player_data(player_id)
     end
     if tot != 0
         for categ in CATEGORIES
-            df[position,Symbol(categ)] /= (tot) #/100)
+            df[position,Symbol(categ)] /= (tot/100)
         end
     end
 end
+
 
 
 ############# Creazione fit #############
@@ -83,49 +85,29 @@ data = DataFrame(CSV.File("data_woo.csv"))
 v = names(data)
 cnames =replace.(v,"."=>"_")
 rename!(data, Symbol.(cnames))
-FORMULA_social = @formula(
+
+FORMULA_social_LM = @formula(
     Social_well_being ~
-    Approach_to_ICT+
-    Use_of_ICT+
-    Teachers__degree+
-    Teacher_skill+
-    ESCS+
-    RATCMP1+
-    ICTSCH+
-    HEDRES+
-    STUBEHA+
-    ATTLNACT+
-    JOYREAD+
-    PROAT6+
-    CLSIZE+
-    EDUSHORT+
-    STAFFSHORT+
-    PV1MATH+
-    PV1READ+
-    CNT+
-    IM_PUBLIC)
+    Approach_to_ICT+ Use_of_ICT+ Teachers__degree+ Teacher_skill+ ESCS+ 
+    RATCMP1+ ICTSCH+ HEDRES+ STUBEHA+ ATTLNACT+ JOYREAD+ PROAT6+ CLSIZE+ 
+    EDUSHORT+ STAFFSHORT+ PV1MATH+ PV1READ+
+    CNT+IM_PUBLIC)
+
+FORMULA_social_LMM = @formula(
+    Social_well_being ~
+    Approach_to_ICT+ Use_of_ICT+ Teachers__degree+ Teacher_skill+ ESCS+ 
+    RATCMP1+ ICTSCH+ HEDRES+ STUBEHA+ ATTLNACT+ JOYREAD+ PROAT6+ CLSIZE+
+    EDUSHORT+ STAFFSHORT+ PV1MATH+ PV1READ+
+    (1|NEW_VAR))
+
 # FORMULA_psych = @formula(
 #     Psychological_well_being ~
-#     Approach_to_ICT+
-#     Use_of_ICT+
-#     Teachers__degree+
-#     Teacher_skill+
-#     ESCS+
-#     RATCMP1+
-#     ICTSCH+
-#     HEDRES+
-#     STUBEHA+
-#     ATTLNACT+
-#     JOYREAD+
-#     PROAT6+
-#     CLSIZE+
-#     EDUSHORT+
-#     STAFFSHORT+
-#     PV1MATH+
-#     PV1READ+
-#     CNT+
-#     IM_PUBLIC)
-lmodel = lm(FORMULA_social,data)
+#     Approach_to_ICT+ Use_of_ICT+ Teachers__degree+ Teacher_skill+ ESCS+
+#     RATCMP1+ ICTSCH+ HEDRES+ STUBEHA+ ATTLNACT+ JOYREAD+ PROAT6+ CLSIZE+
+#     EDUSHORT+ STAFFSHORT+ PV1MATH+ PV1READ+ CNT+ IM_PUBLIC)
+
+lmodel = lm(FORMULA_social_LM,data)
+lmmodel = fit(MixedModel, FORMULA_social_LMM, data)
 ############# end #############
 
 
@@ -138,26 +120,50 @@ function compute_score(player_id)
 
     score = 0
     ############# start prediction #############
+
+    nobs_LMM = Dict(
+        "Social_well_being" => 345,
+        "Approach_to_ICT" => quantile(data[:,:Approach_to_ICT],get_player_data(player_id,"tec")/100),
+        "Use_of_ICT" => quantile(data[:,:Use_of_ICT],get_player_data(player_id,"tec")/100),
+        "Teachers__degree" => quantile(data[:,:Teachers__degree],get_player_data(player_id,"tch")/100),
+        "Teacher_skill" => quantile(data[:,:Teacher_skill],get_player_data(player_id,"tch")/100),
+        "ESCS" => quantile(data[:,:ESCS],get_player_data(player_id,"fam")/100),
+        "RATCMP1" => quantile(data[:,:RATCMP1],get_player_data(player_id,"tec")/100),
+        "ICTSCH" => quantile(data[:,:ICTSCH],get_player_data(player_id,"tec")/100),
+        "HEDRES" => quantile(data[:,:HEDRES],get_player_data(player_id,"fam")/100),
+        "STUBEHA" => quantile(data[:,:STUBEHA],get_player_data(player_id,"stu")/100),
+        "ATTLNACT" => quantile(data[:,:ATTLNACT],get_player_data(player_id,"stu")/100),
+        "JOYREAD" => quantile(data[:,:JOYREAD],get_player_data(player_id,"stu")/100),
+        "PROAT6" => quantile(data[:,:PROAT6],get_player_data(player_id,"tch")/100),
+        "CLSIZE" => quantile(data[:,:CLSIZE],get_player_data(player_id,"sch")/100),
+        "EDUSHORT" => quantile(data[:,:EDUSHORT],get_player_data(player_id,"sch")/100),
+        "STAFFSHORT" => quantile(data[:,:STAFFSHORT],get_player_data(player_id,"sch")/100),
+        "PV1MATH" => quantile(data[:,:PV1MATH],get_player_data(player_id,"stu")/100),
+        "PV1READ" => quantile(data[:,:PV1READ],get_player_data(player_id,"stu")/100),
+        "NEW_VAR" => "ESP-0"
+    )
+    nobs_LMM = DataFrame(nobs_LMM)
+
+    # new_obs = [new_obs mean(data[:,:STUBEHA])
+    # se vogliamo scartare le variabili che non riteniamo controllabili
     new_obs = 1 # intercetta
-
-    new_obs = [new_obs quantile(data[:,:Approach_to_ICT],get_player_data(player_id,"tec")) ]
-    new_obs = [new_obs quantile(data[:,:Use_of_ICT],get_player_data(player_id,"tec")) ]
-    new_obs = [new_obs quantile(data[:,:Teachers__degree],get_player_data(player_id,"tch")) ]
-    new_obs = [new_obs quantile(data[:,:Teacher_skill],get_player_data(player_id,"tch")) ]
-    new_obs = [new_obs quantile(data[:,:ESCS],get_player_data(player_id,"fam")) ]
-    new_obs = [new_obs quantile(data[:,:RATCMP1],get_player_data(player_id,"tec")) ]
-    new_obs = [new_obs quantile(data[:,:ICTSCH],get_player_data(player_id,"tec")) ]
-    new_obs = [new_obs quantile(data[:,:HEDRES],get_player_data(player_id,"fam")) ]
-    new_obs = [new_obs quantile(data[:,:STUBEHA],get_player_data(player_id,"stu")) ]
-    new_obs = [new_obs quantile(data[:,:ATTLNACT],get_player_data(player_id,"stu")) ]
-    new_obs = [new_obs quantile(data[:,:JOYREAD],get_player_data(player_id,"stu")) ]
-    new_obs = [new_obs quantile(data[:,:PROAT6],get_player_data(player_id,"tch")) ]
-    new_obs = [new_obs quantile(data[:,:CLSIZE],get_player_data(player_id,"sch")) ]
-    new_obs = [new_obs quantile(data[:,:EDUSHORT],get_player_data(player_id,"sch")) ]
-    new_obs = [new_obs quantile(data[:,:STAFFSHORT],get_player_data(player_id,"sch")) ]
-    new_obs = [new_obs quantile(data[:,:PV1MATH],get_player_data(player_id,"stu")) ]
-    new_obs = [new_obs quantile(data[:,:PV1READ],get_player_data(player_id,"stu")) ]
-
+    new_obs = [new_obs quantile(data[:,:Approach_to_ICT],get_player_data(player_id,"tec")/100) ]
+    new_obs = [new_obs quantile(data[:,:Use_of_ICT],get_player_data(player_id,"tec")/100) ]
+    new_obs = [new_obs quantile(data[:,:Teachers__degree],get_player_data(player_id,"tch")/100) ]
+    new_obs = [new_obs quantile(data[:,:Teacher_skill],get_player_data(player_id,"tch")/100) ]
+    new_obs = [new_obs quantile(data[:,:ESCS],get_player_data(player_id,"fam")/100) ]
+    new_obs = [new_obs quantile(data[:,:RATCMP1],get_player_data(player_id,"tec")/100) ]
+    new_obs = [new_obs quantile(data[:,:ICTSCH],get_player_data(player_id,"tec")/100) ]
+    new_obs = [new_obs quantile(data[:,:HEDRES],get_player_data(player_id,"fam")/100) ]
+    new_obs = [new_obs quantile(data[:,:STUBEHA],get_player_data(player_id,"stu")/100) ]
+    new_obs = [new_obs quantile(data[:,:ATTLNACT],get_player_data(player_id,"stu")/100) ]
+    new_obs = [new_obs quantile(data[:,:JOYREAD],get_player_data(player_id,"stu")/100) ]
+    new_obs = [new_obs quantile(data[:,:PROAT6],get_player_data(player_id,"tch")/100) ]
+    new_obs = [new_obs quantile(data[:,:CLSIZE],get_player_data(player_id,"sch")/100) ]
+    new_obs = [new_obs quantile(data[:,:EDUSHORT],get_player_data(player_id,"sch")/100) ]
+    new_obs = [new_obs quantile(data[:,:STAFFSHORT],get_player_data(player_id,"sch")/100) ]
+    new_obs = [new_obs quantile(data[:,:PV1MATH],get_player_data(player_id,"stu")/100) ]
+    new_obs = [new_obs quantile(data[:,:PV1READ],get_player_data(player_id,"stu")/100) ]
     new_obs = [new_obs get_player_data(player_id,"state") == "DNK"]
     new_obs = [new_obs get_player_data(player_id,"state") == "ESP"]
     new_obs = [new_obs get_player_data(player_id,"state") == "EST"]
@@ -171,16 +177,17 @@ function compute_score(player_id)
     new_obs = [new_obs get_player_data(player_id,"state") == "POL"]
     new_obs = [new_obs get_player_data(player_id,"state") == "SVK"]
     new_obs = [new_obs get_player_data(player_id,"state") == "SVN"]
+    new_obs = [new_obs quantile(data[:,:IM_PUBLIC],1-get_player_data(player_id,"sch")/100) ]
 
-    new_obs = [new_obs quantile(data[:,:IM_PUBLIC],1-get_player_data(player_id,"sch")) ]
+    score_LM = predict(lmodel,new_obs)[1]
+    score_LMM = predict(lmmodel,nobs)[1]
 
-    score = predict(lmodel,new_obs)[1]
     # score += 2*abs(minimum(data[:,:Social_well_being]))
     # score *= 100
     ## shift perché lo scoreboard non riesce a plottare valori negativi
     ## Update: aggiusta tutto dopo quando fa il grafico
     ############# end #############
-    set_player_data(player_id,:score,score)
+    return score
 end
 
 
@@ -198,6 +205,7 @@ function summary_player(player_id)
     to_send = """
         $str_return
         player_name = $(df_player[3] =="missing" ? "NA" : df_player[3])
+
         state = $(df_player[6]=="missing" ? "NA" : df_player[6])
         tec = $(round(df_player[9],digits=3))
         tch = $(round(df_player[8],digits=3))
