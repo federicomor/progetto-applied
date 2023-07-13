@@ -75,11 +75,11 @@ colnames(data)
 Please tenete questa sezione alla fine delle vostre analisi, mi serve per avere le formule definitive da usare nei modelli per calcolare il punteggio del gioco nel bot. Grazie! :)
 
 ```{r}
-FORMULA_SOCIAL = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
+FORMULA_SOCIAL_LM = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
 
 FORMULA_SOCIAL_LMM  = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
 
-FORMULA_PSYCH = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
+FORMULA_PSYCH_LM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
 
 FORMULA_PSYCH_LMM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
 ```
@@ -89,6 +89,7 @@ linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
 
 vars = c(linear_model_vars,"CNT","IM_PUBLIC")
 FORMULA_SOCIAL <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
+FORMULA_SOCIAL == FORMULA_SOCIAL_LM # check coerenza
 ```
 
 ```{r}
@@ -96,6 +97,7 @@ linear_model_vars <- readLines("../../data/non csv/lm_psico_vars.txt")
 
 vars = c(linear_model_vars,"CNT","IM_PUBLIC")
 FORMULA_PSYCH <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
+FORMULA_PSYCH == FORMULA_PSYCH_LM # check coerenza
 ```
 
 
@@ -116,8 +118,8 @@ hist(d2,breaks = 300,xlim = c(0,300))
 BEST_SOGLIA_SOCIAL = 24.3
 SOGLIA = BEST_SOGLIA_SOCIAL
 data_social_woo = data[which(d2 <= SOGLIA), ]
-print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
-print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_social_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_social_woo)[1]/dim(data)[1]*100,"%"))
 ```
 
 ## Psych
@@ -125,8 +127,8 @@ print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*1
 BEST_SOGLIA_PSYCH = 24.26
 SOGLIA = BEST_SOGLIA_PSYCH
 data_psych_woo = data[which(d2 <= SOGLIA), ]
-print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
-print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_psych_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_psych_woo)[1]/dim(data)[1]*100,"%"))
 ```
 
 # [2.2] Se volete provare ancora
@@ -165,6 +167,8 @@ for (soglia in SOGLIA_RANGE ){
 
 ## Ripresa dati_woo ufficiali
 Ufficiali per ora.
+Sono gli stessi di sopra finché le soglie non vengono cambiate da 24.3 e 24.26.
+
 ```{r}
 data_social_woo = read.csv("../../data/data_social_woo.csv")
 data_psych_woo = read.csv("../../data/data_psych_woo.csv")
@@ -179,11 +183,6 @@ fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo)
 fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=data_psych_woo)
 ```
 
-
-```{r}
-fit_social_lm$coefficients
-fixef(fit_social_lmm)
-```
 
 # Linear hypothesis
 ```{r}
