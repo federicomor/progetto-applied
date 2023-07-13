@@ -288,8 +288,10 @@ summary(fit_fin)
 ```
 # Salvataggio dataset versione-2
 ```{r}
-write.csv(dati_soc_woo,"../../data/dati_soc_woo.csv")
-#write.csv(data_ps_woo,"../../data/dati_ps_woo.csv")
+## Sovrascriviamo quelli della versione-1
+write.csv(dati_soc_woo,"../../data/dati_social_woo.csv")
+# write.csv(dati_soc_woo,"../../data/dati_soc_woo.csv")
+# write.csv(data_ps_woo,"../../data/dati_ps_woo.csv")
 
 colnames(dati_soc_woo)
 numerical_variables=c(1:23,25,26)
@@ -299,7 +301,7 @@ dati_soc_woo_scaled[,numerical_variables] = scale(dati_soc_woo_scaled[,numerical
 #dati_ps_woo_scaled = dati_ps_woo
 #dati_ps_woo_scaled[,numerical_variables] = scale(data_psych_woo_scaled[,numerical_variables])
 
-write.csv(dati_soc_woo_scaled,"../../data/dati_soc_woo_scaled.csv")
+write.csv(dati_soc_woo_scaled,"../../data/dati_social_woo_scaled.csv")
 #write.csv(dati_ps_woo_scaled,"../../data/dati_ps_woo_scaled.csv")
 ```
 
@@ -350,8 +352,19 @@ suppressWarnings({fit_data_social_woo = lmer(FORMULA_SOCIAL_LMM,data=data_social
 res = residuals(fit_data_social_woo)
 qqnorm(res,main="data_social_woo (version-1)")
 qqline(res,col="red")
+```
 
 
+```{r}
+dotplot(ranef(fit_data_soc_woo, condVar=T))$NEW_VAR
+dotplot(ranef(fit_data_social_woo, condVar=T))$NEW_VAR
+```
+
+## T
+
+```{r}
+dim(data_social_woo)
+dim(dati_soc_woo)
 ```
 
 
@@ -362,6 +375,12 @@ qqline(res,col="red")
 ## Ripresa dati_woo ufficiali
 Ufficiali per ora.
 Sono gli stessi di sopra finché le soglie non vengono cambiate da 24.3 e 24.26.
+
+*Update*: quelli di Giulia con la versione-2 sembrano in effetti meglio. Quindi i file sono gli stessi ma con i dati nuovi. Cioè sono ancora da scrivere ma lo saranno.
+
+Check da spuntare: sono i seguenti file riferiti ai dati della versione-2?
+- social sì (c'era il codice già pronto)
+- psych non ancora (updatare qui quando qualcuno lo farà anche per psych)
 
 ```{r}
 data_social_woo = read.csv("../../data/data_social_woo.csv")
