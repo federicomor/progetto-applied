@@ -181,6 +181,134 @@ write.csv(data_psych_woo_scaled,"../../data/data_psych_woo_scaled.csv")
 
 
 
+
+# Tentativo con leverages, residui, distanza di cook
+(partendo con social, codice riadattabile rapidamente per psychological)
+```{r}
+
+fit = lm(FORMULA_SOCIAL,data=data)
+
+#Punti leva
+lev=hatvalues(fit)
+sum(lev) 
+
+p=fit$rank
+n=dim(data)[1]
+fs=summary(fit)
+
+#soglia per leverages è 2*p/n
+watchout_points_lev = lev[ which( lev > 2 * p/n ) ]
+watchout_ids_lev = seq_along( lev )[ which( lev > 2 * p/n ) ]
+
+plot(fit$fitted.values,lev,pch=16, ylab='lev',xlab='Fitted values',main='Leverages')
+abline(h=2*p/n,col='red')
+points( fit$fitted.values[ watchout_ids_lev ], watchout_points_lev, col = 'red', pch = 16 )
+#molti valori sopra soglia
+
+sum(lev[lev>2*p/n])
+#somma è 1.65, punti leva pesano 33% 
+fit2=lm(FORMULA_SOCIAL,data=data,subset=(lev<2*p/n))
+summary(fit2)
+#R^2 adj 
+
+abs((fit$coefficients-fit2$coefficients)/fit$coefficients)
+#Impatto delle leve sui beta
+
+
+
+#Residui standardizzati
+
+res_std=fit$res/fs$sigma
+
+plot(fit$fitted.values,res_std, pch=16, main='Standardized Residuals',ylab='res',xlab='Fitted values')
+abline(h=c(-2,2),col='red')
+
+#punto influente se res standardizzato >2
+watchout_ids_rstd = which( abs( res_std ) > 2 )
+watchout_rstd = res_std[ watchout_ids_rstd ]
+
+points( fit$fitted.values[watchout_ids_rstd],
+        res_std[watchout_ids_rstd], col = 'red', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev],
+        res_std[watchout_ids_lev], col = 'orange', pch = 16 )
+#in rosso residui alti, in arancione leve 
+
+
+
+#Residui studentizzati 
+stud = rstandard( fit )
+
+watchout_ids_stud = which( abs( stud ) > 2 )
+watchout_stud = stud[ watchout_ids_stud ]
+
+plot( fit$fitted.values, stud, ylab = 'res',xlab='Fitted values', main = "Studentized Residuals", pch = 16 )
+points( fit$fitted.values[watchout_ids_stud], 
+        stud[watchout_ids_stud], col = 'pink', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev], 
+        stud[watchout_ids_lev], col = 'orange', pch = 16 )
+abline( h = c(-2,2), col = 'red' )
+#Residui e residui studentizzati sembrano rilevare stessi punti
+
+
+
+#Distanza di Cook 
+Cdist = cooks.distance( fit )
+
+watchout_ids_Cdist = which( Cdist > 4/(n-p) ) 
+watchout_Cdist = Cdist[ watchout_ids_Cdist ]
+
+plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values', 
+      ylab = 'distance', main = 'Cooks Distance' )
+abline(h=4/(n-p), col='red')
+points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ], 
+        col = 'green', pch = 16 )
+
+
+
+#punti da tenere non notevoli
+id_to_keep1 = !(1:n %in% watchout_ids_Cdist)
+id_to_keep2 = !(1:n %in% watchout_ids_stud)
+id_to_keep3 = !(1:n %in% watchout_ids_rstd)
+id_to_keep4 = !(1:n %in% watchout_ids_lev)
+
+id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4 
+
+#tolgo tutte le righe notevoli
+dati_soc_woo=subset(data,id_to_keep)
+dim(dati_soc_woo)
+#si scende a circa 3983 (circa 91% dei dati)
+
+fit_fin=lm(FORMULA_SOCIAL, dati_soc_woo)
+summary(fit_fin)
+#R^2 adj è 0.6861 -> alto
+
+
+
+
+```
+# Salvataggio dataset
+```{r}
+write.csv(dati_soc_woo,"../../data/dati_soc_woo.csv")
+#write.csv(data_ps_woo,"../../data/dati_ps_woo.csv")
+
+colnames(dati_soc_woo)
+numerical_variables=c(1:23,25,26)
+
+dati_soc_woo_scaled = dati_soc_woo
+dati_soc_woo_scaled[,numerical_variables] = scale(dati_soc_woo_scaled[,numerical_variables])
+#dati_ps_woo_scaled = dati_ps_woo
+#dati_ps_woo_scaled[,numerical_variables] = scale(data_psych_woo_scaled[,numerical_variables])
+
+write.csv(dati_soc_woo_scaled,"../../data/dati_soc_woo_scaled.csv")
+#write.csv(dati_ps_woo_scaled,"../../data/dati_ps_woo_scaled.csv")
+```
+
+
+
+
+
+
+
 # [3] Creazione dei fit
 
 ## Ripresa dati_woo ufficiali

@@ -95,6 +95,7 @@ summary(fit_social_final)
 
 #  LMM solo intercetta
 ```{r}
+
 vars=c(linear_model_vars,"(1|NEW_VAR)")
 FORMULA_LMM <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
 FORMULA_LMM
