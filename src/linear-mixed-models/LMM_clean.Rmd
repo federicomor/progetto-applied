@@ -121,7 +121,6 @@ dotplot(ranef(fit_social_lmm, condVar=T))$NEW_VAR
 #codice abbastanza flessibile per aggiungere ulteriori slopes
 
 n=length(vars)
-PVRE_slo=rep(0,n-3)
 
 #dà warning e richiede di scalare variabili
 scaled_data=data
@@ -146,21 +145,27 @@ for(i in 1:(n-3)){    #-3 per togliere CNT,IM_PUBLIC,NEW_VAR (già in NEW_VAR)
     sigma2_eps_slo <- as.numeric(get_variance_residual(fit_social_lmm_slo))
     sigma2_b_slo <- as.numeric(get_variance_random(fit_social_lmm_slo))
 
-    PVRE_slo[i] <- sigma2_b_slo/(sigma2_b_slo+sigma2_eps_slo)
+    PVRE_slo<- sigma2_b_slo/(sigma2_b_slo+sigma2_eps_slo)
   }
   
   print(paste("Modello con slope su ",slopevar))
   
-  #per pvalues di anova tra modello con solo intercetta e modello con slope
-  comp=anova(fit_social_lmm_scaled, fit_social_lmm_slo)$'Pr(>Chisq)'[2]
+  #per anova tra modello con solo intercetta e modello con slope
+  comp=anova(fit_social_lmm_scaled, fit_social_lmm_slo)$AIC
   
   print(paste("Rsquared-marginal = ",r.squaredGLMM(fit_social_lmm_slo)[1]))
-    print(paste("Rsquared-conditional = ",r.squaredGLMM(fit_social_lmm_slo)[2]))
+  print(paste("Rsquared-conditional = ",r.squaredGLMM(fit_social_lmm_slo)[2]))
   #prints marginal and conditional Rsquared
   
-  print(paste("PVRE =",PVRE_slo[i]))
-  print(paste("P-valueAnova =",comp))
+  print(paste("PVRE =",PVRE_slo))
+  
+  print(paste("AIC_Anova_riferimento =",comp[1]))
+  print(paste("AIC_Anova_slope =",comp[2]))
+  
+  if(comp[2]<comp[1])   print("interessante")
+  
   print("----")
+  
 
 }
 
@@ -171,12 +176,73 @@ for(i in 1:(n-3)){    #-3 per togliere CNT,IM_PUBLIC,NEW_VAR (già in NEW_VAR)
 
 #anova invece sembra segnalare miglioramento per alcuni modelli
 #(pvalue che conta è il secondo)
-#ATTLNACT, JOYREAD e PV1READ sembrano promettenti
+#ATTLNACT, JOYREAD, PV1MATH e PV1READ sembrano promettenti ma AIC molto vicini tra loro 
+# -> slope non migliora sensibilmente modello, complessità aumenta ma senza reale guadagno in spiegabilità
 
 #molti warning per singolarità e refitting per fare anova
-#su internet dice potrebbe dipendere da complessità modello (?)
 
 ```
+
+
+# Due slopes
+```{r}
+#Stesso for di prima, stavolta considero già una slope, in questo caso ATTLNACT, che sembrava dare il maggior miglioramento AIC
+#in realtà 0.001808812% (infimo), ma proviamo lo stesso 
+#aggiungendo a var 2 un'altra e modificando il primo if si possono aggiungere anche altre slopes una dopo l'altra
+#questo è esempio con ATTLNACT
+
+vars2=c(vars,"(ATTLNACT|NEW_VAR)")
+n=length(vars2)
+
+i=1
+while(i < (n-3)){    #-3 per togliere CNT,IM_PUBLIC,NEW_VAR (già in NEW_VAR)
+  slopevar=vars2[i]
+  if(slopevar=="ATTLNACT"){
+    i=i+1
+    slopevar=vars2[i]
+  }
+  
+  varsfor=c(vars,paste("(",paste(slopevar),"|NEW_VAR)",collapse=""))
+  FORMULA_LMM_slo <- paste(paste("Social.well.being","~"), paste(varsfor, collapse = "+"))
+  FORMULA_LMM_slo
+
+  fit_social_lmm_slo = lmer(FORMULA_LMM_slo,data=scaled_data)
+  fit_social_lmm_slo
+  
+  #lasciare pvre a 0 se singular (random non ha effetto significativo su modello, non vale la pena considerarlo)
+  if(!isSingular(fit_social_lmm_slo, tol = 1e-4)){
+    sigma2_eps_slo <- as.numeric(get_variance_residual(fit_social_lmm_slo))
+    sigma2_b_slo <- as.numeric(get_variance_random(fit_social_lmm_slo))
+
+    PVRE_slo<- sigma2_b_slo/(sigma2_b_slo+sigma2_eps_slo)
+  }
+  
+  print(paste("Modello con slope su ",slopevar))
+  
+  #per anova tra modello con solo intercetta e modello con slope
+  comp=anova(fit_social_lmm_scaled, fit_social_lmm_slo)$AIC
+  
+  print(paste("Rsquared-marginal = ",r.squaredGLMM(fit_social_lmm_slo)[1]))
+  print(paste("Rsquared-conditional = ",r.squaredGLMM(fit_social_lmm_slo)[2]))
+  #prints marginal and conditional Rsquared
+  
+  print(paste("PVRE =",PVRE_slo))
+  
+  print(paste("AIC_Anova_riferimento =",comp[1]))
+  print(paste("AIC_Anova_slope =",comp[2]))
+  
+  if(comp[2]<comp[1])   print("interessante")
+  
+  print("----")
+  
+  i=i+1
+
+}
+
+#non sembrano esserci sostanziali miglioramenti
+
+```
+
 
 
 
