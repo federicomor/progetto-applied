@@ -82,7 +82,23 @@ FORMULA_PSYCH = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.s
 FORMULA_PSYCH_LMM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
 ```
 
+```{r}
+linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
+
+vars = c(linear_model_vars,"CNT","IM_PUBLIC")
+FORMULA_SOCIAL <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
+```
+
+```{r}
+linear_model_vars <- readLines("../../data/non csv/lm_psico_vars.txt")
+
+vars = c(linear_model_vars,"CNT","IM_PUBLIC")
+FORMULA_PSYCH <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
+```
+
+
 # [2] Gestione outliers
+<<<<<<< Updated upstream
 
 ```{r}
 numerical_variables = c(1:23,25,26)
@@ -93,6 +109,14 @@ hist(d2,breaks = 300,xlim = c(0,300))
 ```
 
 
+=======
+```{r}
+M = colMeans(data[,numerical_relevant_variables])
+S = cov(data[,numerical_relevant_variables])
+d2 = matrix(mahalanobis(data[,numerical_relevant_variables], M, S))
+```
+
+>>>>>>> Stashed changes
 ## Social
 ```{r}
 BEST_SOGLIA = 24.3
@@ -115,7 +139,7 @@ print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*1
 
 # [3] Creazione dei fit
 ```{r}
-fit_social_lm = lm(FORMULA_SOCIAL,data=data_social_woo)
+fit_social_lm = lm(FORMULA_SOCIAL,data=data_psych_woo)
 fit_psych_lm = lm(FORMULA_PSYCH,data=data_psych_woo)
 
 fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo)
@@ -127,6 +151,39 @@ fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=data_psych_woo)
 fit_social_lm$coefficients
 fixef(fit_social_lmm)
 ```
+
+# Linear hypothesis
+```{r}
+fm = fit_social_lm
+summary(fm)
+b=coefficients(fm)
+```
+
+# SOCIAL 
+```{r}
+vars_to_discard = c("CLSIZE",
+                    "ESCS",
+                    "STAFFSHORT",
+                    "STUBEHA",
+                    "EDUSHORT",
+                    "PROAT6"
+                    
+                    )
+check_beta <- which(names(b)%in%vars_to_discard)
+C <- c()
+for( i in 1: length(check_beta)){
+  vect <- rep(0,fm$rank)
+  vect[check_beta[i]] <- 1
+  C <- rbind(C,vect)
+}
+linearHypothesis(fm, C, rep(0,length(check_beta)))
+
+```
+# PSYCHO
+```{r}
+
+```
+
 
 
 # [4] Assumptions LM
