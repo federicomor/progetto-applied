@@ -1178,32 +1178,6 @@ hist(res)
 ```
 
 
-Scaled
-```
-     (Intercept)  Approach.to.ICT       Use.of.ICT Teachers..degree    Teacher.skill 
-    -0.199368845      0.126690620     -0.153775855      0.022852237      0.117411941 
-            ESCS          RATCMP1           ICTSCH           HEDRES          STUBEHA 
-    -0.005431636     -0.010919875      0.043147147      0.164142405     -0.018113104 
-        ATTLNACT          JOYREAD           PROAT6           CLSIZE         EDUSHORT 
-     0.228333604     -0.063665649      0.029177540      0.013154044      0.001380781 
-      STAFFSHORT          PV1MATH          PV1READ 
-     0.019524602     -0.074537790      0.266441346
-```
-
-
-Not scaled
-```
-     (Intercept)  Approach.to.ICT       Use.of.ICT Teachers..degree    Teacher.skill 
-    -3.287993255      0.367664466     -0.504001278      0.056342494      0.227827586 
-            ESCS          RATCMP1           ICTSCH           HEDRES          STUBEHA 
-    -0.018745507     -0.037013983      0.078451227      0.783359918     -0.033694487 
-        ATTLNACT          JOYREAD           PROAT6           CLSIZE         EDUSHORT 
-     1.226341748     -0.301855094      1.393288844      0.003857746      0.002445155 
-      STAFFSHORT          PV1MATH          PV1READ 
-     0.034308617     -0.002439291      0.007973519 
-```
-
-
 ```{r}
 fixef(fm)
 shapiro.test(resid(fm))$p*100
@@ -1213,6 +1187,125 @@ write.csv(data_model,"data_social_woo.csv") # not scaled
 ```
 
 
+## [UP] Test con DATA full e trasformazioni
+```{r}
+data_woo = data[which(d2 <= 32), ]
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
+
+minimum = min
+x1 = (data_woo$Approach.to.ICT)^3
+x2 = (data_woo$Use.of.ICT)
+x3 = (data_woo$Teachers..degree)
+x4 = (data_woo$Teacher.skill)
+x5 = (data_woo$ESCS)^3
+x6 = (data_woo$RATCMP1)
+x7 = (data_woo$ICTSCH)^3
+x8 = exp((data_woo$HEDRES))
+x9 = (data_woo$STUBEHA)^3
+x10 = (data_woo$ATTLNACT)^3
+x11 = exp((data_woo$JOYREAD))
+x12 = (data_woo$PROAT6)
+x13 = (data_woo$CLSIZE)
+x14 = (data_woo$EDUSHORT)^3
+x15 = (data_woo$STAFFSHORT)^3
+x16 = (data_woo$PV1MATH)
+x17 = log((data_woo$PV1READ)+abs(minimum((data_woo$PV1READ)))+1)
+y = (data_woo$Social.well.being)
+# y = log((data_woo$Social.well.being)+abs(minimum((data_woo$Social.well.being)))+1)
+
+fit_social_lmm_woo = lmer(
+y ~ x1 +x2 +x3 +x4 +x5 +x6 +x7 +x8 +x9 +x10 +x11 +x12 +x13 +x14 +x15 +x16 +x17 +
+    +(1|data_woo$NEW_VAR)
+  )
+# fit_social_lmm_woo
+
+# sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
+# sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
+# PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+# print(paste("PVRE =",PVRE))
+
+## visualization of the random intercepts with their 95% confidence intervals
+# Random effects: b_0i for i=1,...,234
+# dotplot(ranef(fit_social_lmm_woo, condVar=T))
+
+# normality of residuals
+fm = fit_social_lmm_woo
+shapiro.test(resid(fm))$p*100
+shapiro.test(unlist(ranef(fm)))$p*100
+```
+
+
+## [UP] Confronto valori con&senza asunzioni
+```{r}
+lmm_social = lmer(FORMULA_SOCIAL_LMM,data=data)
+lmm_social_woo = lmer(FORMULA_SOCIAL_LMM,data=data_woo)
+
+for (i in 1:length(fixef(lmm_social)))
+  print(fixef(lmm_social)[[i]]-fixef(lmm_social_woo)[[i]])
+# tutte intorno allo zero => coefficienti molto simili
+```
+
+
+```{r}
+for (i in 1:length(fixef(lmm_social)))
+  print(paste(levels(data$NEW_VAR)[i], ":",
+              ranef(lmm_social)$NEW_VAR[[1]][i]-ranef(lmm_social_woo)$NEW_VAR[[1]][i]))
+
+dotplot(ranef(lmm_social, condVar=T))$NEW_VAR
+dotplot(ranef(lmm_social_woo, condVar=T))$NEW_VAR
+```
+
+
+```{r}
+plot(1:28,(ranef(lmm_social)$NEW_VAR-ranef(lmm_social_woo)$NEW_VAR)[[1]],col="white")
+text(1:28,(ranef(lmm_social)$NEW_VAR-ranef(lmm_social_woo)$NEW_VAR)[[1]],
+     levels(new_var),cex=0.5)
+abline(h=0)
+```
+
+
+```
+data               data_woo
+CZE-0 -1.03223702  CZE-0 -0.64847656 
+DNK-0  0.18220201  DNK-0  0.15738307 
+ESP-0  1.81429513  ESP-0  1.56886356 
+EST-0 -0.93816819  EST-0 -0.87577076 
+FIN-0 -0.58318348  FIN-0  0.17206834 
+FRA-0 -0.16553861  FRA-0 -0.17985106 
+GRC-0  0.22097409  GRC-0 -0.15841796 
+HRV-0  0.30390358  HRV-0  0.29180672 
+HUN-0  0.59793900  HUN-0  0.35457338 
+LTU-0  0.22226070  LTU-0  0.10892671 
+LUX-0 -0.19237749  LUX-0 -0.46416994 
+POL-0 -1.51811704  POL-0 -0.98845028 
+SVK-0 -0.54358967  SVK-0 -0.08382285 
+SVN-0  0.82472796  SVN-0  0.30932474 
+CZE-1 -0.76333288  CZE-1 -0.73002220 
+DNK-1  0.50270742  DNK-1  0.38612674 
+ESP-1  1.62449750  ESP-1  1.43951208 
+EST-1 -0.75526857  EST-1 -0.84407524 
+FIN-1 -0.27556345  FIN-1 -0.16710567 
+FRA-1  0.06511058  FRA-1  0.03481049 
+GRC-1  0.46251586  GRC-1  0.58322661 
+HRV-1  0.57320836  HRV-1  0.49723024 
+HUN-1  0.35718375  HUN-1  0.27221653 
+LTU-1 -0.06595413  LTU-1 -0.09223659 
+LUX-1  0.31347114  LUX-1  0.10713117 
+POL-1 -0.99833307  POL-1 -0.91523634 
+SVK-1 -0.39041740  SVK-1 -0.24548464 
+SVN-1  0.15708389  SVN-1  0.10991974 
+```
+
+
+```{r}
+shapiro.test(resid(lmm_social))$p*100
+shapiro.test(unlist(ranef(lmm_social)))$p*100
+
+shapiro.test(resid(lmm_social_woo))$p*100
+shapiro.test(unlist(ranef(lmm_social_woo)))$p*100
+
+```
 
 
 
