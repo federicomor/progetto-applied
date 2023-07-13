@@ -332,6 +332,28 @@ dotplot(ranef(fit, condVar=T))$NEW_VAR
 ```
 
 
+# Confronto assumptions
+Dati originali, dati versione-1, dati versione-2.
+
+```{r}
+suppressWarnings({fit_data = lmer(FORMULA_SOCIAL_LMM,data=data)})
+res = residuals(fit_data)
+qqnorm(res,main="data")
+qqline(res,col="red")
+
+suppressWarnings({fit_data_soc_woo = lmer(FORMULA_SOCIAL_LMM,data=dati_soc_woo)})
+res = residuals(fit_data_soc_woo)
+qqnorm(res,main="data_soc_woo (version-2)")
+qqline(res,col="red")
+
+suppressWarnings({fit_data_social_woo = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo)})
+res = residuals(fit_data_social_woo)
+qqnorm(res,main="data_social_woo (version-1)")
+qqline(res,col="red")
+
+
+```
+
 
 
 
