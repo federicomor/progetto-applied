@@ -438,7 +438,7 @@ for(i in 1:(n-2)){    #-1 per togliere CNT e NEW_VAR (già in NEW_VAR)
 ```
 
 
-# Non vale davvero la pena, miglioramento ancora più infimo di prima
+# Non vale davvero la pena, miglioramento ancora più infimo di prima con social
 # Due slopes
 ```{r}
 #ciclo come prima, stavolta considero già una slope, in questo caso ATTLNACT, che sembrava unica a dare miglioramento AIC (ancora poco)
