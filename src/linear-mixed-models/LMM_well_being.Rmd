@@ -166,15 +166,17 @@ for (soglia in SOGLIA_RANGE ){
 ```{r}
 write.csv(data_social_woo,"../../data/data_social_woo.csv")
 write.csv(data_psych_woo,"../../data/data_psych_woo.csv")
-numerical_variables
+
+colnames(data_social_woo)
+numerical_variables=c(1:23,25,26)
 
 data_social_woo_scaled = data_social_woo
 data_social_woo_scaled[,numerical_variables] = scale(data_social_woo_scaled[,numerical_variables])
 data_psych_woo_scaled = data_psych_woo
 data_psych_woo_scaled[,numerical_variables] = scale(data_psych_woo_scaled[,numerical_variables])
 
-write.csv(data_social_woo_scaled,"../../data/data_social_woo_scaled.csv_scaled")
-write.csv(data_psych_woo_scaled,"../../data/data_psych_woo_scale_scaledd.csv")
+write.csv(data_social_woo_scaled,"../../data/data_social_woo_scaled.csv")
+write.csv(data_psych_woo_scaled,"../../data/data_psych_woo_scaled.csv")
 ```
 
 
@@ -188,6 +190,8 @@ Sono gli stessi di sopra finché le soglie non vengono cambiate da 24.3 e 24.26.
 ```{r}
 data_social_woo = read.csv("../../data/data_social_woo.csv")
 data_psych_woo = read.csv("../../data/data_psych_woo.csv")
+data_social_woo_scaled = read.csv("../../data/data_social_woo_scaled.csv")
+data_psych_woo_scaled = read.csv("../../data/data_psych_woo_scaled.csv")
 ```
 
 
@@ -201,6 +205,13 @@ fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo)
 fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=data_psych_woo)
 ```
 
+```{r}
+library(influence.ME)
+suppressWarnings({infl <- influence(fit_social_lmm, obs = TRUE) })
+cooks.distance(infl)
+plot(infl, which = "cook")
+
+```
 
 
 ```{r}
