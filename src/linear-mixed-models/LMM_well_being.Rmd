@@ -75,11 +75,19 @@ colnames(data)
 Please tenete questa sezione alla fine delle vostre analisi, mi serve per avere le formule definitive da usare nei modelli per calcolare il punteggio del gioco nel bot. Grazie! :)
 
 ```{r}
+<<<<<<< Updated upstream
 FORMULA_SOCIAL_LM = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
 
 FORMULA_SOCIAL_LMM  = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
 
 FORMULA_PSYCH_LM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
+=======
+# FORMULA_SOCIAL = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
+
+FORMULA_SOCIAL_LMM  = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
+
+# FORMULA_PSYCH = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
+>>>>>>> Stashed changes
 
 FORMULA_PSYCH_LMM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
 ```
@@ -112,7 +120,11 @@ hist(d2,breaks = 300,xlim = c(0,300))
 ```
 
 
+<<<<<<< Updated upstream
 # [2.1] Soglie migliori trovate
+=======
+
+>>>>>>> Stashed changes
 ## Social
 ```{r}
 BEST_SOGLIA_SOCIAL = 24.3
@@ -129,6 +141,7 @@ SOGLIA = BEST_SOGLIA_PSYCH
 data_psych_woo = data[which(d2 <= SOGLIA), ]
 print(paste("From",dim(data)[1],"obs we moved to",dim(data_psych_woo)[1]))
 print(paste("Percentuale di dati sopravvissuti:",dim(data_psych_woo)[1]/dim(data)[1]*100,"%"))
+<<<<<<< Updated upstream
 ```
 
 # [2.2] Se volete provare ancora
@@ -159,10 +172,13 @@ for (soglia in SOGLIA_RANGE ){
       "  pvalue = ",pval))
   }
 }
+=======
+>>>>>>> Stashed changes
 ```
 
 
 
+<<<<<<< Updated upstream
 # [3] Creazione dei fit
 
 ## Ripresa dati_woo ufficiali
@@ -175,6 +191,9 @@ data_psych_woo = read.csv("../../data/data_psych_woo.csv")
 ```
 
 
+=======
+# [3] Creazione dei fit- WOO
+>>>>>>> Stashed changes
 ```{r}
 fit_social_lm = lm(FORMULA_SOCIAL,data=data_psych_woo)
 fit_psych_lm = lm(FORMULA_PSYCH,data=data_psych_woo)
@@ -184,6 +203,7 @@ fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=data_psych_woo)
 ```
 
 
+<<<<<<< Updated upstream
 # Linear hypothesis
 ```{r}
 fm = fit_social_lm
@@ -215,6 +235,14 @@ linearHypothesis(fm, C, rep(0,length(check_beta)))
 ```{r}
 
 ```
+=======
+
+```{r}
+fit_social_lm$coefficients
+fixef(fit_social_lmm)
+```
+
+>>>>>>> Stashed changes
 
 
 
