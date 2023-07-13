@@ -73,17 +73,182 @@ GBlabel = factor(df_social$NEW_VAR)
 
 ## [1] Anova with CNT
 ```{r}
-for (i in 1:length(model_variables) ){
-	Xtarget = data.frame(df_social[,model_variables[i]])
+treat = levels(Glabel)
+g = length(treat)
+RADAR_MATRIX = data.frame(matrix(0,16,length(model_variables)))
+colnames(RADAR_MATRIX) = model_variables
+rownames(RADAR_MATRIX) = c("max","min",levels(Glabel))
+RADAR_MATRIX
+```
+
+
+```{r}
+for (j in 1:length(model_variables) ){
+# for (j in 1:3 ){
+	Xtarget = data.frame(df_social[,model_variables[j]])
 	# fit_complete = aov(as.matrix(Xtarget) ~ Glabel + Blabel + Glabel:Blabel)
 	fit_complete = aov(as.matrix(Xtarget) ~ Glabel)
-	print(model_variables[i])
+	print(model_variables[j])
 	print(summary.aov(fit_complete))
+	
+	Xtarget = as.numeric(Xtarget[,])
+	mu = mean(Xtarget)
+	
+	print(paste("mu =",mu))
+	tau_i=NULL
+	for (i in 1:g){
+	print(paste0("tau_",i,"(",treat[i],") = ",mean(Xtarget[Glabel==treat[i]])-mu))
+	tau_i = c(tau_i,mean(Xtarget[Glabel==treat[i]])-mu)
+	RADAR_MATRIX[i+2,j] = mean(Xtarget[Glabel==treat[i]])-mu
+	}
+	# sigma2 = var(Xtarget-mu-tau_i[as.numeric(Glabel)])
+	# print(paste("sigmaˆ2 =",sigma2))
+	# print(paste("sigmaˆ2 =",var(residuals(fit))))
+}
+RADAR_MATRIX
+```
+
+```{r}
+for(j in 1:length(model_variables)){
+	RADAR_MATRIX[3:16,j] = RADAR_MATRIX[3:16,j] + abs(min(RADAR_MATRIX[3:16,j]))
+	RADAR_MATRIX[1,j] = max(RADAR_MATRIX[3:16,j])
+	RADAR_MATRIX[2,j] = min(RADAR_MATRIX[3:16,j])
+}
+RADAR_MATRIX
+```
+
+
+
+```{r}
+for(i in 1:g){
+	# show(avg_vals_df[c(1,2,i+2),])
+	radarchart(RADAR_MATRIX[c(1,2,i+2),],title=treat[i],cex=0.3)
 }
 ```
 
-## View on boxplot and maps
 
+```{r}
+create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+                                        vlabels = colnames(data), vlcex = 0.8,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype =0, calcex=0.7,
+    # Customize the polygon
+    pcol = color, pfcol = scales::alpha(color, 0.3), plwd = 2, plty = 1,
+    # Customize the grid
+    cglcol = "#BBBBBB", cglty = 1, cglwd = 0.8,
+    # Customize the axis
+    axislabcol = "#889999", 
+    # Variable labels
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+# colors()
+
+for(i in 1:g){
+	# avg_vals_df[c(1,2,i),]
+	create_beautiful_radarchart(RADAR_MATRIX[c(1,2,i+2),],title=treat[i])
+}
+
+```
+
+
+
+## Differenze discrete
+```{r}
+for (i in 1:length(model_variables) ){
+
+scelta = model_variables[i]
+
+group_ordered <- with(df_social,                      
+                  reorder(df_social$CNT,
+                          df_social[,scelta],
+                          FUN=mean,
+                  		decreasing = T))
+	boxplot(df_social[,scelta] ~ group_ordered,
+			main=paste(scelta,"ordered by mean"),las=2,
+			ylim=c(round(min(df_social[,scelta])),
+				   round(max(df_social[,scelta]))),
+			col = rev(colora(length(levels(Glabel)),43)))
+	abline(h=mean(df_social[,scelta]))
+	
+	medie = tapply(df_social[,scelta],group_ordered,mean)
+	end = length
+	differenze_discrete = round(medie[1:end(medie)-1] - medie[2:end(medie)],digits=4)
+	differenze_discrete = round(as.data.frame(differenze_discrete),digits=4)$differenze_discrete
+
+	max1 = max(differenze_discrete)
+	max2 = max(setdiff(differenze_discrete,max1))
+
+		plot(1:14,medie,type="b",main=scelta,ylab="medie(black) & ddif(blue)")
+		points(1:14,medie,pch=19,main=scelta)
+		lines(1:13,differenze_discrete,type="b",col="blue")
+	abline(v=which(differenze_discrete==max1))
+	abline(v=which(differenze_discrete==max2))
+	
+	
+	# Quality = rep("0",length(Glabel))
+	# Quality
+	# fit_complete = aov(as.matrix(Xtarget) ~ Glabel + Blabel + Glabel:Blabel)
+	# fit_complete = aov(as.matrix(Xtarget) ~ Glabel)
+	# print(model_variables[i])
+	# print(summary.aov(fit_complete))
+}
+```
+
+
+
+## Differenze discrete con vincolo passi
+```{r}
+passi = 2
+for (i in 1:length(model_variables) ){
+
+scelta = model_variables[i]
+
+group_ordered <- with(df_social,                      
+                  reorder(df_social$CNT,
+                          df_social[,scelta],
+                          FUN=mean,
+                  		decreasing = T))
+	boxplot(df_social[,scelta] ~ group_ordered,
+			main=paste(scelta,"ordered by mean"),las=2,
+			ylim=c(round(min(df_social[,scelta])),
+				   round(max(df_social[,scelta]))),
+			col = rev(colora(length(levels(Glabel)),43)))
+	abline(h=mean(df_social[,scelta]))
+	
+	medie = tapply(df_social[,scelta],group_ordered,mean)
+	end = length
+	differenze_discrete = round(medie[1:end(medie)-1] - medie[2:end(medie)],digits=4)
+	differenze_discrete = round(as.data.frame(differenze_discrete),digits=4)$differenze_discrete
+
+	max1 = max(differenze_discrete)
+	max2 = max(setdiff(differenze_discrete,max1))
+	massimi = c(max1)
+	while( abs(which(differenze_discrete==max1)-which(differenze_discrete==max2))<=passi ){
+		massimi = c(massimi,max2)
+		max2 = max(setdiff(differenze_discrete,massimi))
+	}
+	
+		plot(1:14,medie,type="b",main=scelta,ylab="medie(black) & ddif(blue)")
+		points(1:14,medie,pch=19,main=scelta)
+		lines(1:13,differenze_discrete,type="b",col="blue")
+	abline(v=which(differenze_discrete==max1))
+	abline(v=which(differenze_discrete==max2))
+	
+	
+	# Quality = rep("0",length(Glabel))
+	# Quality
+	# fit_complete = aov(as.matrix(Xtarget) ~ Glabel + Blabel + Glabel:Blabel)
+	# fit_complete = aov(as.matrix(Xtarget) ~ Glabel)
+	# print(model_variables[i])
+	# print(summary.aov(fit_complete))
+}
+```
+
+
+## View on boxplot and maps
 ```{r}
 all_countries <- c(
 	"AUT", "BEL", "BGR", "CYP", "CZE", "DEU", "DNK", "ESP", "EST", "FIN",
@@ -172,6 +337,78 @@ for (i in 1:length(model_variables) ){
 ```
 
 
+## Discrete maps (??)
+
+```{r}
+for (i in 1:length(model_variables) ){
+# for (i in 1:4 ){
+	
+	#### Classic boxplot
+	group_ordered <- with(df_social,                      
+                  reorder(df_social$CNT,
+                          df_social[,model_variables[i]],
+                          FUN=mean,
+                  		decreasing = T))
+	boxplot(df_social[,model_variables[i]] ~group_ordered,
+			main=paste(model_variables[i],"ordered by mean"),las=2,
+			ylim=c(round(min(df_social[,model_variables[i]])),
+				   round(max(df_social[,model_variables[i]]))),
+			col = rev(colora(length(levels(Glabel)),20)))
+	abline(h=mean(df_social[,model_variables[i]]))
+
+	
+	#### Map stuff
+	mean_lab_1<-tapply(df_social[,model_variables[i]],Glabel,mean)
+    means = data.frame(mean_lab_1,names(mean_lab_1))
+    colnames(means)=c("mean_value","adm0_a3")
+    for (country in all_countries) {
+      # Check if the country is already in the dataset
+      if (!(country %in% means$adm0_a3)) {
+        # If not, add the country to the dataset with a value of 0
+        means <- rbind(means, data.frame(adm0_a3 = country, mean_value = NA))
+      }
+    }
+
+    europe_joined <- merge(europe_map, means, by = c("adm0_a3"))
+    
+    suppressWarnings({print(
+      europe_joined %>% ggplot(aes(fill = factor(mean_value))) +
+      geom_sf(size = 0.2, color = "black") + # border line
+    scale_fill_manual(
+      name = "legend", 
+      breaks = levels(means$mean_value),
+      ############### COLORI
+      # values =colora(length(levels(means$mean_value)), 24),
+      values =colora(14,20),
+      # values =colora(14,26),
+      ############### COLORI
+      labels = c("high", "medium", "low"),
+      na.value = "white"  # Specify the color for NA values
+      ) +
+      labs(
+        title =model_variables[i],
+        subtitle = "ANOVA") +
+      scale_x_continuous(limits = c(-10, 35)) +
+      scale_y_continuous(limits = c(35, 68))+
+      theme_void()+
+      geom_text_repel(aes(x = X, y = Y, label = name),
+        data = subset(europe_joined, !is.na(mean_value)),
+        size = 3,                   # Increase the size of the labels
+        colour = "gray20",          # Set the color of the labels
+        position = position_dodge(width = 0),
+        fontface = "bold",          # Set the font weight to bold
+        # label.padding = unit(0.5, "lines"),   # Add padding around the label
+        # label.r = unit(0.2, "lines"),         # Set the radius of the label's rounded corners
+        # label.color = "black",                 # Set the color of the label's border
+        # label.size = 0.8,                      # Set the size of the label's border
+        # label.fill = "black"                    # Set the color of the label's background
+                )
+    
+    
+    )})
+}
+```
+
 
 ## BSCIs for the difference in the groups
 
@@ -215,10 +452,12 @@ for (k in 1:length(model_variables) ){
 	for(i in 1:(g-1)) {
 	for(j in (i+1):g) {
 	ind = (i-1)*g-i*(i-1)/2+(j-i)
+	if( (ICrange[ind,1]<0 && ICrange[ind,2]<0) || (ICrange[ind,1]>0 && ICrange[ind,2]>0) ){
 	lines (c(h,h), c(ICrange[ind,1],ICrange[ind,2]), col='grey55');
 	# points(h, Mediag[i]-Mediag[j], pch=16, col='grey55');
 	points(h, ICrange[ind,1], col=colori_fun(g)[j], pch=16);
 	points(h, ICrange[ind,2], col=colori_fun(g)[i], pch=16);
+	}
 	h = h+1
 	}}
 	abline(h=0)
