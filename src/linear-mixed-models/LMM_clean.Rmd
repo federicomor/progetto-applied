@@ -84,7 +84,7 @@ categories_variables_filtered
 
 # Modello base-lineare semplice
 ```{r}
-vars = c(linear_model_vars,"IM_PUBLIC")
+vars = c(linear_model_vars)
 formula_social <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
 formula_social
 
@@ -96,7 +96,7 @@ summary(fit_social_final)
 #  LMM solo intercetta
 ```{r}
 
-vars=c(linear_model_vars,"(1|NEW_VAR)")
+vars=c(linear_model_vars,"(1|CNT)")
 FORMULA_LMM <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
 FORMULA_LMM
 
@@ -111,12 +111,12 @@ print(paste("PVRE =",PVRE))
 
 ## visualization of the random intercepts with their 95% confidence intervals
 # Random effects: b_0i for i=1,...,234
-dotplot(ranef(fit_social_lmm, condVar=T))$NEW_VAR
+dotplot(ranef(fit_social_lmm, condVar=T))$CNT
 ```
 
 #  Ciclo for per aggiungere le varie slopes
 ```{r,warning=FALSE,message=FALSE}
-#ciclare sulle variabili per vedere quale miglior PVRE come slope rispetto a sola intercetta NEW_VAR
+#ciclare sulle variabili per vedere quale miglior PVRE come slope rispetto a sola intercetta CNT
 #confronto tra modello con solo intercetta e modello con una slope
 
 n=length(vars)
@@ -130,9 +130,9 @@ scaled_data[ind]=lapply(data[ind], scale)
 fit_social_lmm_scaled = lmer(FORMULA_LMM,data=scaled_data)
 
 
-for(i in 1:(n-2)){    #-2 per togliere CNT e NEW_VAR (già in NEW_VAR)
+for(i in 1:(n-1)){    #-1 per togliere CNT 
   slopevar=vars[i]
-  varsfor=c(vars,paste("(",paste(slopevar),"|NEW_VAR)",collapse=""))
+  varsfor=c(vars,paste("(",paste(slopevar),"|CNT)",collapse=""))
   FORMULA_LMM_slo <- paste(paste("Social.well.being","~"), paste(varsfor, collapse = "+"))
   FORMULA_LMM_slo
 
@@ -177,8 +177,7 @@ for(i in 1:(n-2)){    #-2 per togliere CNT e NEW_VAR (già in NEW_VAR)
 #alcuni modelli sembrano addirittura non convergere
 
 #anova invece sembra segnalare miglioramento per alcuni modelli
-#(pvalue che conta è il secondo)
-#ATTLNACT, JOYREAD, PV1MATH e PV1READ sembrano promettenti ma AIC molto vicini tra loro 
+
 # -> slope non migliora sensibilmente modello, complessità aumenta ma senza reale guadagno in spiegabilità
 
 #molti warning per singolarità e refitting per fare anova
@@ -188,24 +187,24 @@ for(i in 1:(n-2)){    #-2 per togliere CNT e NEW_VAR (già in NEW_VAR)
 
 # Due slopes
 ```{r}
-#Ciclo come prima, stavolta considero già una slope, in questo caso ATTLNACT (PV1READ), che sembrava dare il maggior miglioramento AIC
+#Ciclo come prima, stavolta considero già una slope, in questo caso JOYREAD (o PV1READ), che sembrava dare il maggior miglioramento AIC
 #in realtà 0.00...
 #infimi, ma proviamo lo stesso 
 #aggiungendo a var 2 un'altra e modificando il primo if si possono aggiungere anche altre slopes una dopo l'altra
-#questo è esempio con PV1READ
+#questo è esempio con JOYREAD
 
-vars2=c(vars,"(PV1READ|NEW_VAR)")
+vars2=c(vars,"(JOYREAD|CNT)")
 n=length(vars2)
 
 i=1
-while(i < (n-3)){    #-3 per togliere CNT, NEW_VAR e slope 
+while(i < (n-1)){    #-2 per togliere CNT e slope 
   slopevar=vars2[i]
-  if(slopevar=="PV1READ"){
+  if(slopevar=="JOYREAD"){
     i=i+1
     slopevar=vars2[i]
   }
   
-  varsfor=c(vars,paste("(",paste(slopevar),"|NEW_VAR)",collapse=""))
+  varsfor=c(vars,paste("(",paste(slopevar),"|CNT)",collapse=""))
   FORMULA_LMM_slo <- paste(paste("Social.well.being","~"), paste(varsfor, collapse = "+"))
   FORMULA_LMM_slo
 
@@ -246,13 +245,13 @@ while(i < (n-3)){    #-3 per togliere CNT, NEW_VAR e slope
 }
 
 #non sembrano esserci sostanziali miglioramenti
-#forse si può aggiungere ATTLNACT
+#forse si può aggiungere PV1READ
 ```
 
 
-#nel caso di sia PV1READ sia ATTLNACT 
+#nel caso di sia PV1READ sia JOYREAD 
 ```{r}
-vars3=c(vars,"(PV1READ|NEW_VAR)","(ATTLNACT|NEW_VAR)")
+vars3=c(vars,"(PV1READ|CNT)","(JOYREAD|CNT)")
 FORMULA_LMM_slo3 <- paste(paste("Social.well.being","~"), paste(vars3, collapse = "+"))
 FORMULA_LMM_slo3
 fit_social_lmm_slo3 = lmer(FORMULA_LMM_slo3,data=scaled_data)
@@ -299,11 +298,11 @@ qqline(resid(fm), col='red', lwd=2)
 shapiro.test(resid(fm))
 # normality of random effects
 # case only interecept
-qqnorm(unlist(ranef(fm)$NEW_VAR),
+qqnorm(unlist(ranef(fm)$CNT),
 main='Normal Q-Q Plot - Random Effects on Intercept')
-qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
+qqline(unlist(ranef(fm)$CNT), col='red', lwd=2)
 # case interecept and slope
-boxplot(residuals(fm)~data$NEW_VAR,las=2)
+boxplot(residuals(fm)~data$CNT,las=2)
 
 
 ## raw residuals
@@ -311,8 +310,8 @@ plot(fm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
 # We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
 # but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
 
-plot(fm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
-bwplot(resid(fm) ~ NEW_VAR, pch = "|", data = data)
+plot(fm, resid(., type = "response") ~ as.numeric(CNT)) # Raw vs. NEW_VAR (not shown)
+bwplot(resid(fm) ~ CNT, pch = "|", data = data)
 # The boxand-whiskers plots clearly show an increasing variance of the residuals.
 
 ## Pearson residuals
@@ -321,8 +320,8 @@ bwplot(resid(fm) ~ NEW_VAR, pch = "|", data = data)
 
 
 plot(fm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
-plot(fm,resid(., type = "pearson") ~ as.numeric(NEW_VAR))
-bwplot( resid(fm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
+plot(fm,resid(., type = "pearson") ~ as.numeric(CNT))
+bwplot( resid(fm, type = "pearson") ~ CNT, # Pearson vs. time.f
         pch = "|", data = data)
 ## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
 ```
@@ -358,7 +357,7 @@ linear_model_vars <- readLines("../../data/non csv/lm_psico_vars.txt")
 
 # LMM solo intercetta
 ```{r}
-vars = c(linear_model_vars,"(1|NEW_VAR)")
+vars = c(linear_model_vars,"(1|CNT)")
 FORMULA_LMM <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
 FORMULA_LMM
 
@@ -373,13 +372,13 @@ print(paste("PVRE =",PVRE))
 
 ## visualization of the random intercepts with their 95% confidence intervals
 # Random effects: b_0i for i=1,...,234
-dotplot(ranef(fit_psico_lmm, condVar=T))$NEW_VAR
+dotplot(ranef(fit_psico_lmm, condVar=T))$CNT
 
 ```
 
 #  Ciclo for per aggiungere le varie slopes
 ```{r,warning=FALSE,message=FALSE}
-#ciclare sulle variabili per vedere quale miglior PVRE come slope rispetto a sola intercetta NEW_VAR
+#ciclare sulle variabili per vedere quale miglior PVRE come slope rispetto a sola intercetta CNT
 #confronto tra modello con solo intercetta e modello con una slope
 
 n=length(vars)
@@ -393,9 +392,9 @@ scaled_data[ind]=lapply(data[ind], scale)
 fit_psico_lmm_scaled = lmer(FORMULA_LMM,data=scaled_data)
 
 
-for(i in 1:(n-2)){    #-1 per togliere CNT e NEW_VAR (già in NEW_VAR)
+for(i in 1:(n-1)){    #-1 per togliere CNT 
   slopevar=vars[i]
-  varsfor=c(vars,paste("(",paste(slopevar),"|NEW_VAR)",collapse=""))
+  varsfor=c(vars,paste("(",paste(slopevar),"|CNT)",collapse=""))
   FORMULA_LMM_slo <- paste(paste("Psychological.well.being","~"), paste(varsfor, collapse = "+"))
   FORMULA_LMM_slo
 
@@ -444,18 +443,18 @@ for(i in 1:(n-2)){    #-1 per togliere CNT e NEW_VAR (già in NEW_VAR)
 #ciclo come prima, stavolta considero già una slope, in questo caso ATTLNACT, che sembrava unica a dare miglioramento AIC (ancora poco)
 
 
-vars2=c(vars,"(ATTLNACT|NEW_VAR)")
+vars2=c(vars,"(ATTLNACT|CNT)")
 n=length(vars2)
 
 i=1
-while(i < (n-3)){    #-3 per togliere CNT, NEW_VAR e slope
+while(i < (n-2)){    #-2 per togliere CNT e slope
   slopevar=vars2[i]
   if(slopevar=="ATTLNACT"){
     i=i+1
     slopevar=vars2[i]
   }
   
-  varsfor=c(vars,paste("(",paste(slopevar),"|NEW_VAR)",collapse=""))
+  varsfor=c(vars,paste("(",paste(slopevar),"|CNT)",collapse=""))
   FORMULA_LMM_slo <- paste(paste("Psychological.well.being","~"), paste(varsfor, collapse = "+"))
   FORMULA_LMM_slo
 
