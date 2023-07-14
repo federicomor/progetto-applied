@@ -1,0 +1,625 @@
+---
+title: "R Notebook"
+# output: html_notebook
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r}
+library(mvtnorm)
+library(MASS)
+library(car)
+library(rgl)
+library(leaps)
+library(ISLR)
+library(glmnet)
+library(lme4)
+library(nlmeU) ## --> for the dataset
+library(nlme)  ## --> for models implementation
+
+library(corrplot)
+library(lattice)
+library(plot.matrix)
+
+library(insight)
+```
+
+```{r}
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/pisa_scores_final.csv",sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+data <- read.csv(file=dataset_path)
+head(data)
+```
+
+# [0] DATA PREP
+
+```{r}
+data$X <- NULL
+data$SCHLTYPE <- as.factor(data$SCHLTYPE)
+data$CNT <- as.factor(data$CNT)
+
+IM_PUBLIC = rep(0,dim(data)[1])
+IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
+data$IM_PUBLIC = as.factor(IM_PUBLIC)
+data$SCHLTYPE <- NULL
+```
+
+### creazione unico factor combinato
+
+```{r}
+# Example categorical variables
+index_cnt = grep("CNT",colnames(data))
+
+colnames(data)
+
+levels(data[,index_cnt])=levels(data$CNT)
+cat_var1 <- data[,index_cnt]
+
+index_public= grep("IM_PUBLIC",colnames(data))
+levels(data[,index_public])=levels(data$IM_PUBLIC)
+cat_var2 <- data[,index_public]
+
+# Combine categorical variables
+new_var <- interaction(cat_var1, cat_var2, sep = "-")
+levels(new_var)
+length(levels(new_var))
+
+data$NEW_VAR = as.factor(new_var)
+colnames(data)
+```
+
+# [1] Definizione formule
+
+Please tenete questa sezione alla fine delle vostre analisi, mi serve per avere le formule definitive da usare nei modelli per calcolare il punteggio del gioco nel bot. Grazie! :)
+
+```{r}
+linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
+
+vars = c(linear_model_vars,"CNT")
+FORMULA_SOCIAL <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
+
+vars = c(linear_model_vars,"(1|CNT)")
+FORMULA_SOCIAL_LMM <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
+```
+
+```{r}
+linear_model_vars <- readLines("../../data/non csv/lm_psico_vars.txt")
+
+vars = c(linear_model_vars,"CNT")
+FORMULA_PSYCH <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
+
+vars = c(linear_model_vars,"(1|CNT)")
+FORMULA_PSYCH_LMM <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
+```
+
+# [2] Gestione outliers
+
+```{r}
+numerical_variables = c(1:23,25,26)
+M = colMeans(data[,numerical_variables])
+S = cov(data[,numerical_variables])
+d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
+hist(d2,breaks = 300,xlim = c(0,300))
+```
+
+## Social
+
+```{r}
+BEST_SOGLIA_SOCIAL = 24.3
+SOGLIA = BEST_SOGLIA_SOCIAL
+data_social_woo = data[which(d2 <= SOGLIA), ]
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_social_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_social_woo)[1]/dim(data)[1]*100,"%"))
+```
+
+## Psych
+
+```{r}
+BEST_SOGLIA_PSYCH = 24.26
+SOGLIA = BEST_SOGLIA_PSYCH
+data_psych_woo = data[which(d2 <= SOGLIA), ]
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_psych_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_psych_woo)[1]/dim(data)[1]*100,"%"))
+```
+
+## For soglia
+
+```{r}
+##########################
+FORMULA = FORMULA_SOCIAL_LMM
+# FORMULA = FORMULA_PSYCH_LMM
+SOGLIA_RANGE = seq(20,40,by=1)
+SOGLIA_PVALUE_INTERESSANTI = 0.05
+##########################
+
+for (soglia in SOGLIA_RANGE ){
+  data_woo = data[which(d2 <= soglia), ]
+
+  suppressWarnings({fit = lmer(FORMULA_SOCIAL_LMM,data=data_woo)})
+  # fit
+  sigma2_eps <- as.numeric(get_variance_residual(fit))
+  sigma2_b <- as.numeric(get_variance_random(fit))
+  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+  # print(paste("PVRE social =",PVRE))
+
+  pval=round(shapiro.test(resid(fit))$p,digits=4)
+  if(pval>SOGLIA_PVALUE_INTERESSANTI){
+    print(paste0(
+      "% rimasta = ",round(dim(data_woo)[1]/dim(data)[1]*100,digits=2),
+      # "PVRE = ",PVRE,
+      "  soglia = ",soglia,
+      "  pvalue = ",pval))
+  }
+}
+```
+
+## Salvataggio dataset versione-1
+
+```{r}
+# write.csv(data_social_woo,"../../data/data_social_woo.csv")
+# write.csv(data_psych_woo,"../../data/data_psych_woo.csv")
+#
+# colnames(data_social_woo)
+# numerical_variables=c(1:23,25,26)
+#
+# data_social_woo_scaled = data_social_woo
+# data_social_woo_scaled[,numerical_variables] = scale(data_social_woo_scaled[,numerical_variables])
+# data_psych_woo_scaled = data_psych_woo
+# data_psych_woo_scaled[,numerical_variables] = scale(data_psych_woo_scaled[,numerical_variables])
+#
+# write.csv(data_social_woo_scaled,"../../data/data_social_woo_scaled.csv")
+# write.csv(data_psych_woo_scaled,"../../data/data_psych_woo_scaled.csv")
+```
+
+# [2.5] Tentativo con leverages, residui, distanza di cook
+
+## Social
+
+```{r}
+fit = lm(FORMULA_SOCIAL,data=data)
+summary(fit)
+
+#Punti leva
+lev=hatvalues(fit)
+sum(lev)
+
+p=fit$rank
+n=dim(data)[1]
+fs=summary(fit)
+
+#soglia per leverages è 2*p/n
+watchout_points_lev = lev[ which( lev > 2 * p/n ) ]
+watchout_ids_lev = seq_along( lev )[ which( lev > 2 * p/n ) ]
+
+plot(fit$fitted.values,lev,pch=16, ylab='lev',xlab='Fitted values',main='Leverages')
+abline(h=2*p/n,col='red')
+points( fit$fitted.values[ watchout_ids_lev ], watchout_points_lev, col = 'red', pch = 16 )
+#molti valori sopra soglia
+
+sum(lev[lev>2*p/n])
+#somma è 1.65, punti leva pesano 33%
+fit2=lm(FORMULA_SOCIAL,data=data,subset=(lev<2*p/n))
+summary(fit2)
+#R^2 adj
+
+abs((fit$coefficients-fit2$coefficients)/fit$coefficients)
+#Impatto delle leve sui beta
+
+
+
+#Residui standardizzati
+
+res_std=fit$res/fs$sigma
+
+plot(fit$fitted.values,res_std, pch=16, main='Standardized Residuals',ylab='res',xlab='Fitted values')
+abline(h=c(-2,2),col='red')
+
+#punto influente se res standardizzato >2
+watchout_ids_rstd = which( abs( res_std ) > 2 )
+watchout_rstd = res_std[ watchout_ids_rstd ]
+
+points( fit$fitted.values[watchout_ids_rstd],
+        res_std[watchout_ids_rstd], col = 'red', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev],
+        res_std[watchout_ids_lev], col = 'orange', pch = 16 )
+#in rosso residui alti, in arancione leve
+
+
+
+#Residui studentizzati
+stud = rstandard( fit )
+
+watchout_ids_stud = which( abs( stud ) > 2 )
+watchout_stud = stud[ watchout_ids_stud ]
+
+plot( fit$fitted.values, stud, ylab = 'res',xlab='Fitted values', main = "Studentized Residuals", pch = 16 )
+points( fit$fitted.values[watchout_ids_stud],
+        stud[watchout_ids_stud], col = 'pink', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev],
+        stud[watchout_ids_lev], col = 'orange', pch = 16 )
+abline( h = c(-2,2), col = 'red' )
+#Residui e residui studentizzati sembrano rilevare stessi punti
+
+
+
+#Distanza di Cook
+Cdist = cooks.distance( fit )
+
+watchout_ids_Cdist = which( Cdist > 4/(n-p) )
+watchout_Cdist = Cdist[ watchout_ids_Cdist ]
+
+plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values',
+      ylab = 'distance', main = 'Cooks Distance' )
+abline(h=4/(n-p), col='red')
+points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ],
+        col = 'green', pch = 16 )
+
+
+
+#punti da tenere non notevoli
+id_to_keep1 = !(1:n %in% watchout_ids_Cdist)
+id_to_keep2 = !(1:n %in% watchout_ids_stud)
+id_to_keep3 = !(1:n %in% watchout_ids_rstd)
+id_to_keep4 = !(1:n %in% watchout_ids_lev)
+
+id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4
+```
+
+```{r}
+#tolgo tutte le righe notevoli
+dati_soc_woo=subset(data,id_to_keep)
+ID_TO_KEEP_SOCIAL = id_to_keep
+dim(dati_soc_woo)
+#si scende a circa 3964 (circa 91% dei dati)
+print(paste("From",dim(data)[1],"obs we moved to",dim(dati_soc_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(dati_soc_woo)[1]/dim(data)[1]*100,"%"))
+
+fit_fin=lm(FORMULA_SOCIAL, dati_soc_woo)
+summary(fit_fin)
+#R^2 adj è 0.6861 -> alto
+#R^2 adj è 0.6898 -> alto (con la modifica di Ettore alla Formula)
+
+```
+
+## Problemino LUX
+
+```{r}
+for (state in STATES)
+	print(paste("#",state,"=",sum(dati_soc_woo==state)))
+```
+
+## Psych
+
+```{r}
+fit = lm(FORMULA_PSYCH,data=data)
+summary(fit)
+
+#Punti leva
+lev=hatvalues(fit)
+sum(lev)
+
+p=fit$rank
+n=dim(data)[1]
+fs=summary(fit)
+
+#soglia per leverages è 2*p/n
+watchout_points_lev = lev[ which( lev > 2 * p/n ) ]
+watchout_ids_lev = seq_along( lev )[ which( lev > 2 * p/n ) ]
+
+plot(fit$fitted.values,lev,pch=16, ylab='lev',xlab='Fitted values',main='Leverages')
+abline(h=2*p/n,col='red')
+points( fit$fitted.values[ watchout_ids_lev ], watchout_points_lev, col = 'red', pch = 16 )
+#molti valori sopra soglia
+
+sum(lev[lev>2*p/n])
+#somma è 1.65, punti leva pesano 33%
+fit2=lm(FORMULA_PSYCH,data=data,subset=(lev<2*p/n))
+summary(fit2)
+#R^2 adj
+
+abs((fit$coefficients-fit2$coefficients)/fit$coefficients)
+#Impatto delle leve sui beta
+
+
+
+#Residui standardizzati
+
+res_std=fit$res/fs$sigma
+
+plot(fit$fitted.values,res_std, pch=16, main='Standardized Residuals',ylab='res',xlab='Fitted values')
+abline(h=c(-2,2),col='red')
+
+#punto influente se res standardizzato >2
+watchout_ids_rstd = which( abs( res_std ) > 2 )
+watchout_rstd = res_std[ watchout_ids_rstd ]
+
+points( fit$fitted.values[watchout_ids_rstd],
+        res_std[watchout_ids_rstd], col = 'red', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev],
+        res_std[watchout_ids_lev], col = 'orange', pch = 16 )
+#in rosso residui alti, in arancione leve
+
+
+
+#Residui studentizzati
+stud = rstandard( fit )
+
+watchout_ids_stud = which( abs( stud ) > 2 )
+watchout_stud = stud[ watchout_ids_stud ]
+
+plot( fit$fitted.values, stud, ylab = 'res',xlab='Fitted values', main = "Studentized Residuals", pch = 16 )
+points( fit$fitted.values[watchout_ids_stud],
+        stud[watchout_ids_stud], col = 'pink', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev],
+        stud[watchout_ids_lev], col = 'orange', pch = 16 )
+abline( h = c(-2,2), col = 'red' )
+#Residui e residui studentizzati sembrano rilevare stessi punti
+
+
+
+#Distanza di Cook
+Cdist = cooks.distance( fit )
+
+watchout_ids_Cdist = which( Cdist > 4/(n-p) )
+watchout_Cdist = Cdist[ watchout_ids_Cdist ]
+
+plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values',
+      ylab = 'distance', main = 'Cooks Distance' )
+abline(h=4/(n-p), col='red')
+points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ],
+        col = 'green', pch = 16 )
+
+
+
+#punti da tenere non notevoli
+id_to_keep1 = !(1:n %in% watchout_ids_Cdist)
+id_to_keep2 = !(1:n %in% watchout_ids_stud)
+id_to_keep3 = !(1:n %in% watchout_ids_rstd)
+id_to_keep4 = !(1:n %in% watchout_ids_lev)
+
+id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4
+```
+
+```{r}
+#tolgo tutte le righe notevoli
+dati_psi_woo=subset(data,id_to_keep)
+ID_TO_KEEP_PSYCH = id_to_keep
+dim(dati_psi_woo)
+#si scende a circa 3978 (circa 91% dei dati)
+print(paste("From",dim(data)[1],"obs we moved to",dim(dati_psi_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(dati_psi_woo)[1]/dim(data)[1]*100,"%"))
+
+fit_fin=lm(FORMULA_PSYCH, dati_psi_woo)
+summary(fit_fin)
+#R^2 adj è 0.6861 -> alto
+#R^2 adj è 0.5068 -> alto ma meno alto (con la modifica di Ettore alla Formula)
+
+```
+
+## Problemino LUX
+
+```{r}
+for (state in STATES)
+	print(paste("#",state,"=",sum(dati_psi_woo==state)))
+```
+
+# Salvataggio dataset versione-2
+
+```{r}
+write.csv(dati_soc_woo,"../../data/data_social_woo.csv")
+write.csv(dati_psi_woo,"../../data/data_psych_woo.csv")
+
+colnames(dati_soc_woo)
+numerical_variables=c(1:23,25,26)
+
+dati_soc_woo_scaled = dati_soc_woo
+dati_soc_woo_scaled[,numerical_variables] = scale(dati_soc_woo_scaled[,numerical_variables])
+dati_psi_woo_scaled = dati_psi_woo
+dati_psi_woo_scaled[,numerical_variables] = scale(dati_psi_woo_scaled[,numerical_variables])
+
+write.csv(dati_soc_woo_scaled,"../../data/data_social_woo_scaled.csv")
+write.csv(dati_psi_woo_scaled,"../../data/data_psych_woo_scaled.csv")
+```
+
+# Confronto assumptions
+
+Dati originali, dati versione-1, dati versione-2.
+
+```{r}
+suppressWarnings({fit_data = lmer(FORMULA_SOCIAL_LMM,data=data)})
+res = residuals(fit_data)
+qqnorm(res,main="data")
+qqline(res,col="red")
+
+suppressWarnings({fit_data_soc_woo = lmer(FORMULA_SOCIAL_LMM,data=dati_soc_woo)})
+res = residuals(fit_data_soc_woo)
+qqnorm(res,main="data_soc_woo (version-2)")
+qqline(res,col="red")
+
+suppressWarnings({fit_data_social_woo = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo)})
+res = residuals(fit_data_social_woo)
+qqnorm(res,main="data_social_woo (version-1)")
+qqline(res,col="red")
+```
+
+# [3] Creazione dei fit
+
+## Ripresa dati_woo ufficiali
+
+Ufficiali per ora. Sono gli stessi di sopra finché le soglie non vengono cambiate da 24.3 e 24.26.
+
+*Update*: quelli di Giulia con la versione-2 sembrano in effetti meglio. Quindi i file sono gli stessi ma con i dati nuovi. Cioè sono ancora da scrivere ma lo saranno.
+
+Check da spuntare: sono i seguenti file riferiti ai dati della versione-2? - social sì (c'era il codice già pronto) - psych sì anche lui fatto (ma Giulia se vuoi ricontrollare è meglio, perché ho solo copiato e incollato il codice di prima, senza fare tuning di eventuali parametri (ma mi sembrava tutto automatico, cioè guidato da variabili anziché scelte da fare a mano))
+
+```{r}
+data_social_woo = read.csv("../../data/data_social_woo.csv")
+data_psych_woo = read.csv("../../data/data_psych_woo.csv")
+data_social_woo_scaled = read.csv("../../data/data_social_woo_scaled.csv")
+data_psych_woo_scaled = read.csv("../../data/data_psych_woo_scaled.csv")
+```
+
+# [3] Creazione dei fit WOO
+
+```{r}
+fit_social_lm = lm(   FORMULA_SOCIAL,    data=data_social_woo_scaled)
+fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo_scaled)
+
+fit_psych_lm = lm(   FORMULA_PSYCH,    data=data_psych_woo)
+fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=data_psych_woo_scaled)
+```
+
+```{r}
+sigma2_b <- get_variance_random(fit_social_lmm)
+sigma2_eps <- get_variance_residual(fit_social_lmm)
+sigma2_f <- get_variance_fixed(fit_social_lmm)
+
+sigma2_b/(sigma2_b+sigma2_eps)
+(sigma2_b+sigma2_f)/(sigma2_b+sigma2_eps+sigma2_f)
+
+library(MuMIn)
+r.squaredGLMM(fit_social_lmm)
+```
+
+# [4] Assumptions LM
+
+```{r}
+#############################
+fit = fit_social_lm
+df = data_social_woo
+# fit = fit_psych_lm
+# df = data_psych_woo
+#############################
+res = fit$residuals
+alpha = 0.05
+
+shapiro.test(res)$p
+print(paste("Normality of residuals?",shapiro.test(res)$p>alpha))
+qqnorm(res)
+qqline(res,col="red")
+
+# homoschedasticity
+boxplot(res ~ df$CNT,las=2)
+```
+
+# [5] Assumptions LMM
+
+```{r}
+#############################
+fit = fit_social_lmm
+df = data_social_woo
+# fit = fit_psych_lmm
+# df = data_psych_woo
+#############################
+res = residuals(fit)
+raneff = unlist(ranef(fit))
+alpha = 0.05
+
+shapiro.test(res)$p
+shapiro.test(raneff)$p
+print(paste("Normality of residuals?",shapiro.test(res)$p>alpha))
+print(paste("Normality of rand effects?",shapiro.test(raneff)$p>alpha))
+qqnorm(res)
+qqline(res,col="red")
+qqnorm(raneff)
+qqline(raneff,col="red")
+
+# homoschedasticity
+boxplot(res ~ df$CNT,las=2)
+```
+
+# [6] Dotplots
+
+## Social
+
+```{r}
+#############################
+fit = fit_social_lmm
+# fit = fit_psych_lmm
+#############################
+
+dotplot(ranef(fit, condVar=T))$CNT
+ranef(fit)
+```
+
+## Psych
+
+```{r}
+#############################
+# fit = fit_social_lmm
+fit = fit_psych_lmm
+#############################
+
+dotplot(ranef(fit, condVar=T))$CNT
+ranef(fit)
+```
+
+# [7] Analisi outliers
+
+```{r}
+# data_out_social = data[which(d2 > BEST_SOGLIA_SOCIAL), ]
+# data_out_psych = data[which(d2 > BEST_SOGLIA_PSYCH), ]
+data_out_social = subset(data,!ID_TO_KEEP_SOCIAL)
+data_out_psych = subset(data,!ID_TO_KEEP_PSYCH)
+dim(data_out_social)
+dim(data_out_psych) # ok sì sono diversi
+```
+
+## Social or Psych
+
+```{r}
+###########################
+# df_out = data_out_social
+# target = "Social.well.being"
+df_out = data_out_psych
+target = "Psychological.well.being"
+###########################
+
+for (i in 1:length(STATES)) { # STATES sta in Utilities
+	print(paste(STATES[i],":",sum(df_out$CNT==STATES[i]),"outliers // out of",
+		  sum(data$CNT==STATES[i]),"obs originally // %lost =",
+					sum(df_out$CNT==STATES[i])/sum(data$CNT==STATES[i])*100))
+}
+```
+
+*Social*: CZE, FIN, LTU, POL, SVK =\> sono peggiori della medie dei dati "normali" ESP, LUX =\> sono migliori della medie dei dati "normali"
+
+Forse ci sta, già ESP era lo stato migliore secondo il LMM, e LUX è uno stato molto ricco. Quindi magari togliendo gli outliers sono state rimosse scuole fin troppo belle nella già bella SPA, e lo stesso vale per LUX.
+
+*Psych*: Sembra molto più sottile qui la questione. Ma comunque ancora ESP e LUX mostrano un comportamento superiore di poco alla media. Insieme ora anche a Croazia (HRV) e DNK.
+
+```{r}
+mean_target_woo = mean(df_out[,target])
+boxplot(df_out[,target] ~ df_out[,"CNT"],col = colora(14),las=2,main=target)
+abline(h=mean_target_woo)
+```
+
+```{r}
+library(plotrix)
+ violin_plot(matrix(c(
+			df_out[which(df_out$CNT=="HRV"),target],
+			df_out[which(df_out$CNT=="CZE"),target],
+			df_out[which(df_out$CNT=="DNK"),target],
+			df_out[which(df_out$CNT=="EST"),target],
+			df_out[which(df_out$CNT=="FIN"),target],
+			df_out[which(df_out$CNT=="FRA"),target],
+			df_out[which(df_out$CNT=="GRC"),target],
+			df_out[which(df_out$CNT=="HUN"),target],
+			df_out[which(df_out$CNT=="LTU"),target],
+			# df_out[which(df_out$CNT=="LUX"),target],
+			df_out[which(df_out$CNT=="POL"),target],
+			df_out[which(df_out$CNT=="SVK"),target],
+			df_out[which(df_out$CNT=="SVN"),target],
+			df_out[which(df_out$CNT=="ESP"),target]
+ 	),ncol=13),
+  main="Default Plot",x_axis_labels=c(
+  	"HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","LTU",
+  	#"LUX",
+  	"POL","SVK","SVN","ESP"
+  ),col=colora(13),las=2)
+
+```

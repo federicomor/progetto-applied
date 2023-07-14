@@ -144,7 +144,7 @@ sigma2_eps <- as.numeric(get_variance_residual(lme_fit))
 sigma2_b <- as.numeric(get_variance_random(lme_fit))
 
 PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-print(paste("PVRE =",PVRE))
+PVRE
 
 ## visualization of the random intercepts with their 95% confidence intervals
 # Random effects: b_0i for i=1,...,234
@@ -199,25 +199,31 @@ By Masci's paper
 fit_lmerf <- lmerf(y = pisa_data$Social.well.being,
                    cov = pisa_data[,regressors],
                    group = pisa_data$CNT,
-                   xnam = regressors)
+                   xnam = regressors,
+                   toll = 0.03)
 
 summary.lmerf(fit_lmerf)
 ```
 
 ```{r}
-fit_lmerf$forest.model$rsq
+y_hat <- fitted.lmerf(fit_lmerf)
+y <- pisa_data$Social.well.being
 
+fit_lmerf$forest.model$mse[length(fit_lmerf$forest.model$mse)]
+sum((y-y_hat)^2)/length(y_hat)
+```
 
-sum((pisa_data$Social.well.being - fitted.lmerf(fit_lmerf))^2)
-
-
-
+```{r}
 dotplot(ranef(fit_lmerf$lmer.model))
-```
 
-```{r}
-sum((pisa_data$Social.well.being-predict.lmerf(fit_lmerf,pisa_data[,regressors],group=pisa_data$CNT))^2)
-```
+sigma2_eps <- as.numeric(get_variance_residual(fit_lmerf$lmer.model))
+sigma2_b <- as.numeric(get_variance_random(fit_lmerf$lmer.model))
 
-```{r}
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+PVRE
+
+sigma2_f <- var(fit_lmerf$forest.model$predicted)
+
+pseudo_Rsq <- (sigma2_b+sigma2_f)/(sigma2_b+sigma2_eps+sigma2_f)
+pseudo_Rsq
 ```
