@@ -69,6 +69,18 @@ rownames(RADAR_MATRIX) = c("max","min",levels(Glabel))
 RADAR_MATRIX
 ```
 
+```{r}
+for (j in 1:length(model_variables) ){
+# for (j in 1:3 ){
+	Xtarget = data.frame(df_social[,model_variables[j]])
+	# fit_complete = aov(as.matrix(Xtarget) ~ Glabel + Blabel + Glabel:Blabel)
+	fit_complete = aov(as.matrix(Xtarget) ~ Glabel)
+	print(model_variables[j])
+	print(summary.aov(fit_complete))
+	print("######################################")
+}
+```
+
 
 ```{r}
 for (j in 1:length(model_variables) ){
@@ -333,12 +345,12 @@ for (i in 1:length(model_variables) ){
 
 ```{r}
 ##########################
-COLORI = rev(colora(nstates,20))
+COLORI = colora(nstates,20)
 # darker is better
 ##########################
 
-for (i in 1:length(model_variables) ){
-# for (i in 1:4 ){
+# for (i in 1:length(model_variables) ){
+for (i in 1:4 ){
 	
 	#### Classic boxplot
 	group_ordered <- with(df_social,                      
@@ -367,7 +379,6 @@ for (i in 1:length(model_variables) ){
     }
 
     europe_joined <- merge(europe_map, means, by = c("adm0_a3"))
-    
     suppressWarnings({print(
       europe_joined %>% ggplot(aes(fill = factor(mean_value))) +
       geom_sf(size = 0.2, color = "black") + # border line
@@ -376,7 +387,7 @@ for (i in 1:length(model_variables) ){
       breaks = levels(means$mean_value),
       ############### COLORI
       # values =colora(length(levels(means$mean_value)), 24),
-      values = COLORI,
+      values = rev(COLORI),
       # values =colora(14,26),
       ############### COLORI
       labels = c("high", "medium", "low"),
@@ -384,16 +395,23 @@ for (i in 1:length(model_variables) ){
       ) +
       labs(
         title =model_variables[i],
-        subtitle = "ANOVA") +
+        subtitle = "darker is better") +
+        # subtitle = "ANOVA") +
+	    # 	 theme(plot.title = element_text(hjust = 1, vjust = 0.5),
+	    #        plot.subtitle = element_text(hjust = 0, vjust = 0.5)) +
       scale_x_continuous(limits = c(-10, 35)) +
       scale_y_continuous(limits = c(35, 68))+
       theme_void()+
+      # geom_text(aes(x = X, y = Y, label = name),
       geom_text_repel(aes(x = X, y = Y, label = name),
         data = subset(europe_joined, !is.na(mean_value)),
         size = 3,                   # Increase the size of the labels
-        colour = "gray20",          # Set the color of the labels
+    	seed=26,
+        # colour = "gray20",          # Set the color of the labels
+        colour = "#19124D",          # Set the color of the labels
         position = position_dodge(width = 0),
         fontface = "bold",          # Set the font weight to bold
+        force=0.9,
         # label.padding = unit(0.5, "lines"),   # Add padding around the label
         # label.r = unit(0.2, "lines"),         # Set the radius of the label's rounded corners
         # label.color = "black",                 # Set the color of the label's border
