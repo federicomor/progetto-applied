@@ -38,6 +38,7 @@ dataset_dir = paste(root_proj_dir,"/data/pisa_scores_final.csv",sep="")
 include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_dir)
+source("funzione_LMERF.R")
 #IMPORTING THE DATASET
 pisa_data <- read.csv(file=dataset_dir)
 ```
@@ -58,6 +59,11 @@ rm(transformed_data)
 pisa_data$X <- NULL
 #check on data 
 boxplot(select_if(pisa_data,is.numeric),las=2)
+
+
+#shuffle data
+shuffled_rows_index <- sample(1:nrow(pisa_data))
+pisa_data <- pisa_data[shuffled_rows_index,]
 ```
 
 # Fitting the Random Forest
@@ -85,7 +91,7 @@ control <- trainControl(method="oob",
                         verboseIter = TRUE)
 
 # grid
-tunegrid <- expand.grid(.mtry = c(4,5))
+tunegrid <- expand.grid(.mtry = 5)
 
 # training
 rf_training <- train(as.formula(formula_str),
@@ -126,8 +132,9 @@ for(reg in final_rf$xNames){
 fix_effect.pred <- final_rf$predicted
 
 #including random effects in the formula
-random_intercepts <- c("(1|CNT)","(1|SCHLTYPE)")
-ME_formula_str <- paste("fix_effect.pred", paste(random_intercepts,collapse="+"), sep="~")
+random_intercepts <- c("(1|CNT)")
+
+ME_formula_str <- paste("Social.well.being~fix_effect.pred", paste(random_intercepts,collapse="+"), sep="+")
 ```
 
 ```{r}
@@ -159,4 +166,58 @@ Random effect part included
 library(MuMIn)
 
 r.squaredGLMM(lme_fit)
+
+#it should be
+sigma2_eps <- as.numeric(get_variance_residual(lme_fit))
+sigma2_b <- as.numeric(get_variance_random(lme_fit))
+
+
+# sigma2_f <- as.numeric(get_variance_fixed(lme_fit)) 
+# -> this is what is computed by the statistic r.squaredGLMM
+
+#to compute the variance of the fixed effect variance on the variance
+sigma2_f <- as.numeric(get_variance_fixed(lme_fit)) #0.91791^2*var(final_rf$predicted)
+
+(sigma2_f+sigma2_b)/(sigma2_b+sigma2_f+sigma2_eps)
+```
+
+Mean squared error
+
+```{r}
+#mean squared error of the fixed effect
+mean((pisa_data$Social.well.being-final_rf$predicted)^2)
+
+#mean squared error of the mixed model
+mean((pisa_data$Social.well.being-predict(lme_fit))^2)
+```
+
+# Correct implementation
+
+By Masci's paper
+
+```{r}
+fit_lmerf <- lmerf(y = pisa_data$Social.well.being,
+                   cov = pisa_data[,regressors],
+                   group = pisa_data$CNT,
+                   xnam = regressors)
+
+summary.lmerf(fit_lmerf)
+```
+
+```{r}
+fit_lmerf$forest.model$rsq
+
+
+sum((pisa_data$Social.well.being - fitted.lmerf(fit_lmerf))^2)
+
+
+
+dotplot(ranef(fit_lmerf$lmer.model))
+```
+
+```{r}
+sum((pisa_data$Social.well.being-predict.lmerf(fit_lmerf,pisa_data[,regressors],group=pisa_data$CNT))^2)
+```
+
+```{r}
 ```
