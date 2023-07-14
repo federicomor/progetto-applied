@@ -125,7 +125,7 @@ print(paste("From",dim(data)[1],"obs we moved to",dim(data_psych_woo)[1]))
 print(paste("Percentuale di dati sopravvissuti:",dim(data_psych_woo)[1]/dim(data)[1]*100,"%"))
 ```
 
-# [2.2] For per la scelta soglia
+## For soglia
 ```{r}
 ##########################
 FORMULA = FORMULA_SOCIAL_LMM
@@ -156,7 +156,7 @@ for (soglia in SOGLIA_RANGE ){
 ```
 
 
-# Salvataggio dataset versione-1
+## Salvataggio dataset versione-1
 ```{r}
 # write.csv(data_social_woo,"../../data/data_social_woo.csv")
 # write.csv(data_psych_woo,"../../data/data_psych_woo.csv")
@@ -176,7 +176,7 @@ for (soglia in SOGLIA_RANGE ){
 
 
 
-# Tentativo con leverages, residui, distanza di cook
+# [2.5] Tentativo con leverages, residui, distanza di cook
 
 ## Social
 ```{r}
@@ -273,6 +273,7 @@ id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4
 ```{r}
 #tolgo tutte le righe notevoli
 dati_soc_woo=subset(data,id_to_keep)
+ID_TO_KEEP_SOCIAL = id_to_keep
 dim(dati_soc_woo)
 #si scende a circa 3964 (circa 91% dei dati)
 print(paste("From",dim(data)[1],"obs we moved to",dim(dati_soc_woo)[1]))
@@ -284,6 +285,13 @@ summary(fit_fin)
 #R^2 adj è 0.6898 -> alto (con la modifica di Ettore alla Formula)
 
 ```
+
+## Problemino LUX
+```{r}
+for (state in STATES)
+	print(paste("#",state,"=",sum(dati_soc_woo==state)))
+```
+
 
 ## Psych
 ```{r}
@@ -380,6 +388,7 @@ id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4
 ```{r}
 #tolgo tutte le righe notevoli
 dati_psi_woo=subset(data,id_to_keep)
+ID_TO_KEEP_PSYCH = id_to_keep
 dim(dati_psi_woo)
 #si scende a circa 3978 (circa 91% dei dati)
 print(paste("From",dim(data)[1],"obs we moved to",dim(dati_psi_woo)[1]))
@@ -391,7 +400,11 @@ summary(fit_fin)
 #R^2 adj è 0.5068 -> alto ma meno alto (con la modifica di Ettore alla Formula)
 
 ```
-
+## Problemino LUX
+```{r}
+for (state in STATES)
+	print(paste("#",state,"=",sum(dati_psi_woo==state)))
+```
 
 
 # Salvataggio dataset versione-2
@@ -409,35 +422,6 @@ dati_psi_woo_scaled[,numerical_variables] = scale(dati_psi_woo_scaled[,numerical
 
 write.csv(dati_soc_woo_scaled,"../../data/data_social_woo_scaled.csv")
 write.csv(dati_psi_woo_scaled,"../../data/data_psych_woo_scaled.csv")
-```
-
-
-# Assumptions LMM con i nuovi dati
-```{r}
-#############################
-fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=dati_soc_woo)
-fit = fit_social_lmm
-df = dati_soc_woo
-#############################
-res = residuals(fit)
-raneff = unlist(ranef(fit))
-alpha = 0.05
-
-print(paste("pvalue residuals =",shapiro.test(res)$p))
-print(paste("pvalue rand effects =",shapiro.test(raneff)$p))
-print(paste("Normality of residuals?",shapiro.test(res)$p>alpha))
-print(paste("Normality of rand effects?",shapiro.test(raneff)$p>alpha))
-qqnorm(res)
-qqline(res,col="red")
-qqnorm(raneff)
-qqline(raneff,col="red")
-
-# homoschedasticity
-boxplot(res ~ df$CNT,las=2)
-boxplot(res ~ df$CNT,las=2)
-
-dotplot(ranef(fit, condVar=T))$CNT
-dotplot(ranef(fit, condVar=T))$IM_PUBLIC
 ```
 
 
@@ -462,19 +446,6 @@ qqline(res,col="red")
 ```
 
 
-```{r}
-dotplot(ranef(fit_data_soc_woo, condVar=T))$CNT
-dotplot(ranef(fit_data_social_woo, condVar=T))$CNT
-```
-
-## T
-
-```{r}
-dim(data_social_woo)
-dim(dati_soc_woo)
-```
-
-
 
 
 # [3] Creazione dei fit
@@ -487,7 +458,7 @@ Sono gli stessi di sopra finché le soglie non vengono cambiate da 24.3 e 24.26.
 
 Check da spuntare: sono i seguenti file riferiti ai dati della versione-2?
 - social sì (c'era il codice già pronto)
-- psych non ancora (updatare qui quando qualcuno lo farà anche per psych)
+- psych sì anche lui fatto (ma Giulia se vuoi ricontrollare è meglio, perché ho solo copiato e incollato il codice di prima, senza fare tuning di eventuali parametri (ma mi sembrava tutto automatico, cioè guidato da variabili anziché scelte da fare a mano))
 
 ```{r}
 data_social_woo = read.csv("../../data/data_social_woo.csv")
@@ -497,31 +468,14 @@ data_psych_woo_scaled = read.csv("../../data/data_psych_woo_scaled.csv")
 ```
 
 
-# [3] Creazione dei fit- WOO
+# [3] Creazione dei fit WOO
 
 ```{r}
-  fit_social_lm = lm(FORMULA_SOCIAL,data=data_psych_woo)
-fit_psych_lm = lm(FORMULA_PSYCH,data=data_psych_woo)
-
+fit_social_lm = lm(   FORMULA_SOCIAL,    data=data_social_woo)
 fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo_scaled)
+
+fit_psych_lm = lm(   FORMULA_PSYCH,    data=data_psych_woo)
 fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=data_psych_woo_scaled)
-```
-
-Forse questo interessante ma ci mette molto a runnare.
-```{r}
-# library(influence.ME)
-# # suppressWarnings({
-# 	infl = influence(fit_social_lmm, obs = TRUE)
-# # })
-# cooks.distance(infl)
-# plot(infl, which = "cook")
-```
-
-
-Confronto beta LM e LMM, sono molto simili.
-```{r}
-fit_social_lm$coefficients
-fixef(fit_social_lmm)
 ```
 
 
@@ -576,7 +530,7 @@ boxplot(res ~ df$CNT,las=2)
 
 
 
-# [6] Random effects
+# [6] Dotplots
 ```{r}
 #############################
 fit = fit_social_lmm
@@ -590,8 +544,11 @@ ranef(fit)
 
 # [7] Analisi outliers
 ```{r}
-data_out_social = data[which(d2 > BEST_SOGLIA_SOCIAL), ]
-data_out_psych = data[which(d2 > BEST_SOGLIA_PSYCH), ]
+# data_out_social = data[which(d2 > BEST_SOGLIA_SOCIAL), ]
+# data_out_psych = data[which(d2 > BEST_SOGLIA_PSYCH), ]
+data_out_social = subset(data,!ID_TO_KEEP_SOCIAL)
+data_out_psych = subset(data,!ID_TO_KEEP_PSYCH)
+
 ```
 
 ## Social or Psych
@@ -599,14 +556,14 @@ data_out_psych = data[which(d2 > BEST_SOGLIA_PSYCH), ]
 ###########################
 df_out = data_out_social
 target = "Social.well.being"
-df = data_out_psych
-target = "Psychological.well.being"
+# df_out = data_out_psych
+# target = "Psychological.well.being"
 ###########################
 
 for (i in 1:length(STATES)) { # STATES sta in Utilities
-	print(paste(STATES[i],":",sum(df_out_social$CNT==STATES[i]),"outliers out of",
-		  sum(data$CNT==STATES[i]),"obs originally  %lost =",
-					sum(df_out_social$CNT==STATES[i])/sum(data$CNT==STATES[i])*100))
+	print(paste(STATES[i],":",sum(df_out$CNT==STATES[i]),"outliers // out of",
+		  sum(data$CNT==STATES[i]),"obs originally // %lost =",
+					sum(df_out$CNT==STATES[i])/sum(data$CNT==STATES[i])*100))
 }
 ```
 
