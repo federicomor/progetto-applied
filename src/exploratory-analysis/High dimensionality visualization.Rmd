@@ -23,64 +23,199 @@ head(pisa_data)
 library(rgl)
 library(Rtsne)
 ```
+
 ```{r}
-
-pisa_data$X <- NULL
-pisa_data$CNT <- as.factor(pisa_data$CNT)
-pisa_data$IM_PUBLIC <- as.factor(pisa_data$IM_PUBLIC)
-pisa_data$NEW_VAR <- as.factor(pisa_data$NEW_VAR)
-countrys =pisa_data$CNT 
-
-pisa_data_cut = as.data.frame(scale(select_if(pisa_data,is.numeric)))
-
-perplex = c(1,30,50)
-
-pdf("high dimensionality plots.pdf")
-
-for(k in perplex){
-  
-  tsne_results <- Rtsne(pisa_data_cut, perplexity=k, check_duplicates = FALSE, pca=FALSE)
-  title = paste("Perplexity = ", k)
-  plot(tsne_results$Y[,1],tsne_results$Y[,2], col = "black", bg= countrys, pch = 21, cex = 1, main = title)
-  
-}
-dev.off()
+# pisa_data$X <- NULL
+# pisa_data$CNT <- as.factor(pisa_data$CNT)
+# pisa_data$IM_PUBLIC <- as.factor(pisa_data$IM_PUBLIC)
+# pisa_data$NEW_VAR <- as.factor(pisa_data$NEW_VAR)
+# countrys =pisa_data$CNT 
+# 
+# pisa_data_cut = as.data.frame(scale(select_if(pisa_data,is.numeric)))
+# 
+# perplex = c(1,30,50)
+# 
+# pdf("high dimensionality plots.pdf")
+# 
+# for(k in perplex){
+#   
+#   tsne_results <- Rtsne(pisa_data_cut, perplexity=k, check_duplicates = FALSE, pca=FALSE)
+#   title = paste("Perplexity = ", k)
+#   plot(tsne_results$Y[,1],tsne_results$Y[,2], col = "black", bg= countrys, pch = 21, cex = 1, main = title)
+#   
+# }
+# dev.off()
 ```
+
 # Chosen perplexity = 30
 ```{r}
 tsne_results <- Rtsne(pisa_data_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
 ```
 
-# [prova] Plot divisi per categorie e livelli ANOVA
+
+# Plot divisi per categorie e livelli ANOVA
 ```{r}
-###### Approach.to.ICT
 cols = colora(4,20)
+```
+
+## Approach.to.ICT
+```{r}
 good = c("FRA","DNK","ESP","HRV")
 bad = c("CZE","SVK")
 
 df_cut = as.data.frame(scale(pisa_data$Approach.to.ICT))
 prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
-
-plot(tsne_results$Y[,1],tsne_results$Y[,2],
+plot(prova$Y[,1],prova$Y[,2],
      col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
-     main = "Perplexity = 30 (darker is better)",
+     main = "Approach.to.ICT // Perplexity = 30 (darker is better)",
      pch =19)
 ```
 
+## Use.of.ICT
 ```{r}
-###### Psychological.well.being
-cols = colora(4,20)
-good = c("HRV","ESP")
-bad = c("CZE","SVN")
+good = c("DNK")
+bad = c("SVK","SVN","EST","CZE","GRC","HUN","HRV","FIN","FRA","ESP")
 
-df_cut = as.data.frame(scale(pisa_data$Psychological.well.being))
+df_cut = as.data.frame(scale(pisa_data$Use.of.ICT))
 prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
-
-plot(tsne_results$Y[,1],tsne_results$Y[,2],
+plot(prova$Y[,1],prova$Y[,2],
      col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
-     main = "Perplexity = 30 (darker is better)",
+     main = "Use.of.ICT // Perplexity = 30 (darker is better)",
      pch =19)
 ```
+
+## Teacher.skill
+```{r}
+good = c("DNK","LTU")
+bad = c("SVK","CZE","SVN")
+
+df_cut = as.data.frame(scale(pisa_data$Teacher.skill))
+prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+plot(prova$Y[,1],prova$Y[,2],
+     col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
+     main = "Teacher.skill // Perplexity = 30 (darker is better)",
+     pch =19)
+```
+
+## RATCMP1
+```{r}
+good = c("EST","LTU")
+bad = c("HRV","GRC")
+
+df_cut = as.data.frame(scale(pisa_data$RATCMP1))
+prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+plot(prova$Y[,1],prova$Y[,2],
+     col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
+     main = "RATCMP1 // Perplexity = 30 (darker is better)",
+     pch =19)
+```
+
+## ICTSCH
+```{r}
+good = c("DNK")
+bad = c("EST","ESP","HUN","HRV","FRA","SVN","POL","CZE")
+
+df_cut = as.data.frame(scale(pisa_data$ICTSCH))
+prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+plot(prova$Y[,1],prova$Y[,2],
+     col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
+     main = "ICTSCH // Perplexity = 30 (darker is better)",
+     pch =19)
+```
+
+## HEDRES
+```{r}
+good = c("DNK","LTU","POL","SVN","EST","CZE","SVK","HRV")
+bad = c("GRC","FRA","FIN")
+
+df_cut = as.data.frame(scale(pisa_data$HEDRES))
+prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+plot(prova$Y[,1],prova$Y[,2],
+     col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
+     main = "HEDRES // Perplexity = 30 (darker is better)",
+     pch =19)
+```
+
+## ATTLNACT
+```{r}
+good = c("ESP","HUN")
+bad = c("SVK","POL")
+
+df_cut = as.data.frame(scale(pisa_data$ATTLNACT))
+prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+plot(prova$Y[,1],prova$Y[,2],
+     col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
+     main = "ATTLNACT // Perplexity = 30 (darker is better)",
+     pch =19)
+```
+
+## JOYREAD
+```{r}
+good = c("POL")
+bad = c("FRA","FIN","HRV","SVN","DNK")
+
+df_cut = as.data.frame(scale(pisa_data$JOYREAD))
+prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+plot(prova$Y[,1],prova$Y[,2],
+     col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
+     main = "JOYREAD // Perplexity = 30 (darker is better)",
+     pch =19)
+```
+
+## PV1MATH
+```{r}
+good = c("EST","POL")
+bad = c("HRV","GRC")
+
+df_cut = as.data.frame(scale(pisa_data$PV1MATH))
+prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+plot(prova$Y[,1],prova$Y[,2],
+     col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
+     main = "PV1MATH // Perplexity = 30 (darker is better)",
+     pch =19)
+```
+
+## PV1READ
+```{r}
+good = c("EST","FIN","POL")
+bad = c("SVN","LTU","GRC","SVK")
+
+df_cut = as.data.frame(scale(pisa_data$PV1READ))
+prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+plot(prova$Y[,1],prova$Y[,2],
+     col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
+     main = "PV1READ // Perplexity = 30 (darker is better)",
+     pch =19)
+```
+
+## Social.well.being
+```{r}
+good = c("ESP")
+bad = c("EST","CZE","POL","SVK")
+
+df_cut = as.data.frame(scale(pisa_data$Social.well.being))
+prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+plot(prova$Y[,1],prova$Y[,2],
+     col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
+     main = "Social.well.being // Perplexity = 30 (darker is better)",
+     pch =19)
+```
+
+## Psychological.well.being
+```{r}
+good = c("HRV")
+bad = c("SVK","SVN","CZE")
+
+df_cut = as.data.frame(scale(pisa_data$lPsychological.well.being))
+prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+plot(prova$Y[,1],prova$Y[,2],
+     col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
+     main = "Psychological.well.being // Perplexity = 30 (darker is better)",
+     pch =19)
+```
+
+
+
 
 
 # plot

@@ -213,7 +213,7 @@ group_ordered <- with(df_social,
 ## Differenze discrete con vincolo passi
 ```{r}
 ##### Parameters #########
-PLOT_BOXPLOT=0
+PLOT_BOXPLOT=1
 passi = 2
 ##### Parameters #########
 
@@ -252,9 +252,16 @@ scelta = model_variables[i]
 		points(1:nstates,medie,pch=19,main=scelta)
 		axis(side = 1, at = 1:13, labels = rownames(data.frame(medie)),las=2)
 		lines(1:(nstates-1),differenze_discrete+mean(medie),type="b",col="blue")
-	abline(v=which(differenze_discrete==max1))
-	abline(v=which(differenze_discrete==max2))
+		v1=which(differenze_discrete==max1)
+		v2=which(differenze_discrete==max2)
+	abline(v=v1)
+	abline(v=v2)
 	
+	print(scelta)
+	print("good = c(")
+	print(rownames(data.frame(medie))[1:min(v1,v2)])
+	print("bad = c(")
+	print(rownames(data.frame(medie))[max(v1,v2):end(medie)])
 	
 	# Quality = rep("0",length(Glabel))
 	# Quality
