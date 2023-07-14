@@ -160,6 +160,10 @@ for(i in 1:g){
 
 ## Differenze discrete
 ```{r}
+##### Parameters #########
+PLOT_BOXPLOT=0
+##### Parameters #########
+
 nstates = length(levels(Glabel))
 for (i in 1:length(model_variables) ){
 
@@ -170,12 +174,14 @@ group_ordered <- with(df_social,
                           df_social[,scelta],
                           FUN=mean,
                   		decreasing = T))
-	boxplot(df_social[,scelta] ~ group_ordered,
+	if(PLOT_BOXPLOT==1){
+		boxplot(df_social[,scelta] ~ group_ordered,
 			main=paste(scelta,"ordered by mean"),las=2,
 			ylim=c(round(min(df_social[,scelta])),
 				   round(max(df_social[,scelta]))),
 			col = rev(colora(length(levels(Glabel)),43)))
-	abline(h=mean(df_social[,scelta]))
+		abline(h=mean(df_social[,scelta]))
+	}
 	
 	medie = tapply(df_social[,scelta],group_ordered,mean)
 	end = length
@@ -187,7 +193,7 @@ group_ordered <- with(df_social,
 
 		plot(1:nstates,medie,type="b",main=scelta,ylab="medie(black) & ddif(blue)")
 		points(1:nstates,medie,pch=19,main=scelta)
-		lines(1:(nstates-1),differenze_discrete,type="b",col="blue")
+		lines(1:(nstates-1),differenze_discrete+mean(medie),type="b",col="blue")
 	abline(v=which(differenze_discrete==max1))
 	abline(v=which(differenze_discrete==max2))
 	
@@ -205,22 +211,28 @@ group_ordered <- with(df_social,
 
 ## Differenze discrete con vincolo passi
 ```{r}
+##### Parameters #########
+PLOT_BOXPLOT=0
 passi = 2
+##### Parameters #########
+
 for (i in 1:length(model_variables) ){
 
 scelta = model_variables[i]
 
-group_ordered <- with(df_social,                      
+	group_ordered <- with(df_social,                      
                   reorder(df_social$CNT,
                           df_social[,scelta],
                           FUN=mean,
                   		decreasing = T))
-	boxplot(df_social[,scelta] ~ group_ordered,
+	if(PLOT_BOXPLOT==1){
+		boxplot(df_social[,scelta] ~ group_ordered,
 			main=paste(scelta,"ordered by mean"),las=2,
 			ylim=c(round(min(df_social[,scelta])),
 				   round(max(df_social[,scelta]))),
 			col = rev(colora(length(levels(Glabel)),43)))
-	abline(h=mean(df_social[,scelta]))
+		abline(h=mean(df_social[,scelta]))
+	}
 	
 	medie = tapply(df_social[,scelta],group_ordered,mean)
 	end = length
@@ -237,7 +249,7 @@ group_ordered <- with(df_social,
 	
 		plot(1:nstates,medie,type="b",main=scelta,ylab="medie(black) & ddif(blue)")
 		points(1:nstates,medie,pch=19,main=scelta)
-		lines(1:(nstates-1),differenze_discrete,type="b",col="blue")
+		lines(1:(nstates-1),differenze_discrete+mean(medie),type="b",col="blue")
 	abline(v=which(differenze_discrete==max1))
 	abline(v=which(differenze_discrete==max2))
 	
