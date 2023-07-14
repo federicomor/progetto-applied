@@ -529,10 +529,22 @@ boxplot(res ~ df$CNT,las=2)
 
 
 # [6] Dotplots
+## Social
 ```{r}
 #############################
 fit = fit_social_lmm
 # fit = fit_psych_lmm
+#############################
+
+dotplot(ranef(fit, condVar=T))$CNT
+ranef(fit)
+```
+
+## Psych
+```{r}
+#############################
+# fit = fit_social_lmm
+fit = fit_psych_lmm
 #############################
 
 dotplot(ranef(fit, condVar=T))$CNT
@@ -546,16 +558,17 @@ ranef(fit)
 # data_out_psych = data[which(d2 > BEST_SOGLIA_PSYCH), ]
 data_out_social = subset(data,!ID_TO_KEEP_SOCIAL)
 data_out_psych = subset(data,!ID_TO_KEEP_PSYCH)
-
+dim(data_out_social)
+dim(data_out_psych) # ok sì sono diversi
 ```
 
 ## Social or Psych
 ```{r}
 ###########################
-df_out = data_out_social
-target = "Social.well.being"
-# df_out = data_out_psych
-# target = "Psychological.well.being"
+# df_out = data_out_social
+# target = "Social.well.being"
+df_out = data_out_psych
+target = "Psychological.well.being"
 ###########################
 
 for (i in 1:length(STATES)) { # STATES sta in Utilities
@@ -574,10 +587,42 @@ Forse ci sta, già ESP era lo stato migliore secondo il LMM, e LUX è uno stato 
 Quindi magari togliendo gli outliers sono state rimosse scuole fin troppo belle nella già bella SPA, e lo stesso vale per LUX.
 
 *Psych*:
-Sembra molto più sottile qui la questione. Ma comunque ancora ESP e LUX mostrano un comportamento superiore di poco alla media.
+Sembra molto più sottile qui la questione. Ma comunque ancora ESP e LUX mostrano un comportamento superiore di poco alla media. Insieme ora anche a Croazia (HRV) e DNK.
 
 ```{r}
-mean_target_woo = mean(data_social_woo[,target])
-boxplot(df_out[,target] ~ df_out[,"CNT"],col = colora(14),las=2)
+mean_target_woo = mean(df_out[,target])
+boxplot(df_out[,target] ~ df_out[,"CNT"],col = colora(14),las=2,main=target)
 abline(h=mean_target_woo)
 ```
+
+
+```{r}
+library(plotrix)
+ violin_plot(matrix(c(
+			df_out[which(df_out$CNT=="HRV"),target],
+			df_out[which(df_out$CNT=="CZE"),target],
+			df_out[which(df_out$CNT=="DNK"),target],
+			df_out[which(df_out$CNT=="EST"),target],
+			df_out[which(df_out$CNT=="FIN"),target],
+			df_out[which(df_out$CNT=="FRA"),target],
+			df_out[which(df_out$CNT=="GRC"),target],
+			df_out[which(df_out$CNT=="HUN"),target],
+			df_out[which(df_out$CNT=="LTU"),target],
+			# df_out[which(df_out$CNT=="LUX"),target],
+			df_out[which(df_out$CNT=="POL"),target],
+			df_out[which(df_out$CNT=="SVK"),target],
+			df_out[which(df_out$CNT=="SVN"),target],
+			df_out[which(df_out$CNT=="ESP"),target]
+ 	),ncol=13),
+  main="Default Plot",x_axis_labels=c(
+  	"HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","LTU",
+  	#"LUX",
+  	"POL","SVK","SVN","ESP"
+  ),col=colora(13),las=2)
+
+```
+
+
+
+
+
