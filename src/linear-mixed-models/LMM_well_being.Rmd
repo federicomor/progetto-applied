@@ -160,15 +160,15 @@ for (soglia in SOGLIA_RANGE ){
 ```{r}
 # write.csv(data_social_woo,"../../data/data_social_woo.csv")
 # write.csv(data_psych_woo,"../../data/data_psych_woo.csv")
-# 
+#
 # colnames(data_social_woo)
 # numerical_variables=c(1:23,25,26)
-# 
+#
 # data_social_woo_scaled = data_social_woo
 # data_social_woo_scaled[,numerical_variables] = scale(data_social_woo_scaled[,numerical_variables])
 # data_psych_woo_scaled = data_psych_woo
 # data_psych_woo_scaled[,numerical_variables] = scale(data_psych_woo_scaled[,numerical_variables])
-# 
+#
 # write.csv(data_social_woo_scaled,"../../data/data_social_woo_scaled.csv")
 # write.csv(data_psych_woo_scaled,"../../data/data_psych_woo_scaled.csv")
 ```
@@ -185,7 +185,7 @@ summary(fit)
 
 #Punti leva
 lev=hatvalues(fit)
-sum(lev) 
+sum(lev)
 
 p=fit$rank
 n=dim(data)[1]
@@ -201,10 +201,10 @@ points( fit$fitted.values[ watchout_ids_lev ], watchout_points_lev, col = 'red',
 #molti valori sopra soglia
 
 sum(lev[lev>2*p/n])
-#somma è 1.65, punti leva pesano 33% 
+#somma è 1.65, punti leva pesano 33%
 fit2=lm(FORMULA_SOCIAL,data=data,subset=(lev<2*p/n))
 summary(fit2)
-#R^2 adj 
+#R^2 adj
 
 abs((fit$coefficients-fit2$coefficients)/fit$coefficients)
 #Impatto delle leve sui beta
@@ -226,36 +226,36 @@ points( fit$fitted.values[watchout_ids_rstd],
         res_std[watchout_ids_rstd], col = 'red', pch = 16 )
 points( fit$fitted.values[watchout_ids_lev],
         res_std[watchout_ids_lev], col = 'orange', pch = 16 )
-#in rosso residui alti, in arancione leve 
+#in rosso residui alti, in arancione leve
 
 
 
-#Residui studentizzati 
+#Residui studentizzati
 stud = rstandard( fit )
 
 watchout_ids_stud = which( abs( stud ) > 2 )
 watchout_stud = stud[ watchout_ids_stud ]
 
 plot( fit$fitted.values, stud, ylab = 'res',xlab='Fitted values', main = "Studentized Residuals", pch = 16 )
-points( fit$fitted.values[watchout_ids_stud], 
+points( fit$fitted.values[watchout_ids_stud],
         stud[watchout_ids_stud], col = 'pink', pch = 16 )
-points( fit$fitted.values[watchout_ids_lev], 
+points( fit$fitted.values[watchout_ids_lev],
         stud[watchout_ids_lev], col = 'orange', pch = 16 )
 abline( h = c(-2,2), col = 'red' )
 #Residui e residui studentizzati sembrano rilevare stessi punti
 
 
 
-#Distanza di Cook 
+#Distanza di Cook
 Cdist = cooks.distance( fit )
 
-watchout_ids_Cdist = which( Cdist > 4/(n-p) ) 
+watchout_ids_Cdist = which( Cdist > 4/(n-p) )
 watchout_Cdist = Cdist[ watchout_ids_Cdist ]
 
-plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values', 
+plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values',
       ylab = 'distance', main = 'Cooks Distance' )
 abline(h=4/(n-p), col='red')
-points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ], 
+points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ],
         col = 'green', pch = 16 )
 
 
@@ -300,7 +300,7 @@ summary(fit)
 
 #Punti leva
 lev=hatvalues(fit)
-sum(lev) 
+sum(lev)
 
 p=fit$rank
 n=dim(data)[1]
@@ -316,10 +316,10 @@ points( fit$fitted.values[ watchout_ids_lev ], watchout_points_lev, col = 'red',
 #molti valori sopra soglia
 
 sum(lev[lev>2*p/n])
-#somma è 1.65, punti leva pesano 33% 
+#somma è 1.65, punti leva pesano 33%
 fit2=lm(FORMULA_PSYCH,data=data,subset=(lev<2*p/n))
 summary(fit2)
-#R^2 adj 
+#R^2 adj
 
 abs((fit$coefficients-fit2$coefficients)/fit$coefficients)
 #Impatto delle leve sui beta
@@ -341,36 +341,36 @@ points( fit$fitted.values[watchout_ids_rstd],
         res_std[watchout_ids_rstd], col = 'red', pch = 16 )
 points( fit$fitted.values[watchout_ids_lev],
         res_std[watchout_ids_lev], col = 'orange', pch = 16 )
-#in rosso residui alti, in arancione leve 
+#in rosso residui alti, in arancione leve
 
 
 
-#Residui studentizzati 
+#Residui studentizzati
 stud = rstandard( fit )
 
 watchout_ids_stud = which( abs( stud ) > 2 )
 watchout_stud = stud[ watchout_ids_stud ]
 
 plot( fit$fitted.values, stud, ylab = 'res',xlab='Fitted values', main = "Studentized Residuals", pch = 16 )
-points( fit$fitted.values[watchout_ids_stud], 
+points( fit$fitted.values[watchout_ids_stud],
         stud[watchout_ids_stud], col = 'pink', pch = 16 )
-points( fit$fitted.values[watchout_ids_lev], 
+points( fit$fitted.values[watchout_ids_lev],
         stud[watchout_ids_lev], col = 'orange', pch = 16 )
 abline( h = c(-2,2), col = 'red' )
 #Residui e residui studentizzati sembrano rilevare stessi punti
 
 
 
-#Distanza di Cook 
+#Distanza di Cook
 Cdist = cooks.distance( fit )
 
-watchout_ids_Cdist = which( Cdist > 4/(n-p) ) 
+watchout_ids_Cdist = which( Cdist > 4/(n-p) )
 watchout_Cdist = Cdist[ watchout_ids_Cdist ]
 
-plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values', 
+plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values',
       ylab = 'distance', main = 'Cooks Distance' )
 abline(h=4/(n-p), col='red')
-points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ], 
+points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ],
         col = 'green', pch = 16 )
 
 
@@ -498,7 +498,6 @@ qqline(res,col="red")
 
 # homoschedasticity
 boxplot(res ~ df$CNT,las=2)
-boxplot(res ~ df$CNT,las=2)
 ```
 
 
@@ -524,7 +523,6 @@ qqnorm(raneff)
 qqline(raneff,col="red")
 
 # homoschedasticity
-boxplot(res ~ df$CNT,las=2)
 boxplot(res ~ df$CNT,las=2)
 ```
 
