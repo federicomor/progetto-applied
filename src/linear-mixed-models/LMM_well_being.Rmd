@@ -139,7 +139,7 @@ print(paste("From",dim(data)[1],"obs we moved to",dim(data_psych_woo)[1]))
 print(paste("Percentuale di dati sopravvissuti:",dim(data_psych_woo)[1]/dim(data)[1]*100,"%"))
 ```
 
-# [2.2] For per la scelta soglia
+## [2.2] For per la scelta soglia
 ```{r}
 ##########################
 FORMULA = FORMULA_SOCIAL_LMM
@@ -170,7 +170,7 @@ for (soglia in SOGLIA_RANGE ){
 ```
 
 
-# Salvataggio dataset versione-1
+## Salvataggio dataset versione-1
 ```{r}
 write.csv(data_social_woo,"../../data/data_social_woo.csv")
 write.csv(data_psych_woo,"../../data/data_psych_woo.csv")
@@ -340,7 +340,6 @@ boxplot(res ~ df$CNT,las=2)
 boxplot(res ~ df$CNT,las=2)
 
 dotplot(ranef(fit, condVar=T))$CNT
-dotplot(ranef(fit, condVar=T))$IM_PUBLIC
 ```
 
 
@@ -403,7 +402,7 @@ data_psych_woo_scaled = read.csv("../../data/data_psych_woo_scaled.csv")
 # [3] Creazione dei fit- WOO
 
 ```{r}
-  fit_social_lm = lm(FORMULA_SOCIAL,data=data_psych_woo)
+fit_social_lm = lm(FORMULA_SOCIAL,data=data_social_woo)
 fit_psych_lm = lm(FORMULA_PSYCH,data=data_psych_woo)
 
 fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo_scaled)
@@ -447,7 +446,6 @@ qqline(res,col="red")
 
 # homoschedasticity
 boxplot(res ~ df$CNT,las=2)
-boxplot(res ~ df$CNT,las=2)
 ```
 
 
@@ -473,7 +471,6 @@ qqnorm(raneff)
 qqline(raneff,col="red")
 
 # homoschedasticity
-boxplot(res ~ df$CNT,las=2)
 boxplot(res ~ df$CNT,las=2)
 ```
 
