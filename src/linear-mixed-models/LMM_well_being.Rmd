@@ -89,6 +89,11 @@ linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
 
 vars = c(linear_model_vars,"CNT","IM_PUBLIC")
 FORMULA_SOCIAL <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
+
+vars = c(linear_model_vars,"(1|CNT)")
+FORMULA_SOCIAL_LMM <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
+
+
 FORMULA_SOCIAL == FORMULA_SOCIAL_LM # check coerenza
 ```
 
@@ -97,6 +102,9 @@ linear_model_vars <- readLines("../../data/non csv/lm_psico_vars.txt")
 
 vars = c(linear_model_vars,"CNT","IM_PUBLIC")
 FORMULA_PSYCH <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
+
+vars = c(linear_model_vars,"(1|CNT)")
+FORMULA_PSYCH_LMM <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
 FORMULA_PSYCH == FORMULA_PSYCH_LM # check coerenza
 ```
 
@@ -187,6 +195,7 @@ write.csv(data_psych_woo_scaled,"../../data/data_psych_woo_scaled.csv")
 ```{r}
 
 fit = lm(FORMULA_SOCIAL,data=data)
+summary(fit)
 
 #Punti leva
 lev=hatvalues(fit)
@@ -393,7 +402,7 @@ data_psych_woo_scaled = read.csv("../../data/data_psych_woo_scaled.csv")
 # [3] Creazione dei fit- WOO
 
 ```{r}
-fit_social_lm = lm(FORMULA_SOCIAL,data=data_psych_woo)
+  fit_social_lm = lm(FORMULA_SOCIAL,data=data_psych_woo)
 fit_psych_lm = lm(FORMULA_PSYCH,data=data_psych_woo)
 
 fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo_scaled)

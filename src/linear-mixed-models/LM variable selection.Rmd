@@ -15,6 +15,12 @@ library(mvtnorm)
 library(MASS)
 library(car)
 library(rgl)
+library(dplyr)
+library(mvtnorm)
+library(MASS)
+library(car)
+library(rgl)
+library(glmnet)
 ```
 
 ```{r}
@@ -40,6 +46,16 @@ data$IM_PUBLIC = as.factor(IM_PUBLIC)
 data$SCHLTYPE <- NULL
 dim(data)
 ```
+
+# scaling the data
+```{r}
+data_scaled = as.data.frame(scale(select_if(data,is.numeric)),data$CNT,data$IM_PUBLIC)
+dim(data_scaled)
+data = cbind("CNT" =data$CNT,"IM_PUBLIC"=data$IM_PUBLIC,data_scaled)
+dim(data)
+rownames(data)=NULL
+```
+
 
 
 
@@ -126,7 +142,7 @@ vars_chosen <- bwd[2:max_vars]
 lambda.c <- 10^seq(-5,5,0.01)
 # Optimal lambda
 fm.ridge = lm.ridge(FORMULA_LM, lambda = lambda.c,data=data)
-select(fm.ridge)
+#select(fm.ridge)
 
 # Alternatives (optimal lambda)
 fm.ridge = lm.ridge(FORMULA_LM, lambda = lambda.c,data=data)
@@ -256,7 +272,7 @@ ind_bwd
 
 ## Comparison- they are all the same
 ```{r, warning=FALSE, message=FALSE}
-max_vars = 18
+max_vars = 17
 full = names(coef(regfit.full,max_vars)) # Exhaustive search
 
 fwd = names(coef(regfit.fwd,max_vars)) # Forward Stepwise Selection
@@ -275,7 +291,7 @@ vars_chosen <- bwd[2:max_vars]
 lambda.c <- 10^seq(-5,5,0.01)
 # Optimal lambda
 fm.ridge = lm.ridge(FORMULA_LM, lambda = lambda.c,data=data)
-select(fm.ridge)
+#select(fm.ridge)
 
 # Alternatives (optimal lambda)
 fm.ridge = lm.ridge(FORMULA_LM, lambda = lambda.c,data=data)
@@ -384,10 +400,13 @@ vars_to_discard = c("CLSIZE",
                     "PROAT6",
                     "ICTRES",
                     "ENTUSE",
-                    "IM_PUBLIC"
+                    "CREACTIV",
+                    "Teachers..degree",
                     
+                    "IM_PUBLIC"
                     )
-check_beta <- which(names(b)%in%vars_to_discard)
+check_beta <- c(which(names(b)%in%vars_to_discard),
+                check_beta <- grep("IM_PUBLIC", names(b)))
 C <- c()
 for( i in 1: length(check_beta)){
   vect <- rep(0,fit_social_lm$rank)
@@ -399,8 +418,8 @@ linearHypothesis(fit_social_lm, C, rep(0,length(check_beta)))
 ```
 
 ```{r}
-vars_final = vars[!(vars%in%vars_to_discard)]
-FORMULA_SOCIAL <- paste(paste("Social.well.being","~"), paste(vars_final, collapse = "+"))
+vars_final = vars[!(vars%in%c(vars_to_discard,"CNT"))]
+FORMULA_SOCIAL <- paste(paste("Social.well.being","~"), paste(c(vars_final,"CNT"), collapse = "+"))
 
 writeLines(vars_final,"../../data/non csv/lm_social_vars.txt")
 
@@ -437,10 +456,11 @@ vars_to_discard = c("Use.of.ICT",
                     "TEACHBEHA",
                     "JOYREAD",
                     "CREACTIV",
+                        
                     "IM_PUBLIC"
-                    
                     )
-check_beta <- which(names(b)%in%vars_to_discard)
+check_beta <- c(which(names(b)%in%vars_to_discard),
+                check_beta <- grep("IM_PUBLIC", names(b)))
 C <- c()
 for( i in 1: length(check_beta)){
   vect <- rep(0,fit_psych_lm$rank)
@@ -452,13 +472,62 @@ linearHypothesis(fit_psych_lm, C, rep(0,length(check_beta)))
 ```
 
 ```{r}
-vars_final = vars[!(vars%in%vars_to_discard)]
-FORMULA_PSYCH <- paste(paste("Psychological.well.being","~"), paste(vars_final, collapse = "+"))
+vars_final = vars[!(vars%in%c(vars_to_discard,"CNT"))]
+FORMULA_PSYCH <- paste(paste("Psychological.well.being","~"), paste(c(vars_final,"CNT"), collapse = "+"))
 
 writeLines(vars_final, "../../data/non csv/lm_psico_vars.txt")
 
 fit_psych_lm = lm(FORMULA_PSYCH,data=data)
 summary(fit_psych_lm)
 ```
+# Grouped variables remaining
+## social
+```{r}
+linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
+
+filter <- function(category,var_lm) {
+  risultato <- c()
+  
+  for (elemento in category) {
+    if (elemento %in% var_lm) {
+      risultato <- c(risultato, elemento)
+    }
+  }
+  
+  return(risultato)
+}
 
 
+categories_variables_filtered=list()
+
+for(cat in cat_var_names ){
+  categories_variables_filtered[[cat]]=filter(categories_variables[[cat]],linear_model_vars)
+}
+
+categories_variables_filtered
+```
+## psico
+```{r}
+linear_model_vars <- readLines("../../data/non csv/lm_psico_vars.txt")
+
+filter <- function(category,var_lm) {
+  risultato <- c()
+  
+  for (elemento in category) {
+    if (elemento %in% var_lm) {
+      risultato <- c(risultato, elemento)
+    }
+  }
+  
+  return(risultato)
+}
+
+
+categories_variables_filtered=list()
+
+for(cat in cat_var_names ){
+  categories_variables_filtered[[cat]]=filter(categories_variables[[cat]],linear_model_vars)
+}
+
+categories_variables_filtered
+```

@@ -1,6 +1,5 @@
 Approach.to.ICT
 Use.of.ICT
-Teachers..degree
 Teacher.skill
 RATCMP1
 ICTSCH
@@ -9,5 +8,3 @@ ATTLNACT
 JOYREAD
 PV1MATH
 PV1READ
-CREACTIV
-CNT
