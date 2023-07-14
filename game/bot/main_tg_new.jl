@@ -44,6 +44,7 @@ end
 
 ############# Include dataframe functions #############
 include("dataframe_functions.jl")
+println("Created linear mixed model.")
 
 
 ############# Global const variables #############
@@ -126,16 +127,10 @@ function handle_command(msg)
 
 
     elseif msg_text == "/done"
-        if get_player_data(player_id,:zdone) == 1
-                sendMessage(tg,
-                    text="Game parameters already confirmed! Type /results to see your ranking in the scoreboard!",
-                    chat_id=chat_id)
-        else
-            sendMessage(tg,
-                    text="*Danger zone!*\nYou are about to confirm your game parameters, and so you won't be able to change them after that.\nIf your are sure, type \"/done yes\" to actually confirm them.",
-                    chat_id=chat_id,
-                    parse_mode="Markdown")
-        end
+        sendMessage(tg,
+                text="*Danger zone!*\nYou are about to confirm your game parameters, and so you won't be able to change them after that.\nIf your are sure, type \"/done yes\" to actually confirm them.",
+                chat_id=chat_id,
+                parse_mode="Markdown")
 
 
     elseif msg_text == "/done yes"
@@ -143,19 +138,17 @@ function handle_command(msg)
             sendMessage(tg,
                 text="Please choose the state before confirming your parameters. See the options with /state.",
                 chat_id=chat_id)
-        else
+        else # qui il player ha scelto lo stato
             if get_player_data(player_id,:zdone) == 1
                 sendMessage(tg,
-                    text="Game parameters already confirmed! Type /results to see your ranking in the scoreboard!",
+                    text="Your first game was the one who determines your position in the scoreboard (for that, see /results). But with the new parameters you provided, I tell you that your score would have been...\n$(compute_score(player_id)).",
                     chat_id=chat_id)
             else
-                sendMessage(tg,
-                    text="Game parameters confirmed! Now you can't change them anymore.\nWe are now normalizing your parameters (so that they sum up to 100), and then computing your score. Type /results to see your ranking in the scoreboard!",
-                    chat_id=chat_id)
-            
                 set_player_data(player_id, :zdone, 1)
-                # normalize_player_data(player_id) # normalizza già nella compute_score
-                compute_score(player_id)
+                sendMessage(tg,
+                    text="Game parameters confirmed! We are now computing your score for the global scoreboard (see your ranking with /results). This score of yout first play is the done which will appear in the scoreboard.\nHowever you can still experiment with the bot, trying different parameters, see how your score changes, and so on.",
+                    chat_id=chat_id)
+                set_player_data(player_id,:score,compute_score(player_id))
                 include("visualize_score.jl")
             end
         end
@@ -170,15 +163,9 @@ function handle_command(msg)
 
 
     elseif msg_text == "/results"
-        if get_player_data(player_id,:zdone)==0
-            sendMessage(tg,
-                text="You firstly need to confirm your game parameters with /done to see your final score.",
-                chat_id = chat_id)
-        else
-            sendMessage(tg,
-                text="Come here to see your position!\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
-                chat_id = chat_id)
-        end
+        sendMessage(tg,
+            text="Remember, your fist play is the one which determines your position. Come here to see it!\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
+            chat_id = chat_id)
 
 
     elseif msg_text == "/state"

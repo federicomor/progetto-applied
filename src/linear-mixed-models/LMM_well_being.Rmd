@@ -5,18 +5,6 @@ editor_options:
   chunk_output_type: inline
 ---
 
-(ho messo le quadre davanti ai numeri, quindi [1] anziché **1** perché mi sembrava più leggibile)
-
-```{r}
-root_proj_dir = "../../"
-dataset_path = paste(root_proj_dir,"data/pisa_scores_final.csv",sep="")
-include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
-#INCLUDING UTILITIES
-source(include_path)
-#IMPORTING THE DATASET
-data <- read.csv(file=dataset_path)
-head(data)
-```
 
 ```{r}
 library(mvtnorm)
@@ -36,6 +24,18 @@ library(plot.matrix)
 
 library(insight)
 ```
+
+```{r}
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/pisa_scores_final.csv",sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+data <- read.csv(file=dataset_path)
+head(data)
+```
+
 # [0] DATA PREP
 ```{r}
 data$X <- NULL
@@ -46,7 +46,6 @@ IM_PUBLIC = rep(0,dim(data)[1])
 IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
 data$IM_PUBLIC = as.factor(IM_PUBLIC)
 data$SCHLTYPE <- NULL
-
 ```
 ### creazione unico factor combinato
 ```{r}
@@ -72,1305 +71,556 @@ colnames(data)
 ```
 
 
-# [1] Modello 1-Social.well.being
+# [1] Definizione formule
+Please tenete questa sezione alla fine delle vostre analisi, mi serve per avere le formule definitive da usare nei modelli per calcolare il punteggio del gioco nel bot. Grazie! :)
+
 ```{r}
-FORMULA_COMPLETE_SOCIAL = formula(Social.well.being~.-Psychological.well.being-CNT-IM_PUBLIC-NEW_VAR)
-fit_social = lm(FORMULA_COMPLETE_SOCIAL,data=data)
-summary(fit_social)
-b=coefficients(fit_social)
-nv_max = length(b)-1
-names(b)
-```
+linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
 
-# [2] Variable selection
-## Best Subset Selection (exhaustive search)
-```{r, warning=FALSE, message=FALSE}
-regfit.full = regsubsets(FORMULA_COMPLETE_SOCIAL, data=data, nvmax=nv_max)
-reg.summary = summary(regfit.full)
+vars = c(linear_model_vars,"CNT")
+FORMULA_SOCIAL <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
 
-# Which one we choose:
-#reg.summary$which
-# Plots
-plot(reg.summary$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-
-
-# We want the model with max r.adj^2 so we extract the coefficients of that model
-# Note: ind = how many coefficients has the model
-ind = which.max(reg.summary$adjr2)
-ind
-coef(regfit.full, ind)
-```
-
-##  Forward and Backward Stepwise Selection
-```{r, warning=FALSE, message=FALSE}
-# Forward
-regfit.fwd = regsubsets(FORMULA_COMPLETE_SOCIAL,data=data,nvmax=nv_max,method="forward")
-
-
-# Plot
-
-plot(summary(regfit.fwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-
-ind_fwd = which.max(summary(regfit.fwd)$adjr2)
-ind_fwd
-# Backward
-regfit.bwd = regsubsets(FORMULA_COMPLETE_SOCIAL,data=data,nvmax=nv_max,method="backward")
-
-
-# Plot
-
-
-plot(summary(regfit.bwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-ind_bwd = which.max(summary(regfit.bwd)$adjr2)
-ind_bwd
-
-```
-
-## Comparison- they are all the same
-```{r, warning=FALSE, message=FALSE}
-max_vars = 18
-full = names(coef(regfit.full,max_vars)) # Exhaustive search
-
-fwd = names(coef(regfit.fwd,max_vars)) # Forward Stepwise Selection
-
-bwd = names(coef(regfit.bwd,max_vars)) # Backward Stepwise Selection
-
-all(full==bwd)
-all(fwd==bwd)
-bwd
-
-vars_chosen_social <- bwd[2:max_vars]
-
-# Salvataggio dei nomi nel file "nomi.txt"
-writeLines(vars_chosen_social,"../../data/lm_social_vars.txt")
-```
-
-
-# [3] Fit final model
-```{r}
-vars = c(bwd[2:max_vars],"CNT","IM_PUBLIC")
-formula_social <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
-formula_social
-
-fit_social_final = lm(formula_social,data=data)
-summary(fit_social_final)
-```
-
-
-
-## Test comparison with model in julia (for the bot)
-```{r}
-fit_social_final_woo = lm(formula_social,data=data_woo)
-summary(fit_social_final_woo)
-new_obs = c(
-    "Approach.to.ICT" = -0.302220835650176,
-    "Use.of.ICT" = -0.28601714192945127,
-    "Teachers..degree" = 0.030637217864519915,
-    "Teacher.skill" = -0.11987012301766596,
-    "ESCS" = -1.8796,
-    "RATCMP1" = 0.4,
-    "ICTSCH" = 5.754853884629829,
-    "HEDRES" = -1.21101666666667,
-    "STUBEHA" = -3.3785,
-    "ATTLNACT" = -1.12032240720721,
-    "JOYREAD" = -1.06053157894737,
-    "PROAT6" = 0.0179,
-    "CLSIZE" = 18.0,
-    "EDUSHORT" = -0.6884,
-    "STAFFSHORT" = -1.4551,
-    "PV1MATH" = 299.5306,
-    "PV1READ" = 299.869,
-  "CNT" = "ESP",
-  "IM_PUBLIC" = 1)
-data.frame(new_obs)
-data.frame(t(new_obs))
-new_data = data.frame(t(new_obs))
-new_data[,1:17] = as.numeric(new_data[,1:17])
-new_data$CNT = as.factor(new_data$CNT)
-new_data
-
-predict(fit_social_final_woo,new_data)
-# julia> predict(lmodel,new_obs)
-# 1-element Vector{Float64}:
-# -1.5243554235967274
-```
-
-
-# [4] Analysis of residuals
-```{r}
-par(mfrow=c(2,2))
-plot(fit_social_final)
-shapiro.test(fit_social_final$residuals)
-```
-
-### For every covariate
-```{r}
-res = fit_social_final$residuals
-for (i in 1:(dim(data)[2]-1)){
-	plot(res,data[,i],main=colnames(data)[i])
-}
-```
-
-
-# [5] Move to LMM
-```{r}
-vars = c(bwd[2:max_vars],"(1|NEW_VAR)")
-FORMULA_LMM <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
-FORMULA_LMM
-
-fit_social_lmm = lmer(FORMULA_LMM,data=data)
-fit_social_lmm
-
-sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm))
-sigma2_b <- as.numeric(get_variance_random(fit_social_lmm))
-
-PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-print(paste("PVRE =",PVRE))
-
-## visualization of the random intercepts with their 95% confidence intervals
-# Random effects: b_0i for i=1,...,234
-dotplot(ranef(fit_social_lmm, condVar=T))$NEW_VAR
-```
-
-### assumptions check
-```{r}
-# normality of residuals
-fm = fit_social_lmm
-qqnorm(resid(fm))
-qqline(resid(fm), col='red', lwd=2)
-shapiro.test(resid(fm))
-# normality of random effects
-# case only interecept
-qqnorm(unlist(ranef(fm)$NEW_VAR),
-main='Normal Q-Q Plot - Random Effects on Intercept')
-qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
-# case interecept and slope
-boxplot(residuals(fm)~data$NEW_VAR,las=2)
-
-res = residuals(fm)
-hist(res)
-shapiro.test(log(res+abs(min(res))+1))
+vars = c(linear_model_vars,"(1|CNT)")
+FORMULA_SOCIAL_LMM <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
 ```
 
 ```{r}
-## raw residuals
-plot(fm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
-# We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
-# but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
+linear_model_vars <- readLines("../../data/non csv/lm_psico_vars.txt")
 
-plot(fm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
-bwplot(resid(fm) ~ NEW_VAR, pch = "|", data = data)
-# The boxand-whiskers plots clearly show an increasing variance of the residuals.
+vars = c(linear_model_vars,"CNT")
+FORMULA_PSYCH <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
 
-## Pearson residuals
-## Pearson residuals are obtained from the raw residuals by dividing the latter by an
-## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
-
-
-plot(fm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
-plot(fm,resid(., type = "pearson") ~ as.numeric(NEW_VAR))
-bwplot( resid(fm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
-        pch = "|", data = data)
-## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
+vars = c(linear_model_vars,"(1|CNT)")
+FORMULA_PSYCH_LMM <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
 ```
 
 
-# [6] Tentativi di recupero assumptions
-
-## [6.1] Scalando le covariate
-Nel LMM qui sopra usciva il warnign "some predictor variables are on very different scales: consider rescaling". So we try rescaling.
+# [2] Gestione outliers
 
 ```{r}
-data
-colnames(data)
 numerical_variables = c(1:23,25,26)
-colnames(data)[numerical_variables]
-
-data_scaled = data
-data_scaled[,c(numerical_variables)] = data.frame(scale(data_scaled[,c(numerical_variables)]))
-boxplot(data[,numerical_variables], main="old data")
-boxplot(data_scaled[,numerical_variables],main="scaled data")
-```
-
-### Fit sul nuovo dataset
-```{r}
-fit_social_lmm_scaled = lmer(FORMULA_LMM,data=data_scaled)
-fit_social_lmm_scaled
-
-sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_scaled))
-sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_scaled))
-
-PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-print(paste("PVRE =",PVRE))
-
-## visualization of the random intercepts with their 95% confidence intervals
-# Random effects: b_0i for i=1,...,234
-dotplot(ranef(fit_social_lmm_scaled, condVar=T))$NEW_VAR
-```
-
-### Assumptions check
-```{r}
-# normality of residuals
-fm = fit_social_lmm_scaled
-qqnorm(resid(fm))
-qqline(resid(fm), col='red', lwd=2)
-shapiro.test(resid(fm))
-# normality of random effects
-# case only interecept
-qqnorm(unlist(ranef(fm)$NEW_VAR),
-main='Normal Q-Q Plot - Random Effects on Intercept')
-qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
-# case interecept and slope
-boxplot(residuals(fm)~data$NEW_VAR,las=2)
-
-res = residuals(fm)
-hist(res)
-```
-
-```{r}
-## raw residuals
-plot(fm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
-# We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
-# but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
-
-plot(fm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
-bwplot(resid(fm) ~ NEW_VAR, pch = "|", data = data)
-# The boxand-whiskers plots clearly show an increasing variance of the residuals.
-
-## Pearson residuals
-## Pearson residuals are obtained from the raw residuals by dividing the latter by an
-## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
-
-
-plot(fm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
-plot(fm,resid(., type = "pearson") ~ as.numeric(NEW_VAR))
-bwplot( resid(fm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
-        pch = "|", data = data)
-## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
-```
-
-
-Niente, sembra che il problema siano sempre le code dei residui, quindi magari è questione di outliers?
-
-## [6.2] Rimuovendo outliers
-### Visual check
-```{r}
-data_woo = data # woo = [W]ith[O]ut [O]utliers
-
-for(i in 1:(length(vars)-1) )
-  boxplot(data_woo[,i],main=paste("Overall,",vars[i]))
-for(i in 1:(length(vars)-1) )
-  boxplot(data_woo[,i]~data_woo$CNT,main=paste("By state,",vars[i]),
-          col=colora(length(unique(data_woo$CNT))),las=2)
-# la funzione colora dovrebbe essere dentro Utilities
-```
-
-### Rimozione overall
-```{r}
 M = colMeans(data[,numerical_variables])
 S = cov(data[,numerical_variables])
 d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
 hist(d2,breaks = 300,xlim = c(0,300))
-abline(v=25,col="red")
-
-data_woo = data[which(d2 <= 25), ]
-print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
-print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
-
 ```
 
-### Rimozione by state
+
+
+## Social
 ```{r}
-# magari ci sta fare meno filtraggio overall al punto prima, cioè lasciare la soglia
-# più alta nella selezione sopra
-# e poi fare un "raffinamento" qui, togliendo outlier relativi non al comportamento
-# generale ma a quello che esce dal confronto tra gli stati
+BEST_SOGLIA_SOCIAL = 24.3
+SOGLIA = BEST_SOGLIA_SOCIAL
+data_social_woo = data[which(d2 <= SOGLIA), ]
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_social_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_social_woo)[1]/dim(data)[1]*100,"%"))
 ```
 
-
-### Visual check after removing outliers
+## Psych
 ```{r}
-for(i in 1:(length(vars)-1) )
-  boxplot(data[,i],data_woo[,i],main=paste("Overall,",vars[i],"before vs after"))
-for(i in 1:(length(vars)-1) )
-  boxplot(data_woo[,i]~data_woo$CNT,main=paste("By state,",vars[i]),
-          col=colora(length(unique(data_woo$CNT))),las=2)
-# la funzione colora dovrebbe essere dentro Utilities
+BEST_SOGLIA_PSYCH = 24.26
+SOGLIA = BEST_SOGLIA_PSYCH
+data_psych_woo = data[which(d2 <= SOGLIA), ]
+print(paste("From",dim(data)[1],"obs we moved to",dim(data_psych_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(data_psych_woo)[1]/dim(data)[1]*100,"%"))
 ```
 
-### Maybe more precise check about the filtering
+## For soglia
 ```{r}
-# cols = heat.colors(100)
-cols = gray.colors(100)
-# cols=colora(100)
-
-image(cov(data_woo[,numerical_variables]),
-      breaks = quantile(cov(data_woo[,numerical_variables]),(0:100)/100),
-      col=cols)
-image(cov(data[,numerical_variables]),
-      breaks = quantile(cov(data[,numerical_variables]),(0:100)/100),
-      col=cols)
-
-# sembrano uguali quindi non c'è stata molta perdita di informazioni
-```
-
-
-### Fit sul nuovo dataset
-```{r}
-fit_social_lmm_woo = lmer(FORMULA_LMM,data=data_woo)
-fit_social_lmm_woo
-
-sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
-sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
-
-PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-print(paste("PVRE =",PVRE))
-
-## visualization of the random intercepts with their 95% confidence intervals
-# Random effects: b_0i for i=1,...,234
-dotplot(ranef(fit_social_lmm_woo, condVar=T))$NEW_VAR
-```
-
-### Assumptions check
-```{r}
-# normality of residuals
-fm = fit_social_lmm_woo
-qqnorm(resid(fm))
-qqline(resid(fm), col='red', lwd=2)
-shapiro.test(resid(fm))
-# normality of random effects
-# case only interecept
-qqnorm(unlist(ranef(fm)$NEW_VAR),
-main='Normal Q-Q Plot - Random Effects on Intercept')
-qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
-# case interecept and slope
-boxplot(residuals(fm)~data_woo$NEW_VAR,las=2)
-
-res = residuals(fm)
-hist(res)
-
-```
-
-### Modifiche suggerite da brute_force.jl
-```{r}
-minimum = min # funzione in julia, che qui si chiama solo min
-```
-
-Da sistemare scegliendo trasformazioni 
-
-```{r}
-fit_social_lmm_woo = lmer(
-y ~ x1 +x2 +x3 +x4 +x5 +x6 +x7 +x8 +x9 +x10 +x11 +x12 +x13 +x14 +x15 +x16 +x17 +
-    +(1|data_woo$NEW_VAR)
-  )
-fit_social_lmm_woo
-
-sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
-sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
-
-PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-print(paste("PVRE =",PVRE))
-
-## visualization of the random intercepts with their 95% confidence intervals
-# Random effects: b_0i for i=1,...,234
-dotplot(ranef(fit_social_lmm_woo, condVar=T))
-```
-### Assumptions check
-```{r}
-# normality of residuals
-fm = fit_social_lmm_woo
-qqnorm(resid(fm))
-qqline(resid(fm), col='red', lwd=2)
-shapiro.test(resid(fm))
-# normality of random effects
-# case only interecept
-qqnorm(unlist(ranef(fm)),
-main='Normal Q-Q Plot - Random Effects on Intercept')
-qqline(unlist(ranef(fm)), col='red', lwd=2)
-# case interecept and slope
-boxplot(residuals(fm)~data_woo$NEW_VAR,las=2)
-
-res = residuals(fm)
-hist(res)
-
-```
-
-
-
-
-## [6.3] Combinando le due idee
-Scaliamo e togliamo gli outliers.
-
-### Togliamo outliers
-```{r}
-M = colMeans(data[,numerical_variables])
-S = cov(data[,numerical_variables])
-d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
-hist(d2,breaks = 300,xlim = c(0,300))
-abline(v=50,col="red")
-
-data_woo = data[which(d2 <= 28), ]
-print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
-print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
-```
-
-
-### Scaliamo
-```{r}
-data_woo_scaled = data_woo
-data_woo_scaled[,c(numerical_variables)] =
-  data.frame(scale(data_woo_scaled[,c(numerical_variables)]))
-
-boxplot(data[,numerical_variables], main="old data",las=2)
-boxplot(data_woo[,numerical_variables], main="woo data",las=2)
-boxplot(data_woo_scaled[,numerical_variables],main="scaled and woo data",las=2)
-# magari dare qualche spuntatina manuale a proat6 e ratcmp1 che sembrano le peggiori
-```
-
-### Spuntatina manuale
-```{r}
-boxplot(data_woo_scaled[,numerical_variables],main="scaled and woo data",las=2)
-
-old_dim = dim(data_woo_scaled)[1]
-data_woo_scaled = data_woo_scaled[which(data_woo_scaled$PROAT6<4),]
-data_woo_scaled = data_woo_scaled[which(data_woo_scaled$RATCMP1<4),]
-data_woo_scaled = data_woo_scaled[which(data_woo_scaled$LM_MINS<4.1),]
-new_dim = dim(data_woo_scaled)[1]
-boxplot(data_woo_scaled[,numerical_variables],main="scaled and woo data, after spuntatina",las=2)
-
-print(paste("From",old_dim,"obs we moved to",new_dim))
-print(paste("Percentuale di dati sopravvissuti:",new_dim/old_dim*100,"%"))
-
-write.csv(data_woo_scaled,"../../data/pisa_score_woo_social.csv")
-```
-
-
-### Fit sul nuovo dataset
-```{r}
-fit_social_lmm_woo_scaled = lmer(FORMULA_LMM,data=data_woo_scaled)
-fit_social_lmm_woo_scaled
-
-sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo_scaled))
-sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo_scaled))
-
-PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-print(paste("PVRE =",PVRE))
-
-## visualization of the random intercepts with their 95% confidence intervals
-# Random effects: b_0i for i=1,...,234
-dotplot(ranef(fit_social_lmm_woo_scaled, condVar=T))$NEW_VAR
-```
-
-### Assumptions check
-```{r}
-# normality of residuals
-fm = fit_social_lmm_woo_scaled
-qqnorm(resid(fm))
-qqline(resid(fm), col='red', lwd=2)
-shapiro.test(resid(fm))
-# normality of random effects
-# case only interecept
-qqnorm(unlist(ranef(fm)$NEW_VAR),
-main='Normal Q-Q Plot - Random Effects on Intercept')
-qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
-# case interecept and slope
-boxplot(residuals(fm)~data_woo_scaled$NEW_VAR,las=2)
-
-res = residuals(fm)
-hist(res)
-```
-
-
-
-# ????????????????????????????????????????????
-
-#[1] Modello 2-Psychological.well.being
-```{r}
-FORMULA_COMPLETE_PSICO = formula(Psychological.well.being~.-Social.well.being-CNT-IM_PUBLIC-NEW_VAR)
-fit_psico = lm(FORMULA_COMPLETE_PSICO,data=data)
-summary(fit_psico)
-b=coefficients(fit_psico)
-nv_max = length(b)-1
-names(b)
-```
-
-# [2] Variable selection
-## Best Subset Selection (exhaustive search)
-```{r, warning=FALSE, message=FALSE}
-regfit.full = regsubsets(FORMULA_COMPLETE_PSICO, data=data, nvmax=nv_max)
-reg.summary = summary(regfit.full)
-
-
-reg.summary = summary(regfit.full)
-
-# Which one we choose:
-#reg.summary$which
-# Plots
-plot(reg.summary$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-
-# We want the model with max r.adj^2 so we extract the coefficients of that model
-# Note: ind = how many coefficients has the model
-ind = which.max(reg.summary$adjr2)
-ind
-
-```
-
-##  Forward and Backward Stepwise Selection
-
-```{r, warning=FALSE, message=FALSE}
-# Forward
-regfit.fwd = regsubsets(FORMULA_COMPLETE_PSICO,data=data,nvmax=nv_max,method="forward")
-
-
-# Plot
-
-plot(summary(regfit.fwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-
-ind_fwd = which.max(summary(regfit.fwd)$adjr2)
-ind_fwd
-# Backward
-regfit.bwd = regsubsets(FORMULA_COMPLETE_PSICO,data=data,nvmax=nv_max,method="backward")
-
-
-# Plot
-
-
-plot(summary(regfit.bwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-ind_bwd = which.max(summary(regfit.bwd)$adjr2)
-ind_bwd
-
-```
-
-## Comparison- they are all the same
-```{r, warning=FALSE, message=FALSE}
-max_vars = 17
-full = names(coef(regfit.full,max_vars)) # Exhaustive search
-
-fwd = names(coef(regfit.fwd,max_vars)) # Forward Stepwise Selection
-
-bwd = names(coef(regfit.bwd,max_vars)) # Backward Stepwise Selection
-
-all(full==bwd)
-all(fwd==bwd)
-bwd
-
-vars_chosen_psyc <- bwd[2:max_vars]
-
-# Salvataggio dei nomi nel file "nomi.txt"
-writeLines(vars_chosen_psyc, "../../data/lm_psico_vars.txt")
-```
-# [3] fit final model
-```{r}
-vars = c(bwd[2:max_vars],"CNT","IM_PUBLIC")
-formula_psyco <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
-formula_psyco
-
-formula_psyco_final = lm(formula_psyco,data=data)
-summary(formula_psyco_final)
-```
-
-
-
-
-
-
-
-
-
-# [4] Analysis of residuals
-```{r}
-par(mfrow=c(2,2))
-plot(formula_psyco_final)
-shapiro.test(formula_psyco_final$residuals)
-```
-
-### For every covariate
-```{r}
-res = formula_psyco_final$residuals
-for (i in 1:(dim(data)[2]-1)){
-	plot(res,data[,i],main=colnames(data)[i])
-}
-```
-
-
-# [5] Move to LMM
-```{r}
-vars = c(bwd[2:max_vars],"(1|NEW_VAR)")
-FORMULA_LMM <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
-FORMULA_LMM
-
-fit_psych_lmm = lmer(FORMULA_LMM,data=data)
-fit_psych_lmm
-
-sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm))
-sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm))
-
-PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-print(paste("PVRE =",PVRE))
-
-## visualization of the random intercepts with their 95% confidence intervals
-# Random effects: b_0i for i=1,...,234
-dotplot(ranef(fit_psych_lmm, condVar=T))$NEW_VAR
-```
-
-
-
-
-
-### assumptions check
-```{r}
-# normality of residuals
-qqnorm(resid(fit_psych_lmm))
-qqline(resid(fit_psych_lmm), col='red', lwd=2)
-shapiro.test(resid(fit_psych_lmm))
-# normality of random effects
-# case only interecept
-qqnorm(unlist(ranef(fit_psych_lmm)$NEW_VAR),
-main='Normal Q-Q Plot - Random Effects on Intercept')
-qqline(unlist(ranef(fit_psych_lmm)$NEW_VAR), col='red', lwd=2)
-# case interecept and slope
-boxplot(residuals(fit_psych_lmm)~data$NEW_VAR,las=2)
-
-res = residuals(fit_psych_lmm)
-hist(res)
-shapiro.test(log(res+abs(min(res))+1))
-```
-
-```{r}
-## raw residuals
-plot(fit_psych_lmm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
-# We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
-# but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
-
-plot(fit_psych_lmm, resid(., type = "response") ~ as.numeric(NEW_VAR)) # Raw vs. NEW_VAR (not shown)
-bwplot(resid(fit_psych_lmm) ~ NEW_VAR, pch = "|", data = data)
-# The boxand-whiskers plots clearly show an increasing variance of the residuals.
-
-## Pearson residuals
-## Pearson residuals are obtained from the raw residuals by dividing the latter by an
-## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
-
-
-plot(fit_psych_lmm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
-plot(fit_psych_lmm,resid(., type = "pearson") ~ as.numeric(NEW_VAR))
-bwplot( resid(fit_psych_lmm, type = "pearson") ~ NEW_VAR, # Pearson vs. time.f
-        pch = "|", data = data)
-## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
-```
-
-
-# [6] Tentativi di recupero assumptions
-## [6.2] Rimuovendo outliers
-### Visual check
-```{r}
-data_woo = data # woo = [W]ith[O]ut [O]utliers
-
-# Codice in teoria generico: qui vars lo prende dalle vars per la psych well being
-# prima invece era il vars definito per la social well being
-# Così come con FORMULA e altro
-
-for(i in 1:(length(vars)-1) )
-  boxplot(data_woo[,i],main=paste("Overall,",vars[i]))
-for(i in 1:(length(vars)-1) )
-  boxplot(data_woo[,i]~data_woo$CNT,main=paste("By state,",vars[i]),
-          col=colora(length(unique(data_woo$CNT))),las=2)
-# la funzione colora dovrebbe essere dentro Utilities
-```
-
-### UPDATE: Rimozione pensata
-Rimuoviamo gli outleirs solo in base alle covariate interessanti per il modello.
-
-Sennò magari outliers su covariate che poi non ci interessano potrebbero eliminare osservazioni invece interessanti forse.
-```{r}
-vars
-numerical_relevant_variables = NULL
-for (i in 1:(length(vars)-1) ) # -1 perché il rand effect non è in data
-  numerical_relevant_variables = c(numerical_relevant_variables,
-                                   which(colnames(data)==vars[i]))
-numerical_relevant_variables
-length(numerical_relevant_variables) == length(vars)-1 # check
-
-M = colMeans(data[,numerical_relevant_variables])
-S = cov(data[,numerical_relevant_variables])
-d2 = matrix(mahalanobis(data[,numerical_relevant_variables], M, S))
-hist(d2,breaks = 300,xlim = c(0,300))
-#========== tune this ===========================#
-SOGLIA = 10
-#========== tune this ===========================#
-abline(v=SOGLIA,col="red")
-
-data_woo = data[which(d2 <= SOGLIA), ]
-print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
-print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
-```
-
-
-
-
-### Rimozione overall
-```{r}
-M = colMeans(data[,numerical_variables])
-S = cov(data[,numerical_variables])
-d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
-hist(d2,breaks = 300,xlim = c(0,300))
-abline(v=25,col="red")
-
-data_woo = data[which(d2 <= 30), ]
-print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
-print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
-
-write.csv(data_woo_scaled,"../../data/pisa_score_woo_psycho.csv")
-```
-
-### Rimozione by state
-```{r}
-# magari ci sta fare meno filtraggio overall al punto prima, cioè lasciare la soglia
-# più alta nella selezione sopra
-# e poi fare un "raffinamento" qui, togliendo outlier relativi non al comportamento
-# generale ma a quello che esce dal confronto tra gli stati
-```
-
-
-### Visual check after removing outliers
-```{r}
-for(i in 1:(length(vars)-1) )
-  boxplot(data[,i],data_woo[,i],main=paste("Overall,",vars[i],"before vs after"))
-for(i in 1:(length(vars)-1) )
-  boxplot(data_woo[,i]~data_woo$CNT,main=paste("By state,",vars[i]),
-          col=colora(length(unique(data_woo$CNT))),las=2)
-# la funzione colora dovrebbe essere dentro Utilities
-```
-
-## Maybe more precise check about the filtering
-```{r}
-# cols = heat.colors(100)
-cols = gray.colors(100)
-# cols = colora(100)
-numerical_variables = numerical_relevant_variables
-
-image(cov(data_woo[,numerical_variables]),
-      breaks = quantile(cov(data_woo[,numerical_variables]),(0:100)/100),
-      col=cols)
-image(cov(data[,numerical_variables]),
-      breaks = quantile(cov(data[,numerical_variables]),(0:100)/100),
-      col=cols)
-
-# sembrano uguali quindi non c'è stata molta perdita di informazioni
-```
-
-
-### Fit sul nuovo dataset
-```{r}
-fit_psych_lmm_woo = lmer(FORMULA_LMM,data=data_woo)
-fit_psych_lmm_woo
-
-sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm_woo))
-sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm_woo))
-
-PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-print(paste("PVRE =",PVRE))
-
-## visualization of the random intercepts with their 95% confidence intervals
-# Random effects: b_0i for i=1,...,234
-dotplot(ranef(fit_psych_lmm_woo, condVar=T))$NEW_VAR
-```
-
-### Assumptions check
-```{r}
-# normality of residuals
-fm = fit_psych_lmm_woo
-qqnorm(resid(fm))
-qqline(resid(fm), col='red', lwd=2)
-shapiro.test(resid(fm))
-# normality of random effects
-# case only interecept
-qqnorm(unlist(ranef(fm)$NEW_VAR),
-main='Normal Q-Q Plot - Random Effects on Intercept')
-qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
-# case interecept and slope
-boxplot(residuals(fm)~data_woo$NEW_VAR,las=2)
-
-res = residuals(fm)
-hist(res)
-shapiro.test(res)
-```
-
-
-# PREDICTION
-```{r}
-linear_model_vars <- readLines("../../data/lm_social_vars.txt")
-filter <- function(category,var_lm) {
-  risultato <- c()
-  
-  for (elemento in category) {
-    if (elemento %in% var_lm) {
-      risultato <- c(risultato, elemento)
-    }
+##########################
+FORMULA = FORMULA_SOCIAL_LMM
+# FORMULA = FORMULA_PSYCH_LMM
+SOGLIA_RANGE = seq(20,40,by=1)
+SOGLIA_PVALUE_INTERESSANTI = 0.05
+##########################
+
+for (soglia in SOGLIA_RANGE ){
+  data_woo = data[which(d2 <= soglia), ]
+
+  suppressWarnings({fit = lmer(FORMULA_SOCIAL_LMM,data=data_woo)})
+  # fit
+  sigma2_eps <- as.numeric(get_variance_residual(fit))
+  sigma2_b <- as.numeric(get_variance_random(fit))
+  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+  # print(paste("PVRE social =",PVRE))
+
+  pval=round(shapiro.test(resid(fit))$p,digits=4)
+  if(pval>SOGLIA_PVALUE_INTERESSANTI){
+    print(paste0(
+      "% rimasta = ",round(dim(data_woo)[1]/dim(data)[1]*100,digits=2),
+      # "PVRE = ",PVRE,
+      "  soglia = ",soglia,
+      "  pvalue = ",pval))
   }
-  
-  return(risultato)
 }
-
-
-categories_variables_filtered=list()
-
-for(cat in cat_var_names ){
-  categories_variables_filtered[[cat]]=filter(categories_variables[[cat]],linear_model_vars)
-}
-
-categories_variables_filtered
-```
-```{r}
-fattori=c(tech=10,
-          teach=10,
-          school=20,
-          student=10,
-          family=30
-)
-fattori=fattori/100
-country_chosen="CZE"
-is_public = 0
-
-names_fattori = names(categories_variables_filtered)
-values_for_predict=list()
-for(i in 1:5){
-  temp=NULL
-  for(j in 1:length(categories_variables_filtered[[i]])){
-    covariate = data[,categories_variables_filtered[[i]][j]]
-    temp=c(temp,quantile(covariate,fattori[i]))
-  }
-  values_for_predict[[names_fattori[i]]]=temp
-}
-values_for_predict
 ```
 
-```{r}
-new_data = data.frame(t(unlist(values_for_predict)))
-colnames(new_data)=linear_model_vars
-#new_data$CNT=country_chosen
-#new_data$IM_PUBLIC = is_public
-new_data$NEW_VAR = "CZE-0"
-new_data
 
+## Salvataggio dataset versione-1
+```{r}
+# write.csv(data_social_woo,"../../data/data_social_woo.csv")
+# write.csv(data_psych_woo,"../../data/data_psych_woo.csv")
+#
+# colnames(data_social_woo)
+# numerical_variables=c(1:23,25,26)
+#
+# data_social_woo_scaled = data_social_woo
+# data_social_woo_scaled[,numerical_variables] = scale(data_social_woo_scaled[,numerical_variables])
+# data_psych_woo_scaled = data_psych_woo
+# data_psych_woo_scaled[,numerical_variables] = scale(data_psych_woo_scaled[,numerical_variables])
+#
+# write.csv(data_social_woo_scaled,"../../data/data_social_woo_scaled.csv")
+# write.csv(data_psych_woo_scaled,"../../data/data_psych_woo_scaled.csv")
+```
+
+
+
+
+# [2.5] Tentativo con leverages, residui, distanza di cook
+
+## Social
+```{r}
+fit = lm(FORMULA_SOCIAL,data=data)
+summary(fit)
+
+#Punti leva
+lev=hatvalues(fit)
+sum(lev)
+
+p=fit$rank
+n=dim(data)[1]
+fs=summary(fit)
+
+#soglia per leverages è 2*p/n
+watchout_points_lev = lev[ which( lev > 2 * p/n ) ]
+watchout_ids_lev = seq_along( lev )[ which( lev > 2 * p/n ) ]
+
+plot(fit$fitted.values,lev,pch=16, ylab='lev',xlab='Fitted values',main='Leverages')
+abline(h=2*p/n,col='red')
+points( fit$fitted.values[ watchout_ids_lev ], watchout_points_lev, col = 'red', pch = 16 )
+#molti valori sopra soglia
+
+sum(lev[lev>2*p/n])
+#somma è 1.65, punti leva pesano 33%
+fit2=lm(FORMULA_SOCIAL,data=data,subset=(lev<2*p/n))
+summary(fit2)
+#R^2 adj
+
+abs((fit$coefficients-fit2$coefficients)/fit$coefficients)
+#Impatto delle leve sui beta
+
+
+
+#Residui standardizzati
+
+res_std=fit$res/fs$sigma
+
+plot(fit$fitted.values,res_std, pch=16, main='Standardized Residuals',ylab='res',xlab='Fitted values')
+abline(h=c(-2,2),col='red')
+
+#punto influente se res standardizzato >2
+watchout_ids_rstd = which( abs( res_std ) > 2 )
+watchout_rstd = res_std[ watchout_ids_rstd ]
+
+points( fit$fitted.values[watchout_ids_rstd],
+        res_std[watchout_ids_rstd], col = 'red', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev],
+        res_std[watchout_ids_lev], col = 'orange', pch = 16 )
+#in rosso residui alti, in arancione leve
+
+
+
+#Residui studentizzati
+stud = rstandard( fit )
+
+watchout_ids_stud = which( abs( stud ) > 2 )
+watchout_stud = stud[ watchout_ids_stud ]
+
+plot( fit$fitted.values, stud, ylab = 'res',xlab='Fitted values', main = "Studentized Residuals", pch = 16 )
+points( fit$fitted.values[watchout_ids_stud],
+        stud[watchout_ids_stud], col = 'pink', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev],
+        stud[watchout_ids_lev], col = 'orange', pch = 16 )
+abline( h = c(-2,2), col = 'red' )
+#Residui e residui studentizzati sembrano rilevare stessi punti
+
+
+
+#Distanza di Cook
+Cdist = cooks.distance( fit )
+
+watchout_ids_Cdist = which( Cdist > 4/(n-p) )
+watchout_Cdist = Cdist[ watchout_ids_Cdist ]
+
+plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values',
+      ylab = 'distance', main = 'Cooks Distance' )
+abline(h=4/(n-p), col='red')
+points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ],
+        col = 'green', pch = 16 )
+
+
+
+#punti da tenere non notevoli
+id_to_keep1 = !(1:n %in% watchout_ids_Cdist)
+id_to_keep2 = !(1:n %in% watchout_ids_stud)
+id_to_keep3 = !(1:n %in% watchout_ids_rstd)
+id_to_keep4 = !(1:n %in% watchout_ids_lev)
+
+id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4
+```
+
+
+```{r}
+#tolgo tutte le righe notevoli
+dati_soc_woo=subset(data,id_to_keep)
+ID_TO_KEEP_SOCIAL = id_to_keep
+dim(dati_soc_woo)
+#si scende a circa 3964 (circa 91% dei dati)
+print(paste("From",dim(data)[1],"obs we moved to",dim(dati_soc_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(dati_soc_woo)[1]/dim(data)[1]*100,"%"))
+
+fit_fin=lm(FORMULA_SOCIAL, dati_soc_woo)
+summary(fit_fin)
+#R^2 adj è 0.6861 -> alto
+#R^2 adj è 0.6898 -> alto (con la modifica di Ettore alla Formula)
+
+```
+
+## Problemino LUX
+```{r}
+for (state in STATES)
+	print(paste("#",state,"=",sum(dati_soc_woo==state)))
+```
+
+
+## Psych
+```{r}
+fit = lm(FORMULA_PSYCH,data=data)
+summary(fit)
+
+#Punti leva
+lev=hatvalues(fit)
+sum(lev)
+
+p=fit$rank
+n=dim(data)[1]
+fs=summary(fit)
+
+#soglia per leverages è 2*p/n
+watchout_points_lev = lev[ which( lev > 2 * p/n ) ]
+watchout_ids_lev = seq_along( lev )[ which( lev > 2 * p/n ) ]
+
+plot(fit$fitted.values,lev,pch=16, ylab='lev',xlab='Fitted values',main='Leverages')
+abline(h=2*p/n,col='red')
+points( fit$fitted.values[ watchout_ids_lev ], watchout_points_lev, col = 'red', pch = 16 )
+#molti valori sopra soglia
+
+sum(lev[lev>2*p/n])
+#somma è 1.65, punti leva pesano 33%
+fit2=lm(FORMULA_PSYCH,data=data,subset=(lev<2*p/n))
+summary(fit2)
+#R^2 adj
+
+abs((fit$coefficients-fit2$coefficients)/fit$coefficients)
+#Impatto delle leve sui beta
+
+
+
+#Residui standardizzati
+
+res_std=fit$res/fs$sigma
+
+plot(fit$fitted.values,res_std, pch=16, main='Standardized Residuals',ylab='res',xlab='Fitted values')
+abline(h=c(-2,2),col='red')
+
+#punto influente se res standardizzato >2
+watchout_ids_rstd = which( abs( res_std ) > 2 )
+watchout_rstd = res_std[ watchout_ids_rstd ]
+
+points( fit$fitted.values[watchout_ids_rstd],
+        res_std[watchout_ids_rstd], col = 'red', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev],
+        res_std[watchout_ids_lev], col = 'orange', pch = 16 )
+#in rosso residui alti, in arancione leve
+
+
+
+#Residui studentizzati
+stud = rstandard( fit )
+
+watchout_ids_stud = which( abs( stud ) > 2 )
+watchout_stud = stud[ watchout_ids_stud ]
+
+plot( fit$fitted.values, stud, ylab = 'res',xlab='Fitted values', main = "Studentized Residuals", pch = 16 )
+points( fit$fitted.values[watchout_ids_stud],
+        stud[watchout_ids_stud], col = 'pink', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev],
+        stud[watchout_ids_lev], col = 'orange', pch = 16 )
+abline( h = c(-2,2), col = 'red' )
+#Residui e residui studentizzati sembrano rilevare stessi punti
+
+
+
+#Distanza di Cook
+Cdist = cooks.distance( fit )
+
+watchout_ids_Cdist = which( Cdist > 4/(n-p) )
+watchout_Cdist = Cdist[ watchout_ids_Cdist ]
+
+plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values',
+      ylab = 'distance', main = 'Cooks Distance' )
+abline(h=4/(n-p), col='red')
+points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ],
+        col = 'green', pch = 16 )
+
+
+
+#punti da tenere non notevoli
+id_to_keep1 = !(1:n %in% watchout_ids_Cdist)
+id_to_keep2 = !(1:n %in% watchout_ids_stud)
+id_to_keep3 = !(1:n %in% watchout_ids_rstd)
+id_to_keep4 = !(1:n %in% watchout_ids_lev)
+
+id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4
+```
+
+
+```{r}
+#tolgo tutte le righe notevoli
+dati_psi_woo=subset(data,id_to_keep)
+ID_TO_KEEP_PSYCH = id_to_keep
+dim(dati_psi_woo)
+#si scende a circa 3978 (circa 91% dei dati)
+print(paste("From",dim(data)[1],"obs we moved to",dim(dati_psi_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(dati_psi_woo)[1]/dim(data)[1]*100,"%"))
+
+fit_fin=lm(FORMULA_PSYCH, dati_psi_woo)
+summary(fit_fin)
+#R^2 adj è 0.6861 -> alto
+#R^2 adj è 0.5068 -> alto ma meno alto (con la modifica di Ettore alla Formula)
+
+```
+## Problemino LUX
+```{r}
+for (state in STATES)
+	print(paste("#",state,"=",sum(dati_psi_woo==state)))
+```
+
+
+# Salvataggio dataset versione-2
+```{r}
+write.csv(dati_soc_woo,"../../data/data_social_woo.csv")
+write.csv(dati_psi_woo,"../../data/data_psych_woo.csv")
+
+colnames(dati_soc_woo)
+numerical_variables=c(1:23,25,26)
+
+dati_soc_woo_scaled = dati_soc_woo
+dati_soc_woo_scaled[,numerical_variables] = scale(dati_soc_woo_scaled[,numerical_variables])
+dati_psi_woo_scaled = dati_psi_woo
+dati_psi_woo_scaled[,numerical_variables] = scale(dati_psi_woo_scaled[,numerical_variables])
+
+write.csv(dati_soc_woo_scaled,"../../data/data_social_woo_scaled.csv")
+write.csv(dati_psi_woo_scaled,"../../data/data_psych_woo_scaled.csv")
+```
+
+
+# Confronto assumptions
+Dati originali, dati versione-1, dati versione-2.
+
+```{r}
+suppressWarnings({fit_data = lmer(FORMULA_SOCIAL_LMM,data=data)})
+res = residuals(fit_data)
+qqnorm(res,main="data")
+qqline(res,col="red")
+
+suppressWarnings({fit_data_soc_woo = lmer(FORMULA_SOCIAL_LMM,data=dati_soc_woo)})
+res = residuals(fit_data_soc_woo)
+qqnorm(res,main="data_soc_woo (version-2)")
+qqline(res,col="red")
+
+suppressWarnings({fit_data_social_woo = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo)})
+res = residuals(fit_data_social_woo)
+qqnorm(res,main="data_social_woo (version-1)")
+qqline(res,col="red")
+```
+
+
+
+
+# [3] Creazione dei fit
+
+## Ripresa dati_woo ufficiali
+Ufficiali per ora.
+Sono gli stessi di sopra finché le soglie non vengono cambiate da 24.3 e 24.26.
+
+*Update*: quelli di Giulia con la versione-2 sembrano in effetti meglio. Quindi i file sono gli stessi ma con i dati nuovi. Cioè sono ancora da scrivere ma lo saranno.
+
+Check da spuntare: sono i seguenti file riferiti ai dati della versione-2?
+- social sì (c'era il codice già pronto)
+- psych sì anche lui fatto (ma Giulia se vuoi ricontrollare è meglio, perché ho solo copiato e incollato il codice di prima, senza fare tuning di eventuali parametri (ma mi sembrava tutto automatico, cioè guidato da variabili anziché scelte da fare a mano))
+
+```{r}
+data_social_woo = read.csv("../../data/data_social_woo.csv")
+data_psych_woo = read.csv("../../data/data_psych_woo.csv")
+data_social_woo_scaled = read.csv("../../data/data_social_woo_scaled.csv")
+data_psych_woo_scaled = read.csv("../../data/data_psych_woo_scaled.csv")
+```
+
+
+# [3] Creazione dei fit WOO
+
+```{r}
+fit_social_lm = lm(   FORMULA_SOCIAL,    data=data_social_woo)
+fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo_scaled)
+
+fit_psych_lm = lm(   FORMULA_PSYCH,    data=data_psych_woo)
+fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=data_psych_woo_scaled)
+```
+
+
+
+# [4] Assumptions LM
+```{r}
+#############################
+fit = fit_social_lm
+df = data_social_woo
+# fit = fit_psych_lm
+# df = data_psych_woo
+#############################
+res = fit$residuals
 alpha = 0.05
 
-Pred = predict(fit_psych_lmm, new_data, interval='prediction', level=1-alpha)
-Pred
+shapiro.test(res)$p
+print(paste("Normality of residuals?",shapiro.test(res)$p>alpha))
+qqnorm(res)
+qqline(res,col="red")
 
+# homoschedasticity
+boxplot(res ~ df$CNT,las=2)
 ```
 
 
-# ????????????????????????????????????????????
-
-# Definzione precisa data_woo
+# [5] Assumptions LMM
 ```{r}
-FORMULA_SOCIAL = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
+#############################
+fit = fit_social_lmm
+df = data_social_woo
+# fit = fit_psych_lmm
+# df = data_psych_woo
+#############################
+res = residuals(fit)
+raneff = unlist(ranef(fit))
+alpha = 0.05
 
-FORMULA_SOCIAL_LMM  = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
+shapiro.test(res)$p
+shapiro.test(raneff)$p
+print(paste("Normality of residuals?",shapiro.test(res)$p>alpha))
+print(paste("Normality of rand effects?",shapiro.test(raneff)$p>alpha))
+qqnorm(res)
+qqline(res,col="red")
+qqnorm(raneff)
+qqline(raneff,col="red")
 
-FORMULA_PSYCH = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
-
-FORMULA_PSYCH_LMM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
-```
-
-
-```{r}
-data
-colnames(data)
-numerical_variables = c(1:15,17:22) # selected from the two above formula
-# quindi tutte le numeriche tranne teachbea che non c'è in entrambe
-# e anche tranne creactiv per lo stesso motivo
-
-M = colMeans(data[,numerical_variables])
-S = cov(data[,numerical_variables])
-d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
-hist(d2,breaks = 300,xlim = c(0,300))
-#==========================#
-SOGLIA = 25
-#==========================#
-abline(v=SOGLIA,col="red")
-
-data_woo = data[which(d2 <= SOGLIA), ]
-print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
-print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
-```
-
-
-```{r}
-  fit_social_lmm_woo = lmer(FORMULA_SOCIAL_LMM,data=data_woo);
-  # fit_social_lmm_woo
-  sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
-  sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
-  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-  print(paste("PVRE social =",PVRE))
-  # PVRE_social = c(PVRE_social,PVRE)
-  
-  fit_psych_lmm_woo = lmer(FORMULA_PSYCH_LMM,data=data_woo);
-  # fit_psych_lmm_woo
-  sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm_woo))
-  sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm_woo))
-  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-  print(paste("PVRE psych =",PVRE))
-  # PVRE_psych = c(PVRE_psych,PVRE)
-  
-  shapiro.test(resid(fit_social_lmm_woo))$p
-  shapiro.test(resid(fit_psych_lmm_woo))$p
+# homoschedasticity
+boxplot(res ~ df$CNT,las=2)
 ```
 
 
 
+# [6] Dotplots
+## Social
 ```{r}
-pvalues_social = NULL
-pvalues_psych = NULL
-PVRE_social = NULL
-PVRE_psych = NULL
+#############################
+fit = fit_social_lmm
+# fit = fit_psych_lmm
+#############################
 
-for (soglia in seq(10,40,by=0.5) ){
-  data_woo = data[which(d2 <= soglia), ]
-  
-  fit_social_lmm_woo = lmer(FORMULA_SOCIAL_LMM,data=data_woo);
-  # fit_social_lmm_woo
-  sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
-  sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
-  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-  # print(paste("PVRE social =",PVRE))
-  PVRE_social = c(PVRE_social,PVRE)
-  
-  fit_psych_lmm_woo = lmer(FORMULA_PSYCH_LMM,data=data_woo);
-  # fit_psych_lmm_woo
-  sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm_woo))
-  sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm_woo))
-  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-  # print(paste("PVRE psych =",PVRE))
-  PVRE_psych = c(PVRE_psych,PVRE)
-  
-  pvalues_social = c(pvalues_social, shapiro.test(resid(fit_social_lmm_woo))$p)
-  pvalues_psych = c(pvalues_psych, shapiro.test(resid(fit_psych_lmm_woo))$p)
+dotplot(ranef(fit, condVar=T))$CNT
+ranef(fit)
+```
+
+## Psych
+```{r}
+#############################
+# fit = fit_social_lmm
+fit = fit_psych_lmm
+#############################
+
+dotplot(ranef(fit, condVar=T))$CNT
+ranef(fit)
+```
+
+
+# [7] Analisi outliers
+```{r}
+# data_out_social = data[which(d2 > BEST_SOGLIA_SOCIAL), ]
+# data_out_psych = data[which(d2 > BEST_SOGLIA_PSYCH), ]
+data_out_social = subset(data,!ID_TO_KEEP_SOCIAL)
+data_out_psych = subset(data,!ID_TO_KEEP_PSYCH)
+dim(data_out_social)
+dim(data_out_psych) # ok sì sono diversi
+```
+
+## Social or Psych
+```{r}
+###########################
+# df_out = data_out_social
+# target = "Social.well.being"
+df_out = data_out_psych
+target = "Psychological.well.being"
+###########################
+
+for (i in 1:length(STATES)) { # STATES sta in Utilities
+	print(paste(STATES[i],":",sum(df_out$CNT==STATES[i]),"outliers // out of",
+		  sum(data$CNT==STATES[i]),"obs originally // %lost =",
+					sum(df_out$CNT==STATES[i])/sum(data$CNT==STATES[i])*100))
 }
 ```
 
 
+*Social*:
+CZE, FIN, LTU, POL, SVK => sono peggiori della medie dei dati "normali"
+ESP, LUX => sono migliori della medie dei dati "normali"
+
+Forse ci sta, già ESP era lo stato migliore secondo il LMM, e LUX è uno stato molto ricco.
+Quindi magari togliendo gli outliers sono state rimosse scuole fin troppo belle nella già bella SPA, e lo stesso vale per LUX.
+
+*Psych*:
+Sembra molto più sottile qui la questione. Ma comunque ancora ESP e LUX mostrano un comportamento superiore di poco alla media. Insieme ora anche a Croazia (HRV) e DNK.
+
 ```{r}
-plot(pvalues_psych)
-plot(pvalues_social)
-```
-
-
-
-
-Escono troppo bassi, occorre lavorare con due dataset diversi quindi.
-
-## Definizione data_woo per social
-```{r}
-FORMULA_SOCIAL = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
-
-FORMULA_SOCIAL_LMM  = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
-
-data
-colnames(data)
-# numerical_variables = c(1:7,11:15,18:22) # selected from the two above formula
-# quindi tutte le numeriche tranne teachbea che non c'è in entrambe
-# e anche tranne creactiv per lo stesso motivo
-
-numerical_variables = c(1:23,25,26)
-
-M = colMeans(data[,numerical_variables])
-S = cov(data[,numerical_variables])
-d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
-hist(d2,breaks = 300,xlim = c(0,300))
-#==========================#
-SOGLIA = 24.3
-#==========================#
-abline(v=SOGLIA,col="red")
-
-data_woo = data[which(d2 <= SOGLIA), ]
-print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
-print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
+mean_target_woo = mean(df_out[,target])
+boxplot(df_out[,target] ~ df_out[,"CNT"],col = colora(14),las=2,main=target)
+abline(h=mean_target_woo)
 ```
 
 
 ```{r}
-fit_social_lmm_woo = lmer(FORMULA_SOCIAL_LMM,data=data_woo);
-# fit_social_lmm_woo
-sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
-sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
-PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-print(paste("PVRE social =",PVRE))
-# PVRE_social = c(PVRE_social,PVRE)
-
-shapiro.test(resid(fit_social_lmm_woo))$p
-
-```
-
-```{r}
-for (soglia in seq(24,30,by=0.1) ){
-  data_woo = data[which(d2 <= soglia), ]
-  
-  suppressWarnings({fit_social_lmm_woo = lmer(FORMULA_SOCIAL_LMM,data=data_woo)})
-  # fit_social_lmm_woo
-  sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
-  sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
-  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-  # print(paste("PVRE social =",PVRE))
-
-  pval=round(shapiro.test(resid(fit_social_lmm_woo))$p,digits=4)
-  if(pval>0.04){
-    print(paste0(
-      "% sopravvissuta = ",round(dim(data_woo)[1]/dim(data)[1]*100,digits=2),
-      # "PVRE = ",PVRE,
-      " soglia = ",soglia,
-      " pvalue = ",pval))
-  }
-}
-```
-
-### best model
-```{r}
-BEST_SOGLIA = 24.3
-SOGLIA = BEST_SOGLIA
-data_woo = data[which(d2 <= SOGLIA), ]
-print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
-print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
-```
-
-
-```{r}
-data_model = data_woo
-
-want_to_scale = 0
-if(want_to_scale == 1){
-data_woo_scaled = data_woo
-data_woo_scaled[,c(numerical_variables)] =
-  data.frame(scale(data_woo_scaled[,c(numerical_variables)]))
-data_model = data_woo_scaled
-}
-
-fit_social_lmm_woo = lmer(FORMULA_SOCIAL_LMM,data=data_model)
-```
-
-
-```{r}
-# fit_social_lmm_woo
-sigma2_eps <- as.numeric(get_variance_residual(fit_social_lmm_woo))
-sigma2_b <- as.numeric(get_variance_random(fit_social_lmm_woo))
-PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-print(paste("PVRE social =",PVRE))
-# PVRE_social = c(PVRE_social,PVRE)
-```
-
-### assumptions check
-```{r}
-fm = fit_social_lmm_woo
-# normality of residuals
-qqnorm(resid(fm))
-qqline(resid(fm), col='red', lwd=2)
-shapiro.test(resid(fm))
-# normality of random effects
-# case only interecept
-qqnorm(unlist(ranef(fm)$NEW_VAR),
-main='Normal Q-Q Plot - Random Effects on Intercept')
-qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
-# case interecept and slope
-boxplot(residuals(fm)~data_model$NEW_VAR,las=2)
-
-res = residuals(fm)
-hist(res)
-```
-
-
-Scaled
-```
-     (Intercept)  Approach.to.ICT       Use.of.ICT Teachers..degree    Teacher.skill 
-    -0.199368845      0.126690620     -0.153775855      0.022852237      0.117411941 
-            ESCS          RATCMP1           ICTSCH           HEDRES          STUBEHA 
-    -0.005431636     -0.010919875      0.043147147      0.164142405     -0.018113104 
-        ATTLNACT          JOYREAD           PROAT6           CLSIZE         EDUSHORT 
-     0.228333604     -0.063665649      0.029177540      0.013154044      0.001380781 
-      STAFFSHORT          PV1MATH          PV1READ 
-     0.019524602     -0.074537790      0.266441346
-```
-
-
-Not scaled
-```
-     (Intercept)  Approach.to.ICT       Use.of.ICT Teachers..degree    Teacher.skill 
-    -3.287993255      0.367664466     -0.504001278      0.056342494      0.227827586 
-            ESCS          RATCMP1           ICTSCH           HEDRES          STUBEHA 
-    -0.018745507     -0.037013983      0.078451227      0.783359918     -0.033694487 
-        ATTLNACT          JOYREAD           PROAT6           CLSIZE         EDUSHORT 
-     1.226341748     -0.301855094      1.393288844      0.003857746      0.002445155 
-      STAFFSHORT          PV1MATH          PV1READ 
-     0.034308617     -0.002439291      0.007973519 
-```
-
-
-```{r}
-fixef(fm)
-shapiro.test(resid(fm))$p*100
-shapiro.test(unlist(ranef(fm)$NEW_VAR))$p*100
-
-write.csv(data_model,"data_social_woo.csv") # not scaled
-```
-
-
-
-
-
-## Definizione data_woo per psych
-```{r}
-FORMULA_PSYCH = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
-
-FORMULA_PSYCH_LMM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
-
-data
-colnames(data)
-# numerical_variables = c(1:7,11:15,18:22) # selected from the two above formula
-# quindi tutte le numeriche tranne teachbea che non c'è in entrambe
-# e anche tranne creactiv per lo stesso motivo
-
-numerical_variables = c(1:23,25,26)
-
-M = colMeans(data[,numerical_variables])
-S = cov(data[,numerical_variables])
-d2 = matrix(mahalanobis(data[,numerical_variables], M, S))
-hist(d2,breaks = 300,xlim = c(0,300))
-#==========================#
-SOGLIA = 24.3
-#==========================#
-abline(v=SOGLIA,col="red")
-
-data_woo = data[which(d2 <= SOGLIA), ]
-print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
-print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
-```
-
-
-```{r}
-fit_psych_lmm_woo = lmer(FORMULA_PSYCH_LMM,data=data_woo);
-# fit_psych_lmm_woo
-sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm_woo))
-sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm_woo))
-PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-print(paste("PVRE social =",PVRE))
-# PVRE_social = c(PVRE_social,PVRE)
-
-shapiro.test(resid(fit_psych_lmm_woo))$p
+library(plotrix)
+ violin_plot(matrix(c(
+			df_out[which(df_out$CNT=="HRV"),target],
+			df_out[which(df_out$CNT=="CZE"),target],
+			df_out[which(df_out$CNT=="DNK"),target],
+			df_out[which(df_out$CNT=="EST"),target],
+			df_out[which(df_out$CNT=="FIN"),target],
+			df_out[which(df_out$CNT=="FRA"),target],
+			df_out[which(df_out$CNT=="GRC"),target],
+			df_out[which(df_out$CNT=="HUN"),target],
+			df_out[which(df_out$CNT=="LTU"),target],
+			# df_out[which(df_out$CNT=="LUX"),target],
+			df_out[which(df_out$CNT=="POL"),target],
+			df_out[which(df_out$CNT=="SVK"),target],
+			df_out[which(df_out$CNT=="SVN"),target],
+			df_out[which(df_out$CNT=="ESP"),target]
+ 	),ncol=13),
+  main="Default Plot",x_axis_labels=c(
+  	"HRV","CZE","DNK","EST","FIN","FRA","GRC","HUN","LTU",
+  	#"LUX",
+  	"POL","SVK","SVN","ESP"
+  ),col=colora(13),las=2)
 
 ```
-
-```{r}
-# for (soglia in seq(20,40,by=1) ){
-for (soglia in seq(23,25,by=0.02) ){
-  data_woo = data[which(d2 <= soglia), ]
-  
-  suppressWarnings({fit_psych_lmm_woo = lmer(FORMULA_PSYCH_LMM,data=data_woo)})
-  # fit_psych_lmm_woo
-  sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm_woo))
-  sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm_woo))
-  PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-  # print(paste("PVRE social =",PVRE))
-
-  pval=round(shapiro.test(resid(fit_psych_lmm_woo))$p,digits=4)
-  if(pval>0.05){
-    print(paste0(
-      "% sopravvissuta = ",round(dim(data_woo)[1]/dim(data)[1]*100,digits=2),
-      # "PVRE = ",PVRE,
-      " soglia = ",soglia,
-      " pvalue = ",pval))
-  }
-}
-```
-
-### best model
-```{r}
-BEST_SOGLIA = 24.26
-SOGLIA = BEST_SOGLIA
-data_woo = data[which(d2 <= SOGLIA), ]
-print(paste("From",dim(data)[1],"obs we moved to",dim(data_woo)[1]))
-print(paste("Percentuale di dati sopravvissuti:",dim(data_woo)[1]/dim(data)[1]*100,"%"))
-```
-
-
-```{r}
-data_model = data_woo
-
-want_to_scale = 0
-if(want_to_scale == 1){
-data_woo_scaled = data_woo
-data_woo_scaled[,c(numerical_variables)] =
-  data.frame(scale(data_woo_scaled[,c(numerical_variables)]))
-data_model = data_woo_scaled
-}
-
-fit_psych_lmm_woo = lmer(FORMULA_PSYCH_LMM,data=data_model)
-```
-
-
-```{r}
-# fit_psych_lmm_woo
-sigma2_eps <- as.numeric(get_variance_residual(fit_psych_lmm_woo))
-sigma2_b <- as.numeric(get_variance_random(fit_psych_lmm_woo))
-PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-print(paste("PVRE social =",PVRE))
-# PVRE_social = c(PVRE_social,PVRE)
-```
-
-### assumptions check
-```{r}
-fm = fit_psych_lmm_woo
-# normality of residuals
-qqnorm(resid(fm))
-qqline(resid(fm), col='red', lwd=2)
-shapiro.test(resid(fm))
-# normality of random effects
-# case only interecept
-qqnorm(unlist(ranef(fm)$NEW_VAR),
-main='Normal Q-Q Plot - Random Effects on Intercept')
-qqline(unlist(ranef(fm)$NEW_VAR), col='red', lwd=2)
-# case interecept and slope
-boxplot(residuals(fm)~data_model$NEW_VAR,las=2)
-
-res = residuals(fm)
-hist(res)
-```
-
-
-Scaled
-```
-(Intercept) Approach.to.ICT      Use.of.ICT   Teacher.skill            ESCS 
-   -0.068740566     0.171277369    -0.021421992     0.114250817     0.008705117 
-        RATCMP1          ICTSCH          ICTRES          ENTUSE         LM_MINS 
-   -0.003013407     0.065572530    -0.010822162     0.042731858     0.034305910 
-         HEDRES        ATTLNACT          PROAT6          CLSIZE        EDUSHORT 
-    0.173643835     0.205770361     0.008805429    -0.007243754     0.024780221 
-        PV1MATH         PV1READ 
-    0.011984683    -0.184866977 
-```
-
-Not scaled
-```
-   (Intercept) Approach.to.ICT      Use.of.ICT   Teacher.skill            ESCS 
-   1.3966919035    0.4463443221   -0.0631028543    0.1990957006    0.0269954472 
-        RATCMP1          ICTSCH          ICTRES          ENTUSE         LM_MINS 
-  -0.0091736668    0.1070234545   -0.0415369770    0.2835025426    0.0011681602 
-         HEDRES        ATTLNACT          PROAT6          CLSIZE        EDUSHORT 
-   0.7439079067    0.9925179380    0.3774292470   -0.0019182000    0.0394189652 
-        PV1MATH         PV1READ 
-   0.0003523595   -0.0049700909 
-```
-
-
-```{r}
-shapiro.test(resid(fm))$p*100
-shapiro.test(unlist(ranef(fm)$NEW_VAR))$p*100
-
-write.csv(data_model,"data_psych_woo.csv") # not scaled
-```
-
-
-
-
-
 
 
 

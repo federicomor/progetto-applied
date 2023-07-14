@@ -1,6 +1,6 @@
 ---
 title: "R Notebook"
-output: html_notebook
+# output: html_notebook
 editor_options: 
   chunk_output_type: inline
 ---
@@ -31,6 +31,7 @@ include_path = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 source(include_path)
 #importing the dataset
 data <- read.csv(file=dataset_path)
+
 head(data)
 ```
 
@@ -45,7 +46,7 @@ IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
 data$IM_PUBLIC = as.factor(IM_PUBLIC)
 data$SCHLTYPE <- NULL
 head(data)
-linear_model_vars <- readLines("../../data/lm_social_vars.txt")
+linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
 ```
 
 
@@ -107,13 +108,33 @@ for ( i in 1:p){
 ## **3.** Model Assumptions
 ```{r, warning=FALSE, message=FALSE}
 # Note that: if we have to remove rows -> one at the time
-
 # Assumptions
+
 # 1) Gaussianity
 treat = levels(Label_1_2)
+treat
 gb = length(treat)
+gb
+```
 
 
+```{r, warning=FALSE, message=FALSE}
+for (i in 1:gb){
+  if(dim(measures[Label_1_2==treat[i],])[1]>7){
+    print(paste("On", dim(measures[Label_1_2==treat[i],])[1],"samples:",
+                "pvalue for normality",treat[i],"=",
+              mvn(measures[Label_1_2==treat[i],])$multivariateNormality$"p value"))
+  }else
+    print(paste("On", dim(measures[Label_1_2==treat[i],])[1],"samples:",
+                "not enough samples for checking",treat[i]))
+}
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+library(MVN)
+library(car)
+library(heplots)
 # 2) homogeneity of the covariance (qualitatively)
 S_list = list()
 for ( i in 1:gb){
@@ -121,7 +142,18 @@ for ( i in 1:gb){
 }
 
 S_bind <- do.call(rbind, S_list)
+```
 
+
+```{r, warning=FALSE, message=FALSE}
+summary(boxM(measures,Label_1_2))
+
+cols = gray.colors(100)
+for (i in 1:gb)
+image(cov(measures[Label_1_2==treat[i],]),
+      breaks = quantile(cov(measures[Label_1_2==treat[i],]),(0:100)/100),
+      col=cols)
+# 'nsomma
 ```
  
 ##**5.** Models 
@@ -170,9 +202,7 @@ for( j in 1:2){
 # for which the groups differ.
 ```
 
-## **7.** Bonferroni: symmetric design assumption (n1 = n2 = n), change if needed
-We want to know the level (of the labels) that introduces the difference.
-##  SSres vs W??
+## statistic preparation
 ```{r, warning=FALSE, message=FALSE}
 W = summary.manova(fit2.int)$SS$Residuals
 Gdl <- n-g-b+1
@@ -199,8 +229,26 @@ for(j in 1:p){
   mean_lab_2[j]<-list(tapply(measures[[j]],Label_2,mean))
 }
 ```
+# line plot of the mean
+```{r}
+for(i in 1:p){
+  fdx <- vector(length = g)
+  ordered_mean = mean_lab_1[[i]][order(mean_lab_1[[i]])]
+  plot(1:g,ordered_mean,type="b",pch =16,main=colnames(measures)[i])
+  for (j in 2:(g-1)) {
+    fdx[j] <- (ordered_mean[j] - ordered_mean[j-1]) 
+  }
+  plot(1:g,fdx,type="b",pch =16,main=paste(colnames(measures)[j],"discrete derivative"))
+  
+}
 
 
+  # Iterate through the values using the forward differencing method
+
+```
+
+
+## BONFERRONI CI
 ```{r, warning=FALSE, message=FALSE}
 k = p*g*(g-1)/2
 n = dim(data)[1]
@@ -237,32 +285,73 @@ for(k in 1:p){
     group_ordered <- with(data,                      
                       reorder(data$label_1,
                               measures[,k],
-                              median))
-    boxplot(measures[,k]~group_ordered, main=paste(colnames(measures)[k]),las=2,
+                              FUN=median))
+    boxplot(measures[,k]~group_ordered, main=paste(colnames(measures)[k],"ordered by median"),las=2,
           ylim=c(round(min(measures[,k])),
           round(max(measures[,k]))), col = rainbow(g))
     abline(h=0)
    
-    plot(c(1,g*(g-1)/2),ylim=c(min(unlist(CI[[k]])),max(unlist(CI[[k]]))), xlim=c(c(1,g*(g-1)/2)),
+
+    
+    ###### 
+    #         plot(c(1,g*(g-1)/2),ylim=c(min(unlist(CI[[k]])),max(unlist(CI[[k]]))), xlim=c(c(1,g*(g-1)/2)),
+    #      pch='',xlab='pairs treat', ylab=paste('CI tau',colnames(measures)[k]), 
+    #      main=paste('CI tau',colnames(measures)[k]))
+    # abline(h=0)
+    # 
+    # for(i in 1:(g-1)) {
+    #   for(j in (i+1):g) {
+    #     ind <- (i-1)*g-i*(i-1)/2+(j-i)
+    #   
+    #     if(CI[[k]][ind,1]*CI[[k]][ind,3]>0){
+    #         lines (c(ind,ind), c(CI[[k]][ind,1],CI[[k]][ind,3])); 
+    #         points(ind, CI[[k]][ind,2], col="black", pch=16); 
+    #         points(ind, CI[[k]][ind,1], col=rainbow(g)[j], pch=16); 
+    #         points(ind, CI[[k]][ind,3], col=rainbow(g)[i], pch=16); 
+    #     }
+    #  }
+    # }
+######
+
+    plot(c(1,g),ylim=c(min(unlist(CI[[k]])),max(unlist(CI[[k]]))),
+         xlim=c(1,g),
          pch='',xlab='pairs treat', ylab=paste('CI tau',colnames(measures)[k]), 
          main=paste('CI tau',colnames(measures)[k]))
     abline(h=0)
     
-    gruoup_ordered_list[[colnames(measures)[k]]] = data.frame(levels(group_ordered),livelli_fittizzi)
-    gruoup_ordered_list[[colnames(measures)[k]]]$livelli_fittizzi=as.factor( gruoup_ordered_list[[colnames(measures)[k]]]$livelli_fittizzi)
-  
-    for(i in 1:(g-1)) {
-      for(j in (i+1):g) {
-        ind <- (i-1)*g-i*(i-1)/2+(j-i)
+    factor_ord = order(mean_lab_1[[p]])
+    country_ordered = factor1[factor_ord[1]]
+    livelli_final = 0
+    lev=0
+    for(i in 2:g){
       
-        if(CI[[k]][ind,1]*CI[[k]][ind,3]>0){
-            lines (c(ind,ind), c(CI[[k]][ind,1],CI[[k]][ind,3])); 
-            points(ind, CI[[k]][ind,2], col="black", pch=16); 
-            points(ind, CI[[k]][ind,1], col=rainbow(g)[j], pch=16); 
-            points(ind, CI[[k]][ind,3], col=rainbow(g)[i], pch=16); 
-        }
-     }
+      if(factor1[factor_ord[i-1]]<factor1[factor_ord[i]]){
+        row = paste(factor1[factor_ord[i-1]],"-",factor1[factor_ord[i]])
+      }
+      else{
+        row = paste(factor1[factor_ord[i]],"-",factor1[factor_ord[i-1]])
+      }
+      if(CI[[k]][row,1]*CI[[k]][row,3]>0 && lev<8){
+        lev=lev+1
+        lines (c(i,i), c(CI[[k]][row,1],CI[[k]][row,3])); 
+        points(i, CI[[k]][row,2], col="black", pch=16); 
+        points(i, CI[[k]][row,1], col=rainbow(g)[i-1], pch=16); 
+        points(i, CI[[k]][row,3], col=rainbow(g)[i], pch=16); 
+        
+      }
+
+      
+      livelli_final = c(livelli_final,lev)
+      country_ordered = c(country_ordered,factor1[factor_ord[i]])
     }
+    print(livelli_final)
+    
+    column = colnames(measures)[k]
+    gruoup_ordered_list[[column]] = data.frame(country_ordered,livelli_final)
+    gruoup_ordered_list[[column]]$livelli_final=as.factor(
+      gruoup_ordered_list[[column]]$livelli_final)
+    
+
 }
   
 ```
@@ -281,6 +370,9 @@ for ( col in 1:p){
 }
 counter
 ```
+
+
+
 
 
 # IM_PUBLIC
@@ -316,11 +408,19 @@ for ( col in 1:p){
   temp = CI[[colnames(measures)[col]]]
   count=0
   for(i in 1:(b*(b-1)/2)){
-    if(temp[i,1]*temp[i,2]>0)
-      count=count+1
+    counter_2[[colnames(measures)[col]]]=0
+    if(temp[i,1]*temp[i,2]>0){
+    if(temp[i,1]>0){
+      counter_2[[colnames(measures)[col]]]=1
+    }else{
+      counter_2[[colnames(measures)[col]]]=2
+    }
+      
   }
-  counter_2[[colnames(measures)[col]]]=count
+  
+  }
 }
+
 counter_2
 ```
 
@@ -390,8 +490,7 @@ for (k in 1:1){
 ```
 #DISCRETE MAPS
 ```{r}
-
-for (k in 1:p){
+for (k in 1:3){
     means = gruoup_ordered_list[[k]]
     means = data.frame(gruoup_ordered_list[[k]][,2],gruoup_ordered_list[[k]][,1])
     colnames(means)=c("mean_value","adm0_a3")
@@ -409,14 +508,20 @@ for (k in 1:p){
       europe_joined %>% ggplot(aes(fill = mean_value)) +
       geom_sf(size = 0.2, color = "black") + # border line
     scale_fill_manual(
-    values = c("low" = "royalblue", "medium" = "forestgreen", "high" = "darkorange"),
-    na.value = "white"  # Specify the color for NA values
-  ) +
+      name = "legend", 
+      breaks = levels(means$mean_value),
+      ############### COLORI
+      # values =brewer.pal(n = length(levels(means$mean_value)), name = "Blues"),
+      values =colora(length(levels(means$mean_value))),
+      ############### COLORI
+      #labels = c("high", "medium", "low"),
+      na.value = "white"  # Specify the color for NA values
+      ) +
       labs(
         title =colnames(measures)[k],
         subtitle = "MANOVA") +
-      scale_x_continuous(limits = c(-10, 35)) +
-      scale_y_continuous(limits = c(35, 68))+
+      scale_x_continuous(limits = c(-10, 30)) +
+      scale_y_continuous(limits = c(35, 70))+
       theme_void()+
       geom_text_repel(aes(x = X, y = Y, label = name),
                 data = subset(europe_joined, !is.na(mean_value)),

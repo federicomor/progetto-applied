@@ -10,7 +10,7 @@ editor_options:
 ```{r, setup}
 #DIRECTORIES
 root_proj_dir = "../../"
-dataset_path = paste(root_proj_dir,"data/df_pca_scores.csv",sep="")
+dataset_path = paste(root_proj_dir,"data/pisa_score_woo.csv",sep="")
 include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_path)
@@ -21,8 +21,14 @@ library(rgl)
 library(Rtsne)
 ```
 ```{r}
-countrys = as.factor(pisa_data$CNT)
-pisa_data_cut = pisa_data[,3:(dim(pisa_data)[2]-1)]
+
+pisa_data$X <- NULL
+pisa_data$CNT <- as.factor(pisa_data$CNT)
+pisa_data$IM_PUBLIC <- as.factor(pisa_data$IM_PUBLIC)
+pisa_data$NEW_VAR <- as.factor(pisa_data$NEW_VAR)
+countrys =pisa_data$CNT 
+
+pisa_data_cut = as.data.frame(scale(select_if(pisa_data,is.numeric)))
 
 perplex = c(1,30,50)
 
@@ -37,10 +43,19 @@ for(k in perplex){
 }
 dev.off()
 ```
+# Chosen perplexity = 30
 ```{r}
 tsne_results <- Rtsne(pisa_data_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+```
+
+# plot
+```{r}
+#x11()
+countrys =pisa_data$CNT 
 countrys_num <- as.numeric(countrys)
-plot(tsne_results$Y,col=countrys_num, main = "Perplexity = 30")
+public_num <- as.numeric(public)
+plot(tsne_results$Y[,1],tsne_results$Y[,2],col=countrys_num, main = "Perplexity = 30",pch =(countrys_num+10))
+legend("topright", legend = unique(countrys), col = unique(countrys_num), pch = unique(countrys_num+10),ncol=2)
 ```
 
 

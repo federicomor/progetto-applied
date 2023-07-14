@@ -1,4 +1,5 @@
 .DS_Store
-.html
-.nb.html
-.Rhistory
+*.html
+*.nb.html
+*.Rhistory
+
