@@ -10,7 +10,10 @@ editor_options:
 ```{r, setup}
 #DIRECTORIES
 root_proj_dir = "../../"
-dataset_path = paste(root_proj_dir,"data/pisa_score_woo.csv",sep="")
+########### Chose one ########
+dataset_path = paste(root_proj_dir,"data/data_social_woo.csv",sep="")
+# dataset_path = paste(root_proj_dir,"data/data_psych_woo.csv",sep="")
+########### Chose one ########
 include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_path)
@@ -48,14 +51,48 @@ dev.off()
 tsne_results <- Rtsne(pisa_data_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
 ```
 
+# [prova] Plot divisi per categorie e livelli ANOVA
+```{r}
+###### Approach.to.ICT
+cols = colora(4,20)
+good = c("FRA","DNK","ESP","HRV")
+bad = c("CZE","SVK")
+
+df_cut = as.data.frame(scale(pisa_data$Approach.to.ICT))
+prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+
+plot(tsne_results$Y[,1],tsne_results$Y[,2],
+     col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
+     main = "Perplexity = 30 (darker is better)",
+     pch =19)
+```
+
+```{r}
+###### Psychological.well.being
+cols = colora(4,20)
+good = c("HRV","ESP")
+bad = c("CZE","SVN")
+
+df_cut = as.data.frame(scale(pisa_data$Psychological.well.being))
+prova <- Rtsne(df_cut,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+
+plot(tsne_results$Y[,1],tsne_results$Y[,2],
+     col=ifelse(pisa_data$CNT %in% good,cols[1],ifelse(pisa_data$CNT %in% bad,cols[3],cols[2])), 
+     main = "Perplexity = 30 (darker is better)",
+     pch =19)
+```
+
+
 # plot
 ```{r}
 #x11()
 countrys =pisa_data$CNT 
 countrys_num <- as.numeric(countrys)
-public_num <- as.numeric(public)
-plot(tsne_results$Y[,1],tsne_results$Y[,2],col=countrys_num, main = "Perplexity = 30",pch =(countrys_num+10))
-legend("topright", legend = unique(countrys), col = unique(countrys_num), pch = unique(countrys_num+10),ncol=2)
+# public_num <- as.numeric(public)
+plot(tsne_results$Y[,1],tsne_results$Y[,2],col=countrys_num, main = "Perplexity = 30",
+     pch =(countrys_num+10))
+legend("topright", legend = unique(countrys), col = unique(countrys_num), pch =
+         unique(countrys_num+10),ncol=2)
 ```
 
 
