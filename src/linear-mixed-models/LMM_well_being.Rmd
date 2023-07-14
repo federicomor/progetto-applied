@@ -75,16 +75,6 @@ colnames(data)
 Please tenete questa sezione alla fine delle vostre analisi, mi serve per avere le formule definitive da usare nei modelli per calcolare il punteggio del gioco nel bot. Grazie! :)
 
 ```{r}
-FORMULA_SOCIAL_LM = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
-
-FORMULA_SOCIAL_LMM  = "Social.well.being ~ Approach.to.ICT+Use.of.ICT+Teachers..degree+Teacher.skill+ESCS+RATCMP1+ICTSCH+HEDRES+STUBEHA+ATTLNACT+JOYREAD+PROAT6+CLSIZE+EDUSHORT+STAFFSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
-
-FORMULA_PSYCH_LM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+CNT+IM_PUBLIC"
-
-FORMULA_PSYCH_LMM = "Psychological.well.being ~ Approach.to.ICT+Use.of.ICT+Teacher.skill+ESCS+RATCMP1+ICTSCH+ICTRES+ENTUSE+LM_MINS+HEDRES+ATTLNACT+PROAT6+CLSIZE+EDUSHORT+PV1MATH+PV1READ+(1|NEW_VAR)"
-```
-
-```{r}
 linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
 
 vars = c(linear_model_vars,"CNT")
@@ -92,9 +82,6 @@ FORMULA_SOCIAL <- paste(paste("Social.well.being","~"), paste(vars, collapse = "
 
 vars = c(linear_model_vars,"(1|CNT)")
 FORMULA_SOCIAL_LMM <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
-
-
-FORMULA_SOCIAL == FORMULA_SOCIAL_LM # check coerenza
 ```
 
 ```{r}
@@ -105,7 +92,6 @@ FORMULA_PSYCH <- paste(paste("Psychological.well.being","~"), paste(vars, collap
 
 vars = c(linear_model_vars,"(1|CNT)")
 FORMULA_PSYCH_LMM <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
-FORMULA_PSYCH == FORMULA_PSYCH_LM # check coerenza
 ```
 
 
@@ -172,28 +158,28 @@ for (soglia in SOGLIA_RANGE ){
 
 # Salvataggio dataset versione-1
 ```{r}
-write.csv(data_social_woo,"../../data/data_social_woo.csv")
-write.csv(data_psych_woo,"../../data/data_psych_woo.csv")
-
-colnames(data_social_woo)
-numerical_variables=c(1:23,25,26)
-
-data_social_woo_scaled = data_social_woo
-data_social_woo_scaled[,numerical_variables] = scale(data_social_woo_scaled[,numerical_variables])
-data_psych_woo_scaled = data_psych_woo
-data_psych_woo_scaled[,numerical_variables] = scale(data_psych_woo_scaled[,numerical_variables])
-
-write.csv(data_social_woo_scaled,"../../data/data_social_woo_scaled.csv")
-write.csv(data_psych_woo_scaled,"../../data/data_psych_woo_scaled.csv")
+# write.csv(data_social_woo,"../../data/data_social_woo.csv")
+# write.csv(data_psych_woo,"../../data/data_psych_woo.csv")
+# 
+# colnames(data_social_woo)
+# numerical_variables=c(1:23,25,26)
+# 
+# data_social_woo_scaled = data_social_woo
+# data_social_woo_scaled[,numerical_variables] = scale(data_social_woo_scaled[,numerical_variables])
+# data_psych_woo_scaled = data_psych_woo
+# data_psych_woo_scaled[,numerical_variables] = scale(data_psych_woo_scaled[,numerical_variables])
+# 
+# write.csv(data_social_woo_scaled,"../../data/data_social_woo_scaled.csv")
+# write.csv(data_psych_woo_scaled,"../../data/data_psych_woo_scaled.csv")
 ```
 
 
 
 
 # Tentativo con leverages, residui, distanza di cook
-(partendo con social, codice riadattabile rapidamente per psychological)
-```{r}
 
+## Social
+```{r}
 fit = lm(FORMULA_SOCIAL,data=data)
 summary(fit)
 
@@ -280,38 +266,149 @@ id_to_keep2 = !(1:n %in% watchout_ids_stud)
 id_to_keep3 = !(1:n %in% watchout_ids_rstd)
 id_to_keep4 = !(1:n %in% watchout_ids_lev)
 
-id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4 
+id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4
+```
 
+
+```{r}
 #tolgo tutte le righe notevoli
 dati_soc_woo=subset(data,id_to_keep)
 dim(dati_soc_woo)
-#si scende a circa 3983 (circa 91% dei dati)
+#si scende a circa 3964 (circa 91% dei dati)
+print(paste("From",dim(data)[1],"obs we moved to",dim(dati_soc_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(dati_soc_woo)[1]/dim(data)[1]*100,"%"))
 
 fit_fin=lm(FORMULA_SOCIAL, dati_soc_woo)
 summary(fit_fin)
 #R^2 adj è 0.6861 -> alto
-
-
-
+#R^2 adj è 0.6898 -> alto (con la modifica di Ettore alla Formula)
 
 ```
+
+## Psych
+```{r}
+fit = lm(FORMULA_PSYCH,data=data)
+summary(fit)
+
+#Punti leva
+lev=hatvalues(fit)
+sum(lev) 
+
+p=fit$rank
+n=dim(data)[1]
+fs=summary(fit)
+
+#soglia per leverages è 2*p/n
+watchout_points_lev = lev[ which( lev > 2 * p/n ) ]
+watchout_ids_lev = seq_along( lev )[ which( lev > 2 * p/n ) ]
+
+plot(fit$fitted.values,lev,pch=16, ylab='lev',xlab='Fitted values',main='Leverages')
+abline(h=2*p/n,col='red')
+points( fit$fitted.values[ watchout_ids_lev ], watchout_points_lev, col = 'red', pch = 16 )
+#molti valori sopra soglia
+
+sum(lev[lev>2*p/n])
+#somma è 1.65, punti leva pesano 33% 
+fit2=lm(FORMULA_PSYCH,data=data,subset=(lev<2*p/n))
+summary(fit2)
+#R^2 adj 
+
+abs((fit$coefficients-fit2$coefficients)/fit$coefficients)
+#Impatto delle leve sui beta
+
+
+
+#Residui standardizzati
+
+res_std=fit$res/fs$sigma
+
+plot(fit$fitted.values,res_std, pch=16, main='Standardized Residuals',ylab='res',xlab='Fitted values')
+abline(h=c(-2,2),col='red')
+
+#punto influente se res standardizzato >2
+watchout_ids_rstd = which( abs( res_std ) > 2 )
+watchout_rstd = res_std[ watchout_ids_rstd ]
+
+points( fit$fitted.values[watchout_ids_rstd],
+        res_std[watchout_ids_rstd], col = 'red', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev],
+        res_std[watchout_ids_lev], col = 'orange', pch = 16 )
+#in rosso residui alti, in arancione leve 
+
+
+
+#Residui studentizzati 
+stud = rstandard( fit )
+
+watchout_ids_stud = which( abs( stud ) > 2 )
+watchout_stud = stud[ watchout_ids_stud ]
+
+plot( fit$fitted.values, stud, ylab = 'res',xlab='Fitted values', main = "Studentized Residuals", pch = 16 )
+points( fit$fitted.values[watchout_ids_stud], 
+        stud[watchout_ids_stud], col = 'pink', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev], 
+        stud[watchout_ids_lev], col = 'orange', pch = 16 )
+abline( h = c(-2,2), col = 'red' )
+#Residui e residui studentizzati sembrano rilevare stessi punti
+
+
+
+#Distanza di Cook 
+Cdist = cooks.distance( fit )
+
+watchout_ids_Cdist = which( Cdist > 4/(n-p) ) 
+watchout_Cdist = Cdist[ watchout_ids_Cdist ]
+
+plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values', 
+      ylab = 'distance', main = 'Cooks Distance' )
+abline(h=4/(n-p), col='red')
+points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ], 
+        col = 'green', pch = 16 )
+
+
+
+#punti da tenere non notevoli
+id_to_keep1 = !(1:n %in% watchout_ids_Cdist)
+id_to_keep2 = !(1:n %in% watchout_ids_stud)
+id_to_keep3 = !(1:n %in% watchout_ids_rstd)
+id_to_keep4 = !(1:n %in% watchout_ids_lev)
+
+id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4
+```
+
+
+```{r}
+#tolgo tutte le righe notevoli
+dati_psi_woo=subset(data,id_to_keep)
+dim(dati_psi_woo)
+#si scende a circa 3978 (circa 91% dei dati)
+print(paste("From",dim(data)[1],"obs we moved to",dim(dati_psi_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(dati_psi_woo)[1]/dim(data)[1]*100,"%"))
+
+fit_fin=lm(FORMULA_PSYCH, dati_psi_woo)
+summary(fit_fin)
+#R^2 adj è 0.6861 -> alto
+#R^2 adj è 0.5068 -> alto ma meno alto (con la modifica di Ettore alla Formula)
+
+```
+
+
+
 # Salvataggio dataset versione-2
 ```{r}
-## Sovrascriviamo quelli della versione-1
 write.csv(dati_soc_woo,"../../data/data_social_woo.csv")
-# write.csv(dati_soc_woo,"../../data/dati_soc_woo.csv")
-# write.csv(data_ps_woo,"../../data/dati_ps_woo.csv")
+write.csv(dati_psi_woo,"../../data/data_psych_woo.csv")
 
 colnames(dati_soc_woo)
 numerical_variables=c(1:23,25,26)
 
 dati_soc_woo_scaled = dati_soc_woo
 dati_soc_woo_scaled[,numerical_variables] = scale(dati_soc_woo_scaled[,numerical_variables])
-#dati_ps_woo_scaled = dati_ps_woo
-#dati_ps_woo_scaled[,numerical_variables] = scale(data_psych_woo_scaled[,numerical_variables])
+dati_psi_woo_scaled = dati_psi_woo
+dati_psi_woo_scaled[,numerical_variables] = scale(dati_psi_woo_scaled[,numerical_variables])
 
 write.csv(dati_soc_woo_scaled,"../../data/data_social_woo_scaled.csv")
-#write.csv(dati_ps_woo_scaled,"../../data/dati_ps_woo_scaled.csv")
+write.csv(dati_psi_woo_scaled,"../../data/data_psych_woo_scaled.csv")
 ```
 
 
