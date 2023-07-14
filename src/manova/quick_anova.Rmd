@@ -190,8 +190,9 @@ group_ordered <- with(df_social,
 
 	max1 = max(differenze_discrete)
 	max2 = max(setdiff(differenze_discrete,max1))
-
+	
 		plot(1:nstates,medie,type="b",main=scelta,ylab="medie(black) & ddif(blue)")
+		axis(side = 1, at = 1:13, labels = rownames(data.frame(medie)),las=2)
 		points(1:nstates,medie,pch=19,main=scelta)
 		lines(1:(nstates-1),differenze_discrete+mean(medie),type="b",col="blue")
 	abline(v=which(differenze_discrete==max1))
@@ -249,6 +250,7 @@ scelta = model_variables[i]
 	
 		plot(1:nstates,medie,type="b",main=scelta,ylab="medie(black) & ddif(blue)")
 		points(1:nstates,medie,pch=19,main=scelta)
+		axis(side = 1, at = 1:13, labels = rownames(data.frame(medie)),las=2)
 		lines(1:(nstates-1),differenze_discrete+mean(medie),type="b",col="blue")
 	abline(v=which(differenze_discrete==max1))
 	abline(v=which(differenze_discrete==max2))
