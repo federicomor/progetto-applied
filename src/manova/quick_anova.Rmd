@@ -41,25 +41,12 @@ df_psych <- read.csv(file=path_psych)
 # On social
 ```{r}
 colnames(df_social)
-covariates = c(
-	"Approach.to.ICT",
-	"Use.of.ICT",
-	"Teachers..degree",
-	"Teacher.skill",
-	"ESCS",
-	"RATCMP1",
-	"ICTSCH",
-	"HEDRES",
-	"STUBEHA",
-	"ATTLNACT",
-	"JOYREAD",
-	"PROAT6",
-	"CLSIZE",
-	"EDUSHORT",
-	"STAFFSHORT",
-	"PV1MATH",
-	"PV1READ"
-)
+
+##### Scegline uno per volta #####
+covariates <- readLines("../../data/non csv/lm_social_vars.txt")
+# covariates <- readLines("../../data/non csv/lm_psico_vars.txt")
+##### Scegline uno per volta #####
+
 targets = c(
 	"Social.well.being",
 	"Psychological.well.being"
@@ -75,7 +62,8 @@ GBlabel = factor(df_social$NEW_VAR)
 ```{r}
 treat = levels(Glabel)
 g = length(treat)
-RADAR_MATRIX = data.frame(matrix(0,16,length(model_variables)))
+ncols = length(levels(Glabel))+2
+RADAR_MATRIX = data.frame(matrix(0,ncols,length(model_variables)))
 colnames(RADAR_MATRIX) = model_variables
 rownames(RADAR_MATRIX) = c("max","min",levels(Glabel))
 RADAR_MATRIX
@@ -110,9 +98,9 @@ RADAR_MATRIX
 
 ```{r}
 for(j in 1:length(model_variables)){
-	RADAR_MATRIX[3:16,j] = RADAR_MATRIX[3:16,j] + abs(min(RADAR_MATRIX[3:16,j]))
-	RADAR_MATRIX[1,j] = max(RADAR_MATRIX[3:16,j])
-	RADAR_MATRIX[2,j] = min(RADAR_MATRIX[3:16,j])
+	RADAR_MATRIX[3:ncols,j] = RADAR_MATRIX[3:ncols,j] + abs(min(RADAR_MATRIX[3:ncols,j]))
+	RADAR_MATRIX[1,j] = max(RADAR_MATRIX[3:ncols,j])
+	RADAR_MATRIX[2,j] = min(RADAR_MATRIX[3:ncols,j])
 }
 RADAR_MATRIX
 ```
@@ -120,6 +108,8 @@ RADAR_MATRIX
 
 
 ```{r}
+# install.packages("fmsb")
+library(fmsb)
 for(i in 1:g){
 	# show(avg_vals_df[c(1,2,i+2),])
 	radarchart(RADAR_MATRIX[c(1,2,i+2),],title=treat[i],cex=0.3)
@@ -128,7 +118,8 @@ for(i in 1:g){
 
 
 ```{r}
-create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+# "#00AFBB"
+create_beautiful_radarchart <- function(data, color = "#1A8FBF", 
                                         vlabels = colnames(data), vlcex = 0.8,
                                         caxislabels = NULL, title = NULL, ...){
   radarchart(
@@ -157,6 +148,7 @@ for(i in 1:g){
 
 ## Differenze discrete
 ```{r}
+nstates = length(levels(Glabel))
 for (i in 1:length(model_variables) ){
 
 scelta = model_variables[i]
@@ -181,9 +173,9 @@ group_ordered <- with(df_social,
 	max1 = max(differenze_discrete)
 	max2 = max(setdiff(differenze_discrete,max1))
 
-		plot(1:14,medie,type="b",main=scelta,ylab="medie(black) & ddif(blue)")
-		points(1:14,medie,pch=19,main=scelta)
-		lines(1:13,differenze_discrete,type="b",col="blue")
+		plot(1:nstates,medie,type="b",main=scelta,ylab="medie(black) & ddif(blue)")
+		points(1:nstates,medie,pch=19,main=scelta)
+		lines(1:(nstates-1),differenze_discrete,type="b",col="blue")
 	abline(v=which(differenze_discrete==max1))
 	abline(v=which(differenze_discrete==max2))
 	
@@ -231,9 +223,9 @@ group_ordered <- with(df_social,
 		max2 = max(setdiff(differenze_discrete,massimi))
 	}
 	
-		plot(1:14,medie,type="b",main=scelta,ylab="medie(black) & ddif(blue)")
-		points(1:14,medie,pch=19,main=scelta)
-		lines(1:13,differenze_discrete,type="b",col="blue")
+		plot(1:nstates,medie,type="b",main=scelta,ylab="medie(black) & ddif(blue)")
+		points(1:nstates,medie,pch=19,main=scelta)
+		lines(1:(nstates-1),differenze_discrete,type="b",col="blue")
 	abline(v=which(differenze_discrete==max1))
 	abline(v=which(differenze_discrete==max2))
 	
@@ -340,6 +332,11 @@ for (i in 1:length(model_variables) ){
 ## Discrete maps (??)
 
 ```{r}
+##########################
+COLORI = rev(colora(nstates,20))
+# darker is better
+##########################
+
 for (i in 1:length(model_variables) ){
 # for (i in 1:4 ){
 	
@@ -353,7 +350,7 @@ for (i in 1:length(model_variables) ){
 			main=paste(model_variables[i],"ordered by mean"),las=2,
 			ylim=c(round(min(df_social[,model_variables[i]])),
 				   round(max(df_social[,model_variables[i]]))),
-			col = rev(colora(length(levels(Glabel)),20)))
+			col = COLORI)
 	abline(h=mean(df_social[,model_variables[i]]))
 
 	
@@ -379,7 +376,7 @@ for (i in 1:length(model_variables) ){
       breaks = levels(means$mean_value),
       ############### COLORI
       # values =colora(length(levels(means$mean_value)), 24),
-      values =colora(14,20),
+      values = COLORI,
       # values =colora(14,26),
       ############### COLORI
       labels = c("high", "medium", "low"),
@@ -465,7 +462,8 @@ for (k in 1:length(model_variables) ){
 }
 ```
 
-
+# ????????????????????
+Non molto rilevante la parte da qui in poi.
 
 ## [2] Anova with IM_PUBLIC
 ```{r}
