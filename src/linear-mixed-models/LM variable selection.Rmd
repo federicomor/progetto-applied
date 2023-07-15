@@ -17,10 +17,11 @@ library(car)
 library(rgl)
 library(dplyr)
 library(mvtnorm)
-library(MASS)
-library(car)
-library(rgl)
+
 library(glmnet)
+
+library(leaps)
+library(ISLR)
 ```
 
 ```{r}
@@ -78,7 +79,7 @@ b=coefficients(fit_psico)
 nv_max = length(b)-1
 names(b)
 ```
-#CHOOSE MODEL
+#SOCIAL
 ```{r}
 fm = fit_social
 Y=data$Social.well.being
@@ -217,17 +218,12 @@ abline(v=log(bestlam.lasso))
 final_vars = union(vars_chosen,union(lasso_vars_names[-1],ridge_vars_names[-1]))
 setdiff(colnames(data),final_vars)
 
+
+final_vars_social <- final_vars
 ```
 
 
-# Salvataggio dei nomi nel file "nomi.txt"
-
-```{r}
-writeLines(final_vars,"../../data/non csv/lm_social_vars.txt")
-```
-
-
-#CHOOSE MODEL
+# PSYCHO
 ```{r}
 fm = fit_psico
 Y=data$Psychological.well.being
@@ -365,48 +361,48 @@ abline(v=log(bestlam.lasso))
 ```{r}
 final_vars = union(vars_chosen,union(lasso_vars_names[-1],ridge_vars_names[-1]))
 setdiff(colnames(data),final_vars)
-```
 
+final_vars_psico <- final_vars
 
-# Salvataggio dei nomi nel file "nomi.txt"
-
-```{r}
-writeLines(final_vars, "../../data/non csv/lm_psico_vars.txt")
 ```
 
 
 
-# linear hyp
+# LINEAR HYP
 ```{r}
-linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
+linear_model_vars <- c(final_vars_social
+                      ,"CNT"
+                      )
 
-vars = c(linear_model_vars,"CNT","IM_PUBLIC")
+vars = c(linear_model_vars)
 FORMULA_SOCIAL <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
 fit_social_lm = lm(FORMULA_SOCIAL,data=data)
-```
 
-```{r}
 summary(fit_social_lm)
 ```
 
 ## SOCIAL 
 ```{r}
 b=coefficients(fit_social_lm)
-vars_to_discard = c("CLSIZE",
-                    "ESCS",
-                    "STAFFSHORT",
-                    "STUBEHA",
-                    "EDUSHORT",
-                    "PROAT6",
-                    "ICTRES",
-                    "ENTUSE",
-                    "CREACTIV",
-                    "Teachers..degree",
-                    
-                    "IM_PUBLIC"
-                    )
-check_beta <- c(which(names(b)%in%vars_to_discard),
-                check_beta <- grep("IM_PUBLIC", names(b)))
+
+vars_to_discard <- c("RATCMP1",
+                     "JOYREAD",
+                     "PROAT6",
+                     "EDUSHORT")
+
+vars_to_discard <- c(
+        "ESCS" ,
+        "STUBEHA", 
+        "PROAT6" ,
+        "CLSIZE" ,
+        "EDUSHORT",
+        "STAFFSHORT", 
+        "CREACTIV" 
+)
+
+
+
+check_beta <- which(names(b)%in%vars_to_discard)
 C <- c()
 for( i in 1: length(check_beta)){
   vect <- rep(0,fit_social_lm$rank)
@@ -430,9 +426,11 @@ summary(fit_social_lm)
 ## PSYCHO
 
 ```{r}
-linear_model_vars <- readLines("../../data/non csv/lm_psico_vars.txt")
+linear_model_vars <-c(final_vars_psico
+                      ,"CNT"
+                      )
 
-vars = c(linear_model_vars,"CNT","IM_PUBLIC")
+vars = c(linear_model_vars)
 FORMULA_PSYCH <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
 fit_psych_lm = lm(FORMULA_PSYCH,data=data)
 ```
@@ -443,6 +441,13 @@ summary(fit_psych_lm)
 
 ```{r}
 b=coefficients(fit_psych_lm)
+vars_to_discard <- c("RATCMP1",
+                     "PROAT6",
+                     "EDUSHORT",
+                     "JOYREAD",
+                     "TEACHBEHA",
+                     "STUBEHA")
+
 vars_to_discard = c("Use.of.ICT",
                     "ESCS",
                     "RATCMP1",
@@ -450,17 +455,17 @@ vars_to_discard = c("Use.of.ICT",
                     "PROAT6",
                     "CLSIZE",
                     "EDUSHORT",
-                    "STAFFSHORT",
                     "PV1READ",
-                    "STUBEHA",
-                    "TEACHBEHA",
                     "JOYREAD",
+                    "TEACHBEHA",
                     "CREACTIV",
-                        
-                    "IM_PUBLIC"
+                    "STUBEHA"
                     )
-check_beta <- c(which(names(b)%in%vars_to_discard),
-                check_beta <- grep("IM_PUBLIC", names(b)))
+
+
+
+
+check_beta <- which(names(b)%in%vars_to_discard)
 C <- c()
 for( i in 1: length(check_beta)){
   vect <- rep(0,fit_psych_lm$rank)
