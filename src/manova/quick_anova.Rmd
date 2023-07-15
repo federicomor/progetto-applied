@@ -130,8 +130,11 @@ for(i in 1:g){
 
 
 ```{r}
-# "#00AFBB"
-create_beautiful_radarchart <- function(data, color = "#1A8FBF", 
+# [1] "#6B0077" "#7C7BB2"
+# [3] "#A7C6DD" "#F1F1F1"
+
+# prima color era questo #1A8FBF
+create_beautiful_radarchart <- function(data, color = "#7C7BB2", 
                                         vlabels = colnames(data), vlcex = 0.8,
                                         caxislabels = NULL, title = NULL, ...){
   radarchart(
@@ -139,9 +142,11 @@ create_beautiful_radarchart <- function(data, color = "#1A8FBF",
     # Customize the polygon
     pcol = color, pfcol = scales::alpha(color, 0.3), plwd = 2, plty = 1,
     # Customize the grid
-    cglcol = "#BBBBBB", cglty = 1, cglwd = 0.8,
+    # cglcol = "#BBBBBB", cglty = 1, cglwd = 0.8,
+    cglcol = "#C1C1C1", cglty = 1, cglwd = 0.8,
     # Customize the axis
-    axislabcol = "#889999", 
+    # axislabcol = "#889999", 
+    axislabcol = "#A7C6DD", 
     # Variable labels
     vlcex = vlcex, vlabels = vlabels,
     caxislabels = caxislabels, title = title, ...
