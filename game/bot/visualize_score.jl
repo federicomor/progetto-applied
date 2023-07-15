@@ -107,9 +107,13 @@ write(f,"```R\n")
 # t_now = Dates.Time(now())
 
 
-# P = barplot(string.(data[:,:player_name]," [",string.(data[:,:state]),"] ",1:size(data)[1] ), # con anche lo stato scelto
+
 # P = barplot(string.(data[:,:player_name]," [",string.(data[:,:state]),"] ",lpad.(1:size(data)[1],3)), # con spazio uguale tra stringhe e cifre
-P = barplot(string.(score_data[:,:player_name]," ",1:size(score_data)[1] ),
+
+P = barplot(string.(score_data[:,:player_name],
+	" [",string.(score_data[:,:state]),"] ", # mostra anche lo stato scelto
+	# " ", # così no invece, solo player_name
+	1:size(score_data)[1] ),
 	round.(score_data[:,:score] .* 100 .+ correzione_punteggio,digits=4),
 	# width=:auto,
 	width = 30, # così stretta che forse dal telefono si vede meglio

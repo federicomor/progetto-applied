@@ -141,7 +141,7 @@ function handle_command(msg)
         else # qui il player ha scelto lo stato
             if get_player_data(player_id,:zdone) == 1
                 sendMessage(tg,
-                    text="Your first game was the one who determines your position in the scoreboard (for that, see /results). But with the new parameters you provided, I tell you that your score would have been...\n$(compute_score(player_id)).",
+                    text="Your first game was the one who determined your position in the scoreboard (for that, see /results). But with the new parameters you provided, I tell you that your score would have been...\n$(compute_score(player_id)).",
                     chat_id=chat_id)
             else
                 set_player_data(player_id, :zdone, 1)
@@ -164,7 +164,7 @@ function handle_command(msg)
 
     elseif msg_text == "/results"
         sendMessage(tg,
-            text="Remember, your fist play is the one which determines your position. Come here to see it!\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
+            text="Remember, your fist play is the one which determined your position. Come here to see it!\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
             chat_id = chat_id)
 
 
@@ -180,13 +180,13 @@ function handle_command(msg)
             *GRC* = Greece
             *HUN* = Hungary
             *LTU* = Lithuania
-            *LUX* = Luxembourg
             *POL* = Poland
             *SVK* = Slovakia
             *SVN* = Slovenia
             *ESP* = Spain
             
-            Remember how to provide parameters: keyword value, so type _play ACRONYM_."""
+            Syntax to send your parameters: "keyword value" (where keyword is now _play_). So for example _play FRA_ will select France as your country to play with."""
+            #*LUX* = Luxembourg
         sendMessage(tg,
             text=to_send,
             chat_id = chat_id,
@@ -210,13 +210,13 @@ function handle_command(msg)
             *fam* = family
             Increase the educational resources that family can give to their children, and try to also support them financially, with bonuses, etc.
 
-            Remember how to provide parameters: keyword value, so type _category VALUE_ (where category is tec, tch, and so on)."""
+            Syntax to send your parameters: "keyword value" (where keywords are now _tec, tch, sch, stu, fam_). So for example _tec 30_ will select to invest 30% of your budget in the category technology."""
         sendMessage(tg,
             text=to_send,
             chat_id = chat_id,
             parse_mode="Markdown")
         sendMessage(tg,
-            text="Give a value between 0 and 100 for each category, the values should add up to 100 but don't worry for possile mistakes, we will fix them (if any) normalizing everything to 100.",
+            text="Give a value between 0 and 100 for each category, the values should add up to 100 but don't worry for possile mistakes, we will fix them (if any) normalizing everything at the end.",
             chat_id = chat_id,
             parse_mode="Markdown")
 
