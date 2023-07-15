@@ -33,7 +33,7 @@ function print_help(chat_id)
     str3 = """
     *Game parameters*
     To set your game parameters send a message in the form "*keyword value*".
-    You will understand better this method in the following sections (/state and /budget), but for example a keyword is _callme_, so you can send a message with "callme Jhonny" to set your player name as Jhonny. 
+    You will understand better this method in the following sections (/state and /budget), but for example a keyword is _callme_, so you can send a message with _callme Jhonny_ to set your player name as Jhonny. 
     """
 
     # useremo la funzione lowercase(input) ovunque

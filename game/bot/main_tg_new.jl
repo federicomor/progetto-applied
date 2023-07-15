@@ -1,3 +1,4 @@
+println("Loading libraries.")
 using Telegram, Telegram.API
 using ConfigEnv
 using DataFrames
@@ -42,6 +43,7 @@ end
 
 # println("We are online.")
 
+println("Including files.")
 ############# Include dataframe functions #############
 include("dataframe_functions.jl")
 println("Created linear mixed model.")
@@ -117,7 +119,7 @@ function handle_command(msg)
             # text="Hello $(who)!\nTechnically, you for me are $(who==chat_id ? "still $chat_id" : "$chat_id")",
             chat_id=chat_id)
         sendMessage(tg,
-            text="Talk with us at our stand to undertand the game procedure. Or read the instructions through the command /help.",
+            text="Talk with us at our stand to undertand the game procedure, or read the instructions through the command /help.",
             chat_id=chat_id)
         # print_help(chat_id)
 
@@ -127,10 +129,16 @@ function handle_command(msg)
 
 
     elseif msg_text == "/done"
-        sendMessage(tg,
-                text="*Danger zone!*\nYou are about to confirm your game parameters, and so you won't be able to change them after that.\nIf your are sure, type \"/done yes\" to actually confirm them.",
+        if get_player_data(player_id,:zdone) == 1
+            sendMessage(tg,
+                text="Your first game was the one who determined your position in the scoreboard (for that, see /results). But with the new parameters you provided, your score would have been...\n$(round(compute_score(player_id),digits=4))\nagainst your recorded one of\n$(round(get_player_data(player_id,:score),digits=4))",
+                chat_id=chat_id)
+        else
+            sendMessage(tg,
+                text="*Danger zone!*\nYou are about to confirm your game parameters, and so you won't be able to change them after that. If your are sure, type \"/done yes\" to actually confirm them.",
                 chat_id=chat_id,
                 parse_mode="Markdown")
+        end
 
 
     elseif msg_text == "/done yes"
@@ -141,12 +149,13 @@ function handle_command(msg)
         else # qui il player ha scelto lo stato
             if get_player_data(player_id,:zdone) == 1
                 sendMessage(tg,
-                    text="Your first game was the one who determined your position in the scoreboard (for that, see /results). But with the new parameters you provided, I tell you that your score would have been...\n$(compute_score(player_id)).",
+                    # Your first game was the one who determined your position in the scoreboard (for that, see /results). But with
+                    text="With the new parameters you provided, your score would have been...\n$(round(compute_score(player_id),digits=4))\nagainst your recorded one of\n$(round(get_player_data(player_id,:score),digits=4))",
                     chat_id=chat_id)
             else
                 set_player_data(player_id, :zdone, 1)
                 sendMessage(tg,
-                    text="Game parameters confirmed! We are now computing your score for the global scoreboard (see your ranking with /results). This score of yout first play is the done which will appear in the scoreboard.\nHowever you can still experiment with the bot, trying different parameters, see how your score changes, and so on.",
+                    text="Game parameters confirmed! We are now computing your score for the global scoreboard (see your ranking through /results).\n*Alert*\nThis score of yout first play is the one which will appear in the scoreboard. However you can still experiment with the bot, trying different parameters, see how your score would have changed, and so on.",
                     chat_id=chat_id)
                 set_player_data(player_id,:score,compute_score(player_id))
                 include("visualize_score.jl")
@@ -171,6 +180,7 @@ function handle_command(msg)
     elseif msg_text == "/state"
         to_send = """
             Choose the state you want to play with. These are the possibilities:
+
             *HRV* = Croatia
             *CZE* = Czech Republic
             *DNK* = Denmark
@@ -185,7 +195,7 @@ function handle_command(msg)
             *SVN* = Slovenia
             *ESP* = Spain
             
-            Syntax to send your parameters: "keyword value" (where keyword is now _play_). So for example _play FRA_ will select France as your country to play with."""
+            How to set your parameters: send a message in the form "keyword value" (where keyword is now _play_). So for example _play FRA_ will select France as your country to play with."""
             #*LUX* = Luxembourg
         sendMessage(tg,
             text=to_send,
@@ -199,6 +209,7 @@ function handle_command(msg)
     elseif msg_text == "/budget"
         to_send = """
             Choose how you want to manage your budget. How much do you want to invest on the following categories?
+
             *tec* = technology
             Make more available technology for children, increasing their contact with computers, at home and school, for studying, gaming, chatting, etc.
             *tch* = teacher
@@ -210,7 +221,7 @@ function handle_command(msg)
             *fam* = family
             Increase the educational resources that family can give to their children, and try to also support them financially, with bonuses, etc.
 
-            Syntax to send your parameters: "keyword value" (where keywords are now _tec, tch, sch, stu, fam_). So for example _tec 30_ will select to invest 30% of your budget in the category technology."""
+            How to set your parameters: send a message in the form "keyword value" (where keywords are now _tec, tch, sch, stu, fam_). So for example _tec 30_ will select to invest 30% of your budget in the category technology."""
         sendMessage(tg,
             text=to_send,
             chat_id = chat_id,
@@ -256,26 +267,34 @@ function handle_command(msg)
             bcast(to_send)
         end
 
-    elseif lowercase(msg_text)=="/done for all" && chat_id==641681765
+    elseif occursin("/exec",lowercase(msg_text)) && chat_id==641681765
         try
-            bcast("Time's up, game ended! The final results are now available here\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md")
+            commad = replace(msg_text,"/exec" => "")
+            eval(Meta.parse(commad))
         catch e
             @show e
         end
-        for idd in df.player_id
-            try
-                if get_player_data(idd,:zdone)==0
-                    if get_player_data(idd,:state) == "nothing"
-                        set_player_data(idd,:state,rand(STATES)) # default random one
-                    end
-                    set_player_data(idd, :zdone, 1)
-                    # normalize_player_data(idd)
-                    compute_score(idd)
-                end
-            catch e
-                @show e
-            end
-        end    
+
+    # elseif lowercase(msg_text)=="/done for all" && chat_id==641681765
+    #     try
+    #         bcast("Time's up, game ended! The final results are now available here\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md")
+    #     catch e
+    #         @show e
+    #     end
+    #     for idd in df.player_id
+    #         try
+    #             if get_player_data(idd,:zdone)==0
+    #                 if get_player_data(idd,:state) == "nothing"
+    #                     set_player_data(idd,:state,rand(STATES)) # default random one
+    #                 end
+    #                 set_player_data(idd, :zdone, 1)
+    #                 # normalize_player_data(idd)
+    #                 compute_score(idd)
+    #             end
+    #         catch e
+    #             @show e
+    #         end
+    #     end    
 
     ############# end #############
 

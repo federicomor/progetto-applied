@@ -46,6 +46,10 @@ else
 end
 
 
+# Filtering who actually provided a state
+score_data = score_data[.!isequal.(df.state,"missing"),:]
+
+
 if WRITE_NEW_DF_scored==1
 	println("Writing the new df filled with scores.")
 	CSV.write("df.csv", score_data)
