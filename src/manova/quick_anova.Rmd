@@ -322,8 +322,10 @@ for (i in 1:length(model_variables) ){
 	v2=which(differenze_discrete==max2)
 	# abline(v=v1)
 	# abline(v=v2)
-	
+	print("#################################################################")
 	print(scelta)
+	print("#################################################################")
+	
 	good=rownames(data.frame(medie))[1:min(v1,v2)]
 	bad=rownames(data.frame(medie))[max(v1,v2):end(medie)]
 	
@@ -363,21 +365,24 @@ for (i in 1:length(model_variables) ){
 		ICrange=NULL
 		for(i in 1:(g-1)) {
 		for(j in (i+1):g) {
-		print(paste(levels(label)[i],"-",levels(label)[j]))
-		print(as.numeric(c(Mediag[i]-Mediag[j] - qt(1-alpha/(2*k), n-g) * sqrt(S * ( 1/ng[i] + 1/ng[j])),
-		Mediag[i]-Mediag[j] + qt(1-alpha/(2*k), n-g) * sqrt(S * ( 1/ng[i] + 1/ng[j])))))
+		# print(paste(levels(label)[i],"-",levels(label)[j]))
+		# print(as.numeric(c(Mediag[i]-Mediag[j] - qt(1-alpha/(2*k), n-g) * sqrt(S * ( 1/ng[i] + 1/ng[j])),
+		# Mediag[i]-Mediag[j] + qt(1-alpha/(2*k), n-g) * sqrt(S * ( 1/ng[i] + 1/ng[j])))))
 		ICrange=rbind(ICrange,as.numeric(c(Mediag[i]-Mediag[j]
 		- qt(1-alpha/(2*k), n-g) * sqrt(S * (1/ng[i] + 1/ng[j])),
 		Mediag[i]-Mediag[j]
 		+ qt(1-alpha/(2*k), n-g) * sqrt(S * (1/ng[i] + 1/ng[j])))))
 		}
 		}
-		ICrange
+		rownames(ICrange) = c("Bad-Good","Bad-Med","Good-Med")
+		colnames(ICrange) = c("inf","sup")
+		print(ICrange)
 		par(mfrow=c(1,2))
 		plot(label, obs, xlab='', ylab='Discriminant variable', col = colori_fun(g), las=2,
 			 main = scelta)
 		h = 1
-		plot(c(1,g*(g-1)/2),range(ICrange), pch='',xlab='Pairs treatment', ylab='CI tau target variable')
+		plot(c(1,g*(g-1)/2),range(ICrange), pch='',xlab='Pairs treatment', ylab='CI tau target variable',
+			 main = scelta)
 		for(i in 1:(g-1)) {
 		for(j in (i+1):g) {
 		ind = (i-1)*g-i*(i-1)/2+(j-i)
