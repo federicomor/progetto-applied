@@ -141,10 +141,7 @@ y_hat <- fitted.lmerf(fit_lmerf)
 y <- pisa_data$Social.well.being
 
 #mean squared error of the MERF
-MSE <- mean((y-y_hat)^2)
-MSE
-
-1-MSE/var(y)
+mean((y-y_hat)^2)
 ```
 
 PVRE
