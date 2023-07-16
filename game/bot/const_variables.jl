@@ -10,11 +10,11 @@ FULL_STATES = Dict(
     "GRC"=>"Greece",
     "HUN"=>"Hungary",
     "LTU"=>"Lithuania",
-    "LUX"=>"Luxembourg",
     "POL"=>"Poland",
     "SVK"=>"Slovakia",
     "SVN"=>"Slovenia",
     "ESP"=>"Spain" )
+    # "LUX"=>"Luxembourg",
 
 CATEGORIES = ["tec" "tch" "sch" "stu" "fam"]
 KEYWORDS = ["callme" "play" "tec" "tch" "sch" "stu" "fam"]

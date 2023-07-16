@@ -40,9 +40,9 @@ end
 function get_player_data(player_id, field::Symbol)
     # get_player_data(id,:state)
     try
-        if is_player_registered(player_id)
+        # if is_player_registered(player_id)
             return df[findfirst(isequal.(df.player_id,player_id)),field]
-        end
+        # end
     catch e
         @show e
     end
@@ -51,9 +51,9 @@ end
 function get_player_data(player_id, field::String)
     # get_player_data(id,"state")
     try
-        if is_player_registered(player_id)
+        # if is_player_registered(player_id)
             return df[findfirst(isequal.(df.player_id,player_id)),Symbol(field)]
-        end
+        # end
     catch e
         @show e
     end

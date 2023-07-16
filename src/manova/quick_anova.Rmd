@@ -130,8 +130,11 @@ for(i in 1:g){
 
 
 ```{r}
-# "#00AFBB"
-create_beautiful_radarchart <- function(data, color = "#1A8FBF", 
+# [1] "#6B0077" "#7C7BB2"
+# [3] "#A7C6DD" "#F1F1F1"
+
+# prima color era questo #1A8FBF
+create_beautiful_radarchart <- function(data, color = "#7C7BB2", 
                                         vlabels = colnames(data), vlcex = 0.8,
                                         caxislabels = NULL, title = NULL, ...){
   radarchart(
@@ -139,9 +142,11 @@ create_beautiful_radarchart <- function(data, color = "#1A8FBF",
     # Customize the polygon
     pcol = color, pfcol = scales::alpha(color, 0.3), plwd = 2, plty = 1,
     # Customize the grid
-    cglcol = "#BBBBBB", cglty = 1, cglwd = 0.8,
+    # cglcol = "#BBBBBB", cglty = 1, cglwd = 0.8,
+    cglcol = "#C1C1C1", cglty = 1, cglwd = 0.8,
     # Customize the axis
-    axislabcol = "#889999", 
+    # axislabcol = "#889999", 
+    axislabcol = "#A7C6DD", 
     # Variable labels
     vlcex = vlcex, vlabels = vlabels,
     caxislabels = caxislabels, title = title, ...
@@ -252,9 +257,16 @@ scelta = model_variables[i]
 		points(1:nstates,medie,pch=19,main=scelta)
 		axis(side = 1, at = 1:13, labels = rownames(data.frame(medie)),las=2)
 		lines(1:(nstates-1),differenze_discrete+mean(medie),type="b",col="blue")
-	abline(v=which(differenze_discrete==max1))
-	abline(v=which(differenze_discrete==max2))
+		v1=which(differenze_discrete==max1)
+		v2=which(differenze_discrete==max2)
+	abline(v=v1)
+	abline(v=v2)
 	
+	print(scelta)
+	print("good = c(")
+	print(rownames(data.frame(medie))[1:min(v1,v2)])
+	print("bad = c(")
+	print(rownames(data.frame(medie))[max(v1,v2):end(medie)])
 	
 	# Quality = rep("0",length(Glabel))
 	# Quality
@@ -265,8 +277,129 @@ scelta = model_variables[i]
 }
 ```
 
+## [2] Anova on the good/bad groupings
+```{r}
+##################
+PRINT_PARAMETERS = 1
+PLOT_DIFF_CIS = 1
+##################
 
-## View on boxplot and maps
+for (i in 1:length(model_variables) ){
+	
+	scelta = model_variables[i]
+	group_ordered <- with(df_social,                      
+                  reorder(df_social$CNT,
+                          df_social[,scelta],
+                          FUN=mean,
+                  		decreasing = T))
+	if(PLOT_BOXPLOT==1){
+		boxplot(df_social[,scelta] ~ group_ordered,
+			main=paste(scelta,"ordered by mean"),las=2,
+			ylim=c(round(min(df_social[,scelta])),
+				   round(max(df_social[,scelta]))),
+			col = rev(colora(length(levels(Glabel)),43)))
+		abline(h=mean(df_social[,scelta]))
+	}
+	
+	medie = tapply(df_social[,scelta],group_ordered,mean)
+	end = length
+	differenze_discrete = round(medie[1:end(medie)-1] - medie[2:end(medie)],digits=4)
+	differenze_discrete = round(as.data.frame(differenze_discrete),digits=4)$differenze_discrete
+
+	max1 = max(differenze_discrete)
+	max2 = max(setdiff(differenze_discrete,max1))
+	massimi = c(max1)
+	while( abs(which(differenze_discrete==max1)-which(differenze_discrete==max2))<=passi ){
+		massimi = c(massimi,max2)
+		max2 = max(setdiff(differenze_discrete,massimi))
+	}
+	
+	# plot(1:nstates,medie,type="b",main=scelta,ylab="medie(black) & ddif(blue)")
+	# points(1:nstates,medie,pch=19,main=scelta)
+	# axis(side = 1, at = 1:13, labels = rownames(data.frame(medie)),las=2)
+	# lines(1:(nstates-1),differenze_discrete+mean(medie),type="b",col="blue")
+	v1=which(differenze_discrete==max1)
+	v2=which(differenze_discrete==max2)
+	# abline(v=v1)
+	# abline(v=v2)
+	print("#################################################################")
+	print(scelta)
+	print("#################################################################")
+	
+	good=rownames(data.frame(medie))[1:min(v1,v2)]
+	bad=rownames(data.frame(medie))[max(v1,v2):end(medie)]
+	
+	obs_good = subset(df_social[,scelta],df_social$CNT %in% good)
+	obs_bad = subset(df_social[,scelta],df_social$CNT %in% bad)
+	obs_medium = subset(df_social[,scelta],!(df_social$CNT %in% c(bad,good)))
+	
+	obs = c(obs_good,obs_medium,obs_bad)
+	label = c(rep("Good",length(obs_good)),
+			  rep("Med",length(obs_medium)),
+			  rep("Bad",length(obs_bad)) )
+	label = factor(label)
+			  
+	fit_3groups = aov(as.matrix(obs) ~ label )
+	print(summary.aov(fit_3groups))
+
+	if(PRINT_PARAMETERS==1){
+		mu = mean(obs)
+		print(paste("mu =",mu))
+		tau_i=NULL
+		for (i in 1:g){
+		print(paste0("tau_",i,"(",levels(label)[i],") = ",mean(obs[label==levels(label)[i]])-mu))
+		tau_i = c(tau_i,mean(obs[label==levels(label)[i]])-mu)
+		}
+		sigma2 = var(obs-mu-tau_i[as.numeric(label)])
+		print(paste("sigma^2 =",sigma2))
+		print(paste("sigma^2 =",var(residuals(fit))))	
+	}
+	
+	
+	if(PLOT_DIFF_CIS==1){
+		g=3
+		k = g*(g-1)/2
+		Mediag = tapply(obs, label, mean) # group-wise means
+		SSres = sum(residuals(fit)^2)
+		S = SSres/(n-g)
+		ICrange=NULL
+		for(i in 1:(g-1)) {
+		for(j in (i+1):g) {
+		# print(paste(levels(label)[i],"-",levels(label)[j]))
+		# print(as.numeric(c(Mediag[i]-Mediag[j] - qt(1-alpha/(2*k), n-g) * sqrt(S * ( 1/ng[i] + 1/ng[j])),
+		# Mediag[i]-Mediag[j] + qt(1-alpha/(2*k), n-g) * sqrt(S * ( 1/ng[i] + 1/ng[j])))))
+		ICrange=rbind(ICrange,as.numeric(c(Mediag[i]-Mediag[j]
+		- qt(1-alpha/(2*k), n-g) * sqrt(S * (1/ng[i] + 1/ng[j])),
+		Mediag[i]-Mediag[j]
+		+ qt(1-alpha/(2*k), n-g) * sqrt(S * (1/ng[i] + 1/ng[j])))))
+		}
+		}
+		rownames(ICrange) = c("Bad-Good","Bad-Med","Good-Med")
+		colnames(ICrange) = c("inf","sup")
+		print(ICrange)
+		par(mfrow=c(1,2))
+		plot(label, obs, xlab='', ylab='Discriminant variable', col = colori_fun(g), las=2,
+			 main = scelta)
+		h = 1
+		plot(c(1,g*(g-1)/2),range(ICrange), pch='',xlab='Pairs treatment', ylab='CI tau target variable',
+			 main = scelta)
+		for(i in 1:(g-1)) {
+		for(j in (i+1):g) {
+		ind = (i-1)*g-i*(i-1)/2+(j-i)
+		lines (c(h,h), c(ICrange[ind,1],ICrange[ind,2]), col='grey55');
+		points(h, Mediag[i]-Mediag[j], pch=16, col='grey55');
+		points(h, ICrange[ind,1], col=colori_fun(g)[j], pch=16);
+		points(h, ICrange[ind,2], col=colori_fun(g)[i], pch=16);
+		h = h+1
+		}}
+		abline(h=0)
+		legend("bottomright",levels(label),fill=colori_fun(g),bty="n",cex=0.6)
+	}
+}
+```
+
+
+
 ```{r}
 all_countries <- c(
 	"AUT", "BEL", "BGR", "CYP", "CZE", "DEU", "DNK", "ESP", "EST", "FIN",
@@ -284,78 +417,10 @@ centroids <- st_centroid(europe_map)
 europe_map <- cbind(europe_map, st_coordinates(st_centroid(europe_map$geometry)))
 ```
 
-```{r}
-for (i in 1:length(model_variables) ){
-# for (i in 1:4 ){
-	
-	#### Classic boxplot
-	group_ordered <- with(df_social,                      
-                  reorder(df_social$CNT,
-                          df_social[,model_variables[i]],
-                          FUN=mean,
-                  		decreasing = T))
-	boxplot(df_social[,model_variables[i]] ~group_ordered,
-			main=paste(model_variables[i],"ordered by mean"),las=2,
-			ylim=c(round(min(df_social[,model_variables[i]])),
-				   round(max(df_social[,model_variables[i]]))),
-			col = rev(colora(length(levels(Glabel)),43)))
-	abline(h=mean(df_social[,model_variables[i]]))
-
-	
-	#### Map stuff
-	mean_lab_1<-tapply(df_social[,model_variables[i]],Glabel,mean)
-    means = data.frame(mean_lab_1,names(mean_lab_1))
-    colnames(means)=c("mean_value","adm0_a3")
-    for (country in all_countries) {
-      # Check if the country is already in the dataset
-      if (!(country %in% means$adm0_a3)) {
-        # If not, add the country to the dataset with a value of 0
-        means <- rbind(means, data.frame(adm0_a3 = country, mean_value = NA))
-      }
-    }
-
-    europe_joined <- merge(europe_map, means, by = c("adm0_a3"))
-    
-    suppressWarnings({print(
-      europe_joined %>% ggplot(aes(fill = mean_value)) +
-      geom_sf(size = 0.2, color = "black") + # border line
-     scale_fill_continuous(
-      type = "viridis",
-      name = "score",                  # title of the legend
-      na.value = "white",  # Specify the color for NA values
-      guide = guide_colorbar(
-        direction = "vertical",             # vertical colorbar
-        title.position = "top",             # title displayed at the top
-        label.position = "right",           # labels displayed at the right side
-        barwidth = unit(0.4, "cm"),         # width of the colorbar
-        barheight = unit(7, "cm"),          # height of the colorbar
-        ticks = TRUE))+
-      labs(
-        title =model_variables[i],
-        subtitle = "ANOVA") +
-      scale_x_continuous(limits = c(-10, 35)) +
-      scale_y_continuous(limits = c(35, 68))+
-      theme_void()+
-      geom_text_repel(aes(x = X, y = Y, label = name),
-        data = subset(europe_joined, !is.na(mean_value)),
-        size = 3,                   # Increase the size of the labels
-        colour = "gray20",          # Set the color of the labels
-        position = position_dodge(width = 0),
-        fontface = "bold",          # Set the font weight to bold
-        # label.padding = unit(0.5, "lines"),   # Add padding around the label
-        # label.r = unit(0.2, "lines"),         # Set the radius of the label's rounded corners
-        # label.color = "black",                 # Set the color of the label's border
-        # label.size = 0.8,                      # Set the size of the label's border
-        # label.fill = "black"                    # Set the color of the label's background
-                )
-    
-    
-    )})
-}
-```
 
 
-## Discrete maps (??)
+
+## Continuos maps (using means)
 
 ```{r}
 ##########################
@@ -363,8 +428,8 @@ COLORI = colora(nstates,20)
 # darker is better
 ##########################
 
-# for (i in 1:length(model_variables) ){
-for (i in 1:4 ){
+for (i in 1:length(model_variables) ){
+# for (i in 1:4 ){
 	
 	#### Classic boxplot
 	group_ordered <- with(df_social,                      
@@ -439,6 +504,125 @@ for (i in 1:4 ){
 ```
 
 
+## Discrete maps
+```{r}
+#################
+COLORI = colora(4,20)
+PLOT_BOXPLOT = 1
+# sarebbero solo 3 ma il più chiaro con colora(3,) è troppo chiaro
+#################
+
+for (i in 1:length(model_variables) ){
+	
+	scelta = model_variables[i]
+	group_ordered <- with(df_social,                      
+                  reorder(df_social$CNT,
+                          df_social[,scelta],
+                          FUN=mean,
+                  		decreasing = T))
+	
+	medie = tapply(df_social[,scelta],group_ordered,mean)
+	end = length
+	differenze_discrete = round(medie[1:end(medie)-1] - medie[2:end(medie)],digits=4)
+	differenze_discrete = round(as.data.frame(differenze_discrete),digits=4)$differenze_discrete
+
+	max1 = max(differenze_discrete)
+	max2 = max(setdiff(differenze_discrete,max1))
+	massimi = c(max1)
+	while( abs(which(differenze_discrete==max1)-which(differenze_discrete==max2))<=passi ){
+		massimi = c(massimi,max2)
+		max2 = max(setdiff(differenze_discrete,massimi))
+	}
+	
+	v1=which(differenze_discrete==max1)
+	v2=which(differenze_discrete==max2)
+	
+	if(PLOT_BOXPLOT==1){
+		boxplot(df_social[,scelta] ~ group_ordered,
+			main=paste(scelta,"ordered by mean"),las=2,
+			ylim=c(round(min(df_social[,scelta])),
+				   round(max(df_social[,scelta]))),
+			col = colora(length(levels(Glabel)),20))
+		abline(h=mean(df_social[,scelta]))
+		abline(v=v1+0.5)
+		abline(v=v2+0.5)
+	}
+	
+
+	# print("#################################################################")
+	# print(scelta)
+	# print("#################################################################")
+	
+	good=rownames(data.frame(medie))[1:min(v1,v2)]
+	bad=rownames(data.frame(medie))[max(v1,v2):end(medie)]
+	
+	obs_good = subset(df_social[,scelta],df_social$CNT %in% good)
+	obs_bad = subset(df_social[,scelta],df_social$CNT %in% bad)
+	obs_medium = subset(df_social[,scelta],!(df_social$CNT %in% c(bad,good)))
+	
+	obs = c(obs_good,obs_medium,obs_bad)
+	label = c(rep("Good",length(obs_good)),
+			  rep("Med",length(obs_medium)),
+			  rep("Bad",length(obs_bad)) )
+	label = factor(label)
+	
+	
+	
+	#### Map stuff
+	mean_lab_1<-tapply(df_social[,scelta],group_ordered,mean)
+    means = data.frame(mean_lab_1,names(mean_lab_1))
+    colnames(means)=c("mean_value","adm0_a3")
+    for (country in all_countries) {
+      # Check if the country is already in the dataset
+      if (!(country %in% means$adm0_a3)) {
+        # If not, add the country to the dataset with a value of 0
+        means <- rbind(means, data.frame(adm0_a3 = country, mean_value = NA))
+      }
+    }
+    ########### Discretization of means
+	means$mean_value[1:length(good)] = "Good"
+	# nstates = 13
+	means$mean_value[(length(good)+1):(nstates-length(bad))] = "Med"
+	means$mean_value[(nstates-length(bad)+1):nstates] = "Bad"
+	means$mean_value = factor(means$mean_value)
+    ########### Discretization of means
+    
+    europe_joined <- merge(europe_map, means, by = c("adm0_a3"))
+    
+    print(
+      europe_joined %>% ggplot(aes(fill = mean_value)) +
+      geom_sf(size = 0.2, color = "black") + # border line
+    scale_fill_manual(
+      name = "legend", 
+      # breaks = levels(means$mean_value),
+      breaks = c("Good","Med","Bad"),
+      ############### COLORI
+      # values =brewer.pal(n = length(levels(means$mean_value)), name = "Blues"),
+      # values =colora(length(levels(means$mean_value))),
+      values = COLORI,
+      ############### COLORI
+      #labels = c("high", "medium", "low"),
+      na.value = "white"  # Specify the color for NA values
+      ) +
+      labs(
+        title =scelta,
+        subtitle = "darker is better") +
+      scale_x_continuous(limits = c(-10, 30)) +
+      scale_y_continuous(limits = c(35, 70))+
+      theme_void()+
+      geom_text_repel(aes(x = X, y = Y, label = name),
+                data = subset(europe_joined, !is.na(mean_value)),
+                size = 3.5,                   # Increase the size of the labels
+                colour = "black",          # Set the color of the labels
+                fontface = "bold",          # Set the font weight to bold
+                ) 
+    
+    )
+}
+
+```
+
+
 ## BSCIs for the difference in the groups
 
 ```{r}
@@ -494,128 +678,11 @@ for (k in 1:length(model_variables) ){
 }
 ```
 
-# ????????????????????
+
 Non molto rilevante la parte da qui in poi.
-
-## [2] Anova with IM_PUBLIC
-```{r}
-for (i in 1:length(model_variables) ){
-	Xtarget = data.frame(df_social[,model_variables[i]])
-	# fit_complete = aov(as.matrix(Xtarget) ~ Glabel + Blabel + Glabel:Blabel)
-	fit_complete = aov(as.matrix(Xtarget) ~ Blabel)
-	print(model_variables[i])
-	print(summary.aov(fit_complete))
-}
-```
-## View on boxplot
-```{r}
-for (i in 1:length(model_variables) ){
-# for (i in 1:4 ){
-	
-	#### Classic boxplot
-	group_ordered <- with(df_social,                      
-                  reorder(df_social$IM_PUBLIC,
-                          df_social[,model_variables[i]],
-                          FUN=mean,
-                  		decreasing = T))
-	boxplot(df_social[,model_variables[i]] ~group_ordered,
-			main=paste(model_variables[i],"ordered by mean"),las=2,
-			ylim=c(round(min(df_social[,model_variables[i]])),
-				   round(max(df_social[,model_variables[i]]))),
-			col = rev(colora(length(levels(Blabel)),43)))
-	abline(h=0)
-}
-```
-
-## [3] Anova with NEW_VAR
-```{r}
-for (i in 1:length(model_variables) ){
-	Xtarget = data.frame(df_social[,model_variables[i]])
-	# fit_complete = aov(as.matrix(Xtarget) ~ Glabel + Blabel + Glabel:Blabel)
-	fit_complete = aov(as.matrix(Xtarget) ~ GBlabel)
-	print(model_variables[i])
-	print(summary.aov(fit_complete))
-}
-```
-
-## View on boxplot
-
-```{r}
-for (i in 1:length(model_variables) ){
-# for (i in 1:4 ){
-	
-	#### Classic boxplot
-	group_ordered <- with(df_social,                      
-                  reorder(df_social$NEW_VAR,
-                          df_social[,model_variables[i]],
-                          FUN=mean,
-                  		decreasing = T))
-	boxplot(df_social[,model_variables[i]] ~group_ordered,
-			main=paste(model_variables[i],"ordered by mean"),las=2,
-			ylim=c(round(min(df_social[,model_variables[i]])),
-				   round(max(df_social[,model_variables[i]]))),
-			col = rev(colora(length(levels(GBlabel)),43)))
-	abline(h=0)
-}
-```
+Quindi l'ho tolta.
 
 
-## BSCIs for the difference in the groups
-
-```{r}
-# If we reject H0, which supplement is responsible for this? We
-# do g*(g-1)/2 comparisons (all the pairs in g groups, g choose 2).
-# We use Bonferroni as we look simultaneously at the intervals
-g = length(levels(GBlabel))
-k = g*(g-1)/2
-n = dim(df_social)[1]
-treat = levels(GBlabel)
-alpha = 0.05
-ng = table(GBlabel) # number of obs in each group
-
-for (k in 1:length(model_variables) ){
-		
-	Xtarget = data.frame(df_social[,model_variables[k]])
-	fit = aov(as.matrix(Xtarget) ~ GBlabel)
-	Mediag = tapply(df_social[,model_variables[k]], df_social$NEW_VAR, mean) # group-wise means
-	SSres = sum(residuals(fit)^2)
-	S = SSres/(n-g)
-	ICrange=NULL
-	for(i in 1:(g-1)) {
-	for(j in (i+1):g) {
-	# print(paste(treat[i],"-",treat[j]))
-	# print(as.numeric(c(Mediag[i]-Mediag[j] - qt(1-alpha/(2*k), n-g) * sqrt(S * ( 1/ng[i] + 1/ng[j])), Mediag[i]-Mediag[j] + qt(1-alpha/(2*k), n-g) * sqrt(S * ( 1/ng[i] + 1/ng[j])))))
-	ICrange=rbind(ICrange,as.numeric(c(Mediag[i]-Mediag[j]
-	- qt(1-alpha/(2*k), n-g) * sqrt(S * (1/ng[i] + 1/ng[j])),
-	Mediag[i]-Mediag[j]
-	+ qt(1-alpha/(2*k), n-g) * sqrt(S * (1/ng[i] + 1/ng[j])))))
-	}
-	}
-	# ICrange
-	# par(mfrow=c(1,2))
-	# plot(df_social$CNT, df_social[,model_variables[i]], xlab='', ylab='Discriminant variable',
-		 # col = colori_fun(g), las=2)
-	h = 1
-	plot(c(1,g*(g-1)/2),range(ICrange), pch='',
-		 xlab='Pairs treatment', ylab='CI tau target variable',
-		 main = model_variables[k])
-	for(i in 1:(g-1)) {
-	for(j in (i+1):g) {
-	ind = (i-1)*g-i*(i-1)/2+(j-i)
-	if( (ICrange[ind,1]<0 && ICrange[ind,2]<0) || (ICrange[ind,1]>0 && ICrange[ind,2]>0) ){
-		lines (c(h,h), c(ICrange[ind,1],ICrange[ind,2]), col='grey55');
-		# points(h, Mediag[i]-Mediag[j], pch=16, col='grey55');
-		points(h, ICrange[ind,1], col=colori_fun(g,1)[j], pch=16);
-		points(h, ICrange[ind,2], col=colori_fun(g,1)[i], pch=16);
-	}
-	h = h+1
-	}}
-	abline(h=0)
-	legend("topright",treat,fill=colori_fun(g,1),bty="n",cex=0.4)
-}
-```
-
-
-
+puf
 
 
