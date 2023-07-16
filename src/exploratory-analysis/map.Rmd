@@ -87,9 +87,7 @@ geom_text_repel(aes(x = X, y = Y, label = name),
 scale_fill_manual(values="forestgreen",na.value = "white")+
 #scale_fill_viridis_d(na.value = "white")+  # Use the viridis color palette (continuous version)
 theme(legend.position = "none")  # Hide the legend
-
-  
-
-
-
 ```
+
+
+
