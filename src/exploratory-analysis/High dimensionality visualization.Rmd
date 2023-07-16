@@ -12,6 +12,7 @@ editor_options:
 root_proj_dir = "../../"
 ########### Chose one ########
 dataset_path = paste(root_proj_dir,"data/data_social_woo.csv",sep="")
+dataset_path = paste(root_proj_dir,"data/pisa_scores_final.csv",sep="")
 # dataset_path = paste(root_proj_dir,"data/data_psych_woo.csv",sep="")
 ########### Chose one ########
 include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
@@ -27,6 +28,28 @@ library(Rtsne)
 # Plot divisi per categorie e livelli ANOVA
 ```{r}
 cols = colora(4,20)
+```
+
+# 3d complete dataset pltot
+```{r}
+pisa_data$X <- NULL
+pisa_data$CNT <- as.factor(pisa_data$CNT)
+pisa_data$IM_PUBLIC <- as.factor(pisa_data$SCHLTYPE)
+countrys =pisa_data$CNT
+
+pisa_data_cut=as.data.frame(scale(select_if(pisa_data,is.numeric)))
+tsne_results_3d <- Rtsne(pisa_data_cut,dim=3, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+```
+```{r}
+plot3d(tsne_results_3d$Y, pch = 19, cex = 2, col = as.numeric(countrys), main = "Perplexity = 30")
+```
+ 
+# 2d
+```{r}
+tsne_results_2d <- Rtsne(pisa_data_cut,dim=2, perplexity=20, check_duplicates = FALSE, pca=FALSE)
+```
+```{r}
+plot(tsne_results_2d$Y, pch = 16, col = as.numeric(countrys), main = "Perplexity = 20")
 ```
 
 ## social
@@ -84,7 +107,7 @@ Chosen perplexity = 30
 
 
 
-# Parameters and data prep
+# Parameters and data prep-consider only FINAL variables
 ```{r}
 ##### Scegline uno per volta #####
 covariates <- readLines("../../data/non csv/lm_social_vars.txt")
@@ -109,6 +132,7 @@ pisa_data = as.data.frame(scale(pisa_data))
 # Dataset completo- all countrys
 ```{r}
 prova <- Rtsne(pisa_data,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
+#x11()
 plot(prova$Y[,1],prova$Y[,2],
    col=countrys, 
    main = paste( model_variables[i],"Perplexity = 30 (darker is better)"),
@@ -156,78 +180,68 @@ print(scelta)
 # Dataset tagliato in base alla categoria
 ```{r}
 names_group = names(categories_variables_filtered)
+# ACORSS GROUPS
 for(k in 1:5){
   model_vars_grouped = categories_variables_filtered[[k]]
   pisa_data_group = pisa_data[,model_vars_grouped]
-
-	if(length(model_vars_grouped)>2)
+   # if over 3 vars->perform tsne
+	if(length(model_vars_grouped)>3)
     prova <- Rtsne(pisa_data_group,dim=2, perplexity=50, check_duplicates = FALSE, pca=FALSE)
+  
+  # plot for each variable in the group, jump if the group has only one variable
   if(length(model_vars_grouped)!=1){
       for (i in 1:length(model_vars_grouped) ){
+        scelta = model_vars_grouped[i]
   
-      scelta = model_vars_grouped[i]
-
-  	  group_ordered <- with(pisa_data_group,                      
-                    reorder(countrys,
-                            pisa_data_group[,scelta],
-                            FUN=mean,
-                    		decreasing = T))
-  	
-  	medie = tapply(pisa_data_group[,scelta],group_ordered,mean)
-  	end = length
-  	differenze_discrete = round(medie[1:end(medie)-1] - medie[2:end(medie)],digits=4)
-  	differenze_discrete = round(as.data.frame(differenze_discrete),digits=4)$differenze_discrete
-  
-  	max1 = max(differenze_discrete)
-  	max2 = max(setdiff(differenze_discrete,max1))
-  	massimi = c(max1)
-  	while( abs(which(differenze_discrete==max1)-which(differenze_discrete==max2))<=passi ){
-  		massimi = c(massimi,max2)
-  		max2 = max(setdiff(differenze_discrete,massimi))
-  	}
-  	v1=which(differenze_discrete==max1)
-  	v2=which(differenze_discrete==max2)
-  	
-  	good = (rownames(data.frame(medie))[1:min(v1,v2)])
-  
-  	bad= (rownames(data.frame(medie))[max(v1,v2):end(medie)])
-  	if(length(model_vars_grouped)>2){
-  	   plot(prova$Y[,1],prova$Y[,2],
-         col=ifelse(countrys %in% good,cols[1],ifelse(countrys %in% bad,cols[3],cols[2])), 
-         main = paste( paste(names_group[k],model_vars_grouped[i]),"Perplexity = 50 (darker is better)"),
-         pch =19)
-  	    
-  	}else if (length(model_vars_grouped)==2){
-  	  plot(pisa_data_group[,model_vars_grouped],
-        col=ifelse(countrys %in% good,cols[1],ifelse(countrys %in% bad,cols[3],cols[2])), 
-        main = paste( paste(names_group[k],model_vars_grouped[i]),"Perplexity = 50 (darker is better)"),
-        pch =19)
-  	}
-
+    	  group_ordered <- with(pisa_data_group,                      
+                      reorder(countrys,
+                              pisa_data_group[,scelta],
+                              FUN=mean,
+                      		decreasing = T))
+    	
+      	medie = tapply(pisa_data_group[,scelta],group_ordered,mean)
+      	end = length
+      	differenze_discrete = round(medie[1:end(medie)-1] - medie[2:end(medie)],digits=4)
+      	differenze_discrete = round(as.data.frame(differenze_discrete),digits=4)$differenze_discrete
+      
+      	max1 = max(differenze_discrete)
+      	max2 = max(setdiff(differenze_discrete,max1))
+      	massimi = c(max1)
+      	while( abs(which(differenze_discrete==max1)-which(differenze_discrete==max2))<=passi ){
+      		massimi = c(massimi,max2)
+      		max2 = max(setdiff(differenze_discrete,massimi))
+      	}
+      	v1=which(differenze_discrete==max1)
+      	v2=which(differenze_discrete==max2)
+      	
+      	good = (rownames(data.frame(medie))[1:min(v1,v2)])
+      
+      	bad= (rownames(data.frame(medie))[max(v1,v2):end(medie)])
+      	if(length(model_vars_grouped)>2){
+      	   plot(prova$Y[,1],prova$Y[,2],
+             col=ifelse(countrys %in% good,cols[1],ifelse(countrys %in% bad,cols[3],cols[2])), 
+             main = paste( paste(names_group[k],model_vars_grouped[i]),"Perplexity = 50 (darker is better)"),
+             pch =19)
+      	    
+      	}else if (length(model_vars_grouped)==2){
+      	  plot(pisa_data_group[,model_vars_grouped],
+            col=ifelse(countrys %in% good,cols[1],ifelse(countrys %in% bad,cols[3],cols[2])), 
+            main = paste( paste(names_group[k],model_vars_grouped[i]),"Perplexity = 50 (darker is better)"),
+            pch =19)
+      	}else if(length(model_vars_grouped)==3){
+      	  plot3d(pisa_data_group[,model_vars_grouped],
+            col=ifelse(countrys %in% good,cols[1],ifelse(countrys %in% bad,cols[3],cols[2])), 
+            main = paste( paste(names_group[k],model_vars_grouped[i]),"Perplexity = 50 (darker is better)"),
+            pch =19)
+      	}
+      }
   }
-  }
-
 }
 ```
 
 
 
-# plot vecchio
-```{r}
-#x11()
-countrys_num <- as.numeric(countrys)
-plot(tsne_results$Y[,1],tsne_results$Y[,2],col=countrys_num, main = "Perplexity = 30",
-     pch =(countrys_num+10))
-legend("topright", legend = unique(countrys), col = unique(countrys_num), pch =
-         unique(countrys_num+10),ncol=2)
-```
 
 
-```{r}
-tsne_results_3d <- Rtsne(pisa_data_cut,dim=3, perplexity=30, check_duplicates = FALSE, pca=FALSE)
-
-plot3d(tsne_results_3d$Y, pch = 19, cex = 2, col = countrys_num, main = "Perplexity = 30")
-
-```
 
 

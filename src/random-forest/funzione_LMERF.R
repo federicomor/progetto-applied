@@ -1,4 +1,4 @@
-lmerf= function (y, cov, group, xnam, znam=NULL, bizero=NULL, itmax=100, toll=0.03) {
+lmerf= function (y, cov, group, xnam, ntrees, mtry, znam=NULL, bizero=NULL, itmax=100, toll=0.03) {
 #argomenti: 
 #-y=vettore con le risposte
 #-cov=data frame con le covariate di ogni unit? statistica
@@ -66,7 +66,7 @@ lmerf= function (y, cov, group, xnam, znam=NULL, bizero=NULL, itmax=100, toll=0.
 			target[i]= y[i] - z.temp%*%b.temp
 		}
 		forest.data=cbind(target, cov[xnam])
-		forest=randomForest(forest.formula, forest.data, mtry=5, ntree = 200) 
+		forest=randomForest(forest.formula, forest.data, mtry=mtry, ntree = ntrees) 
 		f.x_ij=forest$predicted
 
 		#glm con mixed effects

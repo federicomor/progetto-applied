@@ -1,0 +1,95 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+library(car)
+library(MVN)
+library(mvtnorm)
+library(mvnormtest)
+
+library(ggplot2)
+library(grid)
+library(sf)
+library(dplyr)
+library(rnaturalearth)
+
+library(sp)
+
+library(ggrepel)
+library(tmap)
+library(knitr)
+
+#directories
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"/data/pisa_scores_final.csv",sep="")
+include_path = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
+#including utilities
+source(include_path)
+#importing the dataset
+data <- read.csv(file=dataset_path)
+
+head(data)
+```
+
+
+# DATA PREP FOR MAPS
+```{r}
+all_countries <- c("AUT", "BEL", "BGR", "CYP", "CZE", "DEU", "DNK", "ESP", "EST", "FIN", "FRA", "GRC", "HRV", "HUN", "IRL", "ITA", "LTU", "LUX", "LVA", "MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "SWE",	# "IRL", # IRL non c'Ã¨ quindi magari possiamo toglierla e avere spazio?
+	"ITA", "LTU", "LUX", "LVA", "MLT",
+	"NLD", "POL", "PRT", "ROU", "SVK", "SVN", "SWE", 
+	"BIH", "ALB","MNE" # queste erano per chiudere la mappa
+	)
+
+
+europe_map <- ne_countries( scale=50,returnclass = 'sf',continent = "europe")
+sf_use_s2(FALSE)
+centroids <- st_centroid(europe_map)
+
+europe_map <- cbind(europe_map, st_coordinates(st_centroid(europe_map$geometry)))
+```
+#DISCRETE MAPS
+```{r}
+countrys = unique(data$CNT)
+means = data.frame(rep(1,14),countrys)
+colnames(means)=c("mean_value","adm0_a3")
+for (country in all_countries) {
+  # Check if the country is already in the dataset
+  if (!(country %in% countrys)) {
+    # If not, add the country to the dataset with a value of 0
+    means <- rbind(means, data.frame(adm0_a3 = country, mean_value = NA))
+  }
+}
+
+europe_joined <- merge(europe_map, means, by = c("adm0_a3"))
+```
+
+
+```{r}
+europe_joined %>% 
+ggplot(aes(fill = factor(mean_value))) +
+geom_sf(size = 0.2, color = "black") + # border line
+theme_void()+
+labs(
+  title ="chosen countrys")+
+scale_x_continuous(limits = c(-10, 30)) +
+scale_y_continuous(limits = c(35, 70))+
+
+geom_text_repel(aes(x = X, y = Y, label = name),
+          data = subset(europe_joined, !is.na(mean_value)),
+          size = 3.5,                   # Increase the size of the labels
+          colour = "black",          # Set the color of the labels
+          fontface = "bold",          # Set the font weight to bold
+          )  +
+scale_fill_manual(values="forestgreen",na.value = "white")+
+#scale_fill_viridis_d(na.value = "white")+  # Use the viridis color palette (continuous version)
+theme(legend.position = "none")  # Hide the legend
+
+  
+
+
+
+```
