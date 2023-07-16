@@ -1,4 +1,4 @@
-STATES = [ "HRV" "CZE" "DNK" "EST" "FIN" "FRA" "GRC" "HUN" "LTU" "LUX" "POL" "SVK" "SVN" "ESP" ]
+STATES = [ "HRV" "CZE" "DNK" "EST" "FIN" "FRA" "GRC" "HUN" "LTU" "POL" "SVK" "SVN" "ESP" ] # "LUX" 
 
 FULL_STATES = Dict(
     "HRV"=>"Croatia",

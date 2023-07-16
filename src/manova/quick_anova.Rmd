@@ -282,6 +282,8 @@ scelta = model_variables[i]
 ##################
 PRINT_PARAMETERS = 1
 PLOT_DIFF_CIS = 1
+passi = 2
+alpha=0.05
 ##################
 
 for (i in 1:length(model_variables) ){
@@ -313,15 +315,9 @@ for (i in 1:length(model_variables) ){
 		massimi = c(massimi,max2)
 		max2 = max(setdiff(differenze_discrete,massimi))
 	}
-	
-	# plot(1:nstates,medie,type="b",main=scelta,ylab="medie(black) & ddif(blue)")
-	# points(1:nstates,medie,pch=19,main=scelta)
-	# axis(side = 1, at = 1:13, labels = rownames(data.frame(medie)),las=2)
-	# lines(1:(nstates-1),differenze_discrete+mean(medie),type="b",col="blue")
+
 	v1=which(differenze_discrete==max1)
 	v2=which(differenze_discrete==max2)
-	# abline(v=v1)
-	# abline(v=v2)
 	print("#################################################################")
 	print(scelta)
 	print("#################################################################")
@@ -339,6 +335,11 @@ for (i in 1:length(model_variables) ){
 			  rep("Bad",length(obs_bad)) )
 	label = factor(label)
 			  
+		n = length(label) # total number of obs = n1 + ... + n6
+		ng = table(label) # number of obs in each group
+		treat = levels(as.factor(label)) # levels of the treatment
+		g = length(treat) # number of levels (ie, of groups)
+	
 	fit_3groups = aov(as.matrix(obs) ~ label )
 	print(summary.aov(fit_3groups))
 
@@ -352,7 +353,7 @@ for (i in 1:length(model_variables) ){
 		}
 		sigma2 = var(obs-mu-tau_i[as.numeric(label)])
 		print(paste("sigma^2 =",sigma2))
-		print(paste("sigma^2 =",var(residuals(fit))))	
+		print(paste("sigma^2 =",var(residuals(fit_3groups))))	
 	}
 	
 	
@@ -360,7 +361,7 @@ for (i in 1:length(model_variables) ){
 		g=3
 		k = g*(g-1)/2
 		Mediag = tapply(obs, label, mean) # group-wise means
-		SSres = sum(residuals(fit)^2)
+		SSres = sum(residuals(fit_3groups)^2)
 		S = SSres/(n-g)
 		ICrange=NULL
 		for(i in 1:(g-1)) {

@@ -1,0 +1,87 @@
+---
+title: "R Notebook"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+linear_model_vars <- readLines( "../../data/non csv/lm_social_vars.txt")
+
+filter <- function(category,var_lm) {
+  risultato <- c()
+  
+  for (elemento in category) {
+    if (elemento %in% var_lm) {
+      risultato <- c(risultato, elemento)
+    }
+  }
+  
+  return(risultato)
+}
+
+
+categories_variables_filtered=list()
+
+for(cat in cat_var_names ){
+  categories_variables_filtered[[cat]]=filter(categories_variables[[cat]],linear_model_vars)
+}
+
+categories_variables_filtered
+```
+
+
+```{r}
+# Perform analysis of variance
+anova_result <- anova(fit)
+
+# Extract sums of squares and total sum of squares
+ss_total <- sum(anova_result$'Sum Sq')
+ss_covariates <- anova_result$'Sum Sq'[-length(anova_result$'Sum Sq')]
+
+# Calculate proportion of explained variance for each covariate
+explained_variance <- (ss_covariates / ss_total)*100
+var_df <- data.frame(Covariate = names(coefficients(fit))[1:length(explained_variance)], explained_Variance = explained_variance)
+var_df$group_var = rep("INTERCEPT",12)
+k=1
+for(group in categories_variables_filtered){
+  for(var in group){
+    var_df[var_df$Covariate==var,3]=names(categories_variables_filtered)[k]
+  }
+  k=k+1
+}
+
+sum_perc = tapply(var_df$explained_Variance,var_df$group_var,sum)
+```
+
+
+```{r}
+legend_labels <- paste0(names(sum_perc), ": ", round(sum_perc, 2), "%")
+# Manually create legend annotations
+legend_labels <- var_df %>%
+  group_by(group_var) %>%
+  summarize(value = sum(explained_Variance))
+
+
+
+
+
+plot <- ggplot(data=var_df, aes(x=1, y=explained_variance, fill=group_var)) +
+  geom_bar(stat="identity", width = 0.5)+
+  ylim(0, 100)+
+  scale_fill_viridis_d() +  # Use the viridis color palette
+  theme_bw() +  # Use a minimal theme
+  theme(axis.text.x = element_blank(),  # Hide x-axis labels
+        axis.ticks.x = element_blank(),  # Hide x-axis ticks
+        axis.title.x = element_blank(),  # Hide x-axis title
+        legend.title = element_blank(),  # Hide legend title
+        legend.position = "right",  # Position the legend on the right
+        legend.spacing = unit(0.2, "cm"),  # Adjust spacing between legend elements
+        legend.text = element_text(size = 10))  # Adjust legend text size
+  #+scale_fill_manual(values=c("red","blue","green","yellow","purple"),guide = guide_legend(label = legend_labels))
+  #+
+
+plot
+
+```
+
