@@ -64,11 +64,16 @@ boxplot(select_if(pisa_data,is.numeric),las=2)
 #shuffle data
 shuffled_rows_index <- sample(1:nrow(pisa_data))
 pisa_data <- pisa_data[shuffled_rows_index,]
+
+#view the target
+boxplot(pisa_data$Social.well.being, main = "Social.well.being")
 ```
 
-# Fitting the Random Forest
+# MERF: Naive try
 
-## Fixed effect
+## Fitting
+
+### Fixed effects
 
 Constructing the formula object
 
@@ -116,8 +121,85 @@ randomForest::importance(final_rf)
 varImpPlot(final_rf)
 ```
 
+### Random effects
+
 ```{r}
-for(reg in final_rf$xNames){
+fix_effect.pred <- final_rf$predicted
+
+#including random effects in the formula
+random_intercepts <- c("(1|CNT)")
+
+ME_formula_str <- paste("Social.well.being", paste(random_intercepts,collapse="+"), sep="~")
+```
+
+```{r}
+lme_fit <- lmer(ME_formula_str, 
+                data=pisa_data,
+                offset = fix_effect.pred)
+
+lme_fit
+```
+
+## Evaluation
+
+### Fixed effects
+
+```{r}
+R2 <- 1 - var(final_rf$y - final_rf$predicted) / var(final_rf$y) 
+R2
+```
+
+### Mixed effects
+
+PVRE
+
+```{r}
+sigma2_eps <- as.numeric(get_variance_residual(lme_fit))
+sigma2_b <- as.numeric(get_variance_random(lme_fit))
+
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+PVRE
+```
+
+Trying pseudo R\^2
+
+```{r}
+# library(MuMIn)
+
+# r.squaredGLMM(lme_fit)
+
+#to compute the variance of the fixed effect variance on the variance
+sigma2_f <- as.numeric(get_variance_fixed(lme_fit)) #0.91791^2*var(final_rf$predicted)
+
+(sigma2_f+sigma2_b)/(sigma2_b+sigma2_f+sigma2_eps)
+```
+
+MSE
+
+```{r}
+#mean squared error of the fixed effect
+mean((pisa_data$Social.well.being-final_rf$predicted)^2)
+
+#mean squared error of the mixed model
+mean((pisa_data$Social.well.being-fitted(lme_fit))^2)
+```
+
+## Interpretations
+
+### Fixed effects
+
+Importance
+
+```{r}
+varImpPlot(final_rf)
+```
+
+Partial plots
+
+```{r}
+threshold_imp <- 200
+
+for(reg in regressors[randomForest::importance(final_rf) > threshold_imp]){
   partialPlot(final_rf,
               pred.data = pisa_data,
               x.var = as.character(reg),
@@ -126,104 +208,109 @@ for(reg in final_rf$xNames){
 }
 ```
 
-## Random effect
+### Mixed effects
+
+Dotplot
 
 ```{r}
-fix_effect.pred <- final_rf$predicted
-
-#including random effects in the formula
-random_intercepts <- c("(1|CNT)")
-
-ME_formula_str <- paste("Social.well.being~fix_effect.pred", paste(random_intercepts,collapse="+"), sep="+")
-```
-
-```{r}
-lme_fit <- lmer(ME_formula_str, data=pisa_data)
-
-sigma2_eps <- as.numeric(get_variance_residual(lme_fit))
-sigma2_b <- as.numeric(get_variance_random(lme_fit))
-
-PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
-PVRE
-
-## visualization of the random intercepts with their 95% confidence intervals
-# Random effects: b_0i for i=1,...,234
 dotplot(ranef(lme_fit, condVar=T))
 ```
 
-# Evaluation
+# MERF: rigorous implementation
 
-Only Fixed effect
+Implementation following the procedure of Masci's paper. You can find it in the docs in the folder random-forest
 
-```{r}
-R2 <- 1 - var(final_rf$y - final_rf$predicted) / var(final_rf$y) 
-R2
-```
-
-Random effect part included
+## Fitting
 
 ```{r}
-library(MuMIn)
-
-r.squaredGLMM(lme_fit)
-
-#it should be
-sigma2_eps <- as.numeric(get_variance_residual(lme_fit))
-sigma2_b <- as.numeric(get_variance_random(lme_fit))
-
-
-# sigma2_f <- as.numeric(get_variance_fixed(lme_fit)) 
-# -> this is what is computed by the statistic r.squaredGLMM
-
-#to compute the variance of the fixed effect variance on the variance
-sigma2_f <- as.numeric(get_variance_fixed(lme_fit)) #0.91791^2*var(final_rf$predicted)
-
-(sigma2_f+sigma2_b)/(sigma2_b+sigma2_f+sigma2_eps)
-```
-
-Mean squared error
-
-```{r}
-#mean squared error of the fixed effect
-mean((pisa_data$Social.well.being-final_rf$predicted)^2)
-
-#mean squared error of the mixed model
-mean((pisa_data$Social.well.being-predict(lme_fit))^2)
-```
-
-# Correct implementation
-
-By Masci's paper
-
-```{r}
+#function lmerf fit a MERF following an iterative procedure, which alternates the fitting of a random forest with the fitting of mixed effect model, incorporating the two
 fit_lmerf <- lmerf(y = pisa_data$Social.well.being,
                    cov = pisa_data[,regressors],
                    group = pisa_data$CNT,
                    xnam = regressors,
+                   mtry = 5,
+                   ntrees = 500,
                    toll = 0.03)
 
 summary.lmerf(fit_lmerf)
 ```
 
+## Evaluation
+
+### Fixed effects
+
+```{r}
+forest.model <- fit_lmerf$forest.model
+
+#inspecting fixed effect
+y_hat_forest <- forest.model$predicted
+target_forest <- forest.model$y
+
+MSE_forest <- mean((target_forest-y_hat_forest)^2)
+MSE_forest #MSE represents the unexplained variance
+
+Rsq <- 1 - MSE_forest/var(target_forest)
+Rsq
+
+#what's target_forest?
+
+# *** by lmerf function ***
+# target=rep(0,N) #target=y-Z%*%b
+# for (i in 1:N) {
+# 	b.temp=as.matrix(bi[group[i]], nrow=q, ncol=1)
+# 	z.temp=as.matrix(Zi.int[i,], nrow=1, ncol=q)
+# 	target[i]= y[i] - z.temp%*%b.temp
+# }
+```
+
+### Mixed effects
+
+Comparing the MSE with the one from the Naive implementation we see that we're increasing the performance
+
 ```{r}
 y_hat <- fitted.lmerf(fit_lmerf)
 y <- pisa_data$Social.well.being
 
-fit_lmerf$forest.model$mse[length(fit_lmerf$forest.model$mse)]
-sum((y-y_hat)^2)/length(y_hat)
+#mean squared error of the MERF
+mean((y-y_hat)^2)
 ```
 
-```{r}
-dotplot(ranef(fit_lmerf$lmer.model))
+PVRE
 
+```{r}
 sigma2_eps <- as.numeric(get_variance_residual(fit_lmerf$lmer.model))
 sigma2_b <- as.numeric(get_variance_random(fit_lmerf$lmer.model))
 
 PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
 PVRE
+```
 
-sigma2_f <- var(fit_lmerf$forest.model$predicted)
+## Interpretations
 
-pseudo_Rsq <- (sigma2_b+sigma2_f)/(sigma2_b+sigma2_eps+sigma2_f)
-pseudo_Rsq
+### Fixed effect
+
+Importance
+
+```{r}
+varImpPlot(fit_lmerf$forest.model)
+```
+
+Partial plots
+
+```{r}
+threshold_imp <- 150
+
+for(reg in regressors[randomForest::importance(fit_lmerf$forest.model) > threshold_imp]){
+  partialPlot(fit_lmerf$forest.model,
+              pred.data = pisa_data,
+              x.var = as.character(reg),
+              main = paste("Dependence on",reg)
+              )
+}
+```
+
+### Mixed effect
+
+```{r}
+dotplot(ranef(fit_lmerf$lmer.model))
 ```
