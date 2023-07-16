@@ -131,7 +131,7 @@ function handle_command(msg)
     elseif msg_text == "/done"
         if get_player_data(player_id,:zdone) == 1
             sendMessage(tg,
-                text="Your first game was the one who determined your position in the scoreboard (for that, see /results). But with the new parameters you provided, your score would have been...\n$(round(compute_score(player_id),digits=4))\nagainst your recorded one of\n$(round(get_player_data(player_id,:score),digits=4))",
+                text="Your first game was the one who determined your position in the scoreboard (for that, see /results).\nWith the new parameters you provided, your score would have been...\n$(round(compute_score(player_id),digits=4))\nagainst your recorded one of\n$(round(get_player_data(player_id,:score),digits=4))",
                 chat_id=chat_id)
         else
             sendMessage(tg,
@@ -149,13 +149,12 @@ function handle_command(msg)
         else # qui il player ha scelto lo stato
             if get_player_data(player_id,:zdone) == 1
                 sendMessage(tg,
-                    # Your first game was the one who determined your position in the scoreboard (for that, see /results). But with
-                    text="With the new parameters you provided, your score would have been...\n$(round(compute_score(player_id),digits=4))\nagainst your recorded one of\n$(round(get_player_data(player_id,:score),digits=4))",
+                 text="Your first game was the one who determined your position in the scoreboard (for that, see /results).\nWith the new parameters you provided, your score would have been...\n$(round(compute_score(player_id),digits=4))\nagainst your recorded one of\n$(round(get_player_data(player_id,:score),digits=4))",
                     chat_id=chat_id)
             else
                 set_player_data(player_id, :zdone, 1)
                 sendMessage(tg,
-                    text="Game parameters confirmed! We are now computing your score for the global scoreboard (see your ranking through /results).\n*Alert*\nThis score of yout first play is the one which will appear in the scoreboard. However you can still experiment with the bot, trying different parameters, see how your score would have changed, and so on.",
+                    text="Game parameters confirmed! We are now computing your score for the global scoreboard (see it through /results).\n*Alert*\nThis score, of your first play, is the one which will appear in the scoreboard. However you can still experiment with the bot, trying different parameters, see how your score would have changed, and so on.",
                     chat_id=chat_id)
                 set_player_data(player_id,:score,compute_score(player_id))
                 include("visualize_score.jl")
@@ -270,7 +269,9 @@ function handle_command(msg)
     elseif occursin("/exec",lowercase(msg_text)) && chat_id==641681765
         try
             commad = replace(msg_text,"/exec" => "")
+            println(">>>>>>>>>>>>>>>>>>>> DEBUG >>>>>>>>>>>>>>>>>>>>\n$commad")
             eval(Meta.parse(commad))
+            println("\n<<<<<<<<<<<<<<<<<<<< DEBUG <<<<<<<<<<<<<<<<<<<<")
         catch e
             @show e
         end
@@ -325,7 +326,11 @@ function main()
     run_bot() do msg
         # @show msg
         # @show typeof(msg)
+        try
             handle_command(msg)
+        catch e
+            @show e
+        end
         # @show df
         CSV.write("df.csv", df)
 
