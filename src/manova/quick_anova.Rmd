@@ -489,7 +489,7 @@ for (i in 1:length(model_variables) ){
 ```
 
 
-## Discrete maps (??)
+## Continuos maps
 
 ```{r}
 ##########################
@@ -570,6 +570,119 @@ for (i in 1:4 ){
     
     )})
 }
+```
+
+
+## Discrete maps
+```{r}
+#################
+COLORI = colora(4,20)
+PLOT_BOXPLOT = 1
+# sarebbero solo 3 ma il più chiaro con colora(3,) è troppo chiaro
+#################
+
+for (i in 1:length(model_variables) ){
+	scelta = model_variables[i]
+	group_ordered <- with(df_social,                      
+                  reorder(df_social$CNT,
+                          df_social[,scelta],
+                          FUN=mean,
+                  		decreasing = T))
+	if(PLOT_BOXPLOT==1){
+		boxplot(df_social[,scelta] ~ group_ordered,
+			main=paste(scelta,"ordered by mean"),las=2,
+			ylim=c(round(min(df_social[,scelta])),
+				   round(max(df_social[,scelta]))),
+			col = colora(length(levels(Glabel)),20))
+		abline(h=mean(df_social[,scelta]))
+	}
+	
+	medie = tapply(df_social[,scelta],group_ordered,mean)
+	end = length
+	differenze_discrete = round(medie[1:end(medie)-1] - medie[2:end(medie)],digits=4)
+	differenze_discrete = round(as.data.frame(differenze_discrete),digits=4)$differenze_discrete
+
+	max1 = max(differenze_discrete)
+	max2 = max(setdiff(differenze_discrete,max1))
+	massimi = c(max1)
+	while( abs(which(differenze_discrete==max1)-which(differenze_discrete==max2))<=passi ){
+		massimi = c(massimi,max2)
+		max2 = max(setdiff(differenze_discrete,massimi))
+	}
+	
+	v1=which(differenze_discrete==max1)
+	v2=which(differenze_discrete==max2)
+	# print("#################################################################")
+	# print(scelta)
+	# print("#################################################################")
+	
+	good=rownames(data.frame(medie))[1:min(v1,v2)]
+	bad=rownames(data.frame(medie))[max(v1,v2):end(medie)]
+	
+	obs_good = subset(df_social[,scelta],df_social$CNT %in% good)
+	obs_bad = subset(df_social[,scelta],df_social$CNT %in% bad)
+	obs_medium = subset(df_social[,scelta],!(df_social$CNT %in% c(bad,good)))
+	
+	obs = c(obs_good,obs_medium,obs_bad)
+	label = c(rep("Good",length(obs_good)),
+			  rep("Med",length(obs_medium)),
+			  rep("Bad",length(obs_bad)) )
+	label = factor(label)
+	
+	
+	
+	#### Map stuff
+	mean_lab_1<-tapply(df_social[,scelta],group_ordered,mean)
+    means = data.frame(mean_lab_1,names(mean_lab_1))
+    colnames(means)=c("mean_value","adm0_a3")
+    for (country in all_countries) {
+      # Check if the country is already in the dataset
+      if (!(country %in% means$adm0_a3)) {
+        # If not, add the country to the dataset with a value of 0
+        means <- rbind(means, data.frame(adm0_a3 = country, mean_value = NA))
+      }
+    }
+    ########### Discretization of means
+	means$mean_value[1:length(good)] = "Good"
+	# nstates = 13
+	means$mean_value[(length(good)+1):(nstates-length(bad))] = "Med"
+	means$mean_value[(nstates-length(bad)+1):nstates] = "Bad"
+	means$mean_value = factor(means$mean_value)
+    ########### Discretization of means
+    
+    europe_joined <- merge(europe_map, means, by = c("adm0_a3"))
+    
+    print(
+      europe_joined %>% ggplot(aes(fill = mean_value)) +
+      geom_sf(size = 0.2, color = "black") + # border line
+    scale_fill_manual(
+      name = "legend", 
+      # breaks = levels(means$mean_value),
+      breaks = c("Good","Med","Bad"),
+      ############### COLORI
+      # values =brewer.pal(n = length(levels(means$mean_value)), name = "Blues"),
+      # values =colora(length(levels(means$mean_value))),
+      values = COLORI,
+      ############### COLORI
+      #labels = c("high", "medium", "low"),
+      na.value = "white"  # Specify the color for NA values
+      ) +
+      labs(
+        title =scelta,
+        subtitle = "darker is better") +
+      scale_x_continuous(limits = c(-10, 30)) +
+      scale_y_continuous(limits = c(35, 70))+
+      theme_void()+
+      geom_text_repel(aes(x = X, y = Y, label = name),
+                data = subset(europe_joined, !is.na(mean_value)),
+                size = 3.5,                   # Increase the size of the labels
+                colour = "black",          # Set the color of the labels
+                fontface = "bold",          # Set the font weight to bold
+                ) 
+    
+    )
+}
+
 ```
 
 
