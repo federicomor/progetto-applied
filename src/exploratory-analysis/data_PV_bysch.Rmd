@@ -1,19 +1,12 @@
----
-title: "R Notebook"
-output: 
-editor_options: 
-  chunk_output_type: inline
----
-
-# REFERENCES
-
--   Insight in computation of the indices: <https://www.oecd.org/pisa/data/pisa2018technicalreport/PISA2018_Technical-Report-Chapter-16-Background-Questionnaires.pdf>
-
 # EXPLORATORY ANALYSIS: SCHOOL DATASET
 
 In this notebook I collect some useful plots made across the other notebooks that help better understanding the dataset grouped by schools
 
-## PRELIMINARY STUFF
+## References
+
+-   Insight in computation of the indices: <https://www.oecd.org/pisa/data/pisa2018technicalreport/PISA2018_Technical-Report-Chapter-16-Background-Questionnaires.pdf>
+
+## Settings
 
 ```{r}
 #libraries
@@ -26,13 +19,15 @@ library(rlang) #to select variables to be plugged into a formula object
 ```{r, setup}
 #DIRECTORIES
 root_proj_dir = "../../"
-dataset_path = paste(root_proj_dir,"data/pisa_wPV_grouped_bysch.csv",sep="")
+dataset_path = paste(root_proj_dir,"data/dataset_vecchi/pisa_wPV_grouped_bysch.csv",sep="")
 include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_path)
 #IMPORTING THE DATASET
 pisa_data <- read.csv(file=dataset_path)
 ```
+
+Adjustments
 
 ```{r}
 #some adjustments on the data
@@ -44,6 +39,8 @@ pisa_data$CNTSTUID <- as.factor(pisa_data$CNTSTUID)
 pisa_data <- pisa_data %>% select(-(starts_with("PV") & !ends_with("1")))
 head(pisa_data)
 ```
+
+Groupings of variables
 
 ```{r}
 #variabili finite nel dataset
@@ -58,13 +55,10 @@ grouped_variables[["tch"]] <- c("TEACHINT","TEACHSUP","STIMREAD","PROAT5AB","PRO
 grouped_variables[["sch"]] <- c("PERCOMP","PERCOOP","ICTSCH","RATCMP1","STRATIO","SCHSIZE","CLSIZE","CREACTIV","EDUSHORT","STAFFSHORT")
 ```
 
-# CORRELATION
+# Correlation structure
 
 ```{r}
-#OVERALL CORRELATION OVERVIEW
-ggcorr(select_if(pisa_data,is.numeric),label=TRUE,label_size = 2)
-
-#WITHIN GROUPS
+#WITHIN GROUPS OF VARIABLES
 #tec
 ggpairs(select_if(pisa_data[,grouped_variables[["tec"]]],is.numeric),progress = FALSE)
 ggcorr(select_if(pisa_data[,grouped_variables[["tec"]]],is.numeric),label=TRUE,label_size = 2)
@@ -131,18 +125,29 @@ for(variable in colnames(pisa_data)){
 }
 ```
 
-By country:
+Inspecting PROAT5M, PROAT5B, PROAT56
 
-```{r,fig.show='hide'}
-countries = unique(pisa_data$CNT)
-#plotting the histograms
-for(cntry in countries){
-  for(variable in colnames(select_if(pisa_data,is.numeric))){
-    if(variable != "CNTSCHID" && variable != "CNT"  && variable != "CNTSTUID"){
-      hist(pisa_data[which(pisa_data$CNT==cntry),variable],main = paste(variable,cntry))
-    }
-  }
-}
+```{r}
+tch_edu_level <- pisa_data[,c("PROAT5AB","PROAT5AM","PROAT6","CNT")]
+
+attach(tch_edu_level)
+
+plot(PROAT5AB, col=CNT)
+legend("topleft",legend=levels(CNT))
+
+plot(PROAT5AM,col=CNT )
+legend("topleft",legend=levels(CNT))
+
+plot(PROAT6,col=CNT )
+legend("topleft",legend=levels(CNT))
+
+plot(PROAT5AB+PROAT5AM, col =CNT)
+legend("topleft",legend=levels(CNT),col=CNT)
+
+plot(-PROAT5AB+PROAT5AM, col =CNT)
+legend("topleft",legend=levels(CNT),col=CNT)
+
+detach(tch_edu_level)
 ```
 
 # VARIANCES

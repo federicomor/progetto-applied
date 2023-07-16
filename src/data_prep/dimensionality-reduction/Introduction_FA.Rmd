@@ -62,6 +62,9 @@ Saving plausible values in a separate dataframe. Later we'll add them to the sco
 plausible_values <- pisa_data %>% select(starts_with("PV"))
 #excluding PV frmo the dataset to compute the factor analysis
 pisa_data <- pisa_data %>% select(-starts_with("PV")) #excluding target variables
+
+#summing learning times
+pisa_data$LM_MINS = (pisa_data$LMINS+pisa_data$MMINS)/2
 ```
 
 ```{r}
@@ -106,10 +109,6 @@ grouped_variables[["Reading"]] <- c("JOYREAD", "SCREADCOMP")
 ##Family
 grouped_variables[["Family economic status"]] <- c("WEALTH","ESCS","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI")
 
-### consider only ESCS
-#grouped_variables[["Family economic status"]] <- "ESCS"
-
-
 ##Teaching
 grouped_variables[["Teachers' degree"]] <- c("PROAT5AB","PROAT5AM","PROAT6")
 grouped_variables[["Teacher support"]] <- c("TEACHINT","TEACHSUP","STIMREAD","TEACHBEHA")
@@ -117,6 +116,14 @@ grouped_variables[["Teacher support"]] <- c("TEACHINT","TEACHSUP","STIMREAD","TE
 ##School
 grouped_variables[["School size"]] <- c("STRATIO","SCHSIZE","CLSIZE")
 grouped_variables[["Equipment of the school"]] <- c("EDUSHORT","STAFFSHORT")
+
+#OTHER PROPOSED GROUPINGS
+grouped_variables[["Perceived ompetence and interest in ICT"]] <- c("AUTICT","COMPICT","INTICT")
+grouped_variables[["Overall use of ICT related to school activities"]] <- c("HOMESCH","USESCH","ICTCLASS","ICTOUTSIDE")
+grouped_variables[["Teacher skill"]] <- c("TEACHINT","TEACHSUP","STIMREAD","PERFEED") 
+
+grouped_variables[["Attitude towards learning"]] <- c("STUBEHA","ATTLNACT","JOYREAD","LM_MINS") 
+grouped_variables[["ICT resources at home"]] <- c("ICTRES","ICTHOME")
 
 #groups
 group_list <- names(grouped_variables)
@@ -363,6 +370,3 @@ for(group in group_list){
 
 scores_data=data.frame(scores_data)
 ```
-
-
-

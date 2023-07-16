@@ -1,11 +1,8 @@
----
-title: "R Notebook"
-output: html_notebook
-editor_options: 
-  chunk_output_type: inline
----
+# Reducing dimensionality with PCA
 
 ## Settings
+
+Libraries
 
 ```{r}
 #loaded librarires
@@ -15,9 +12,10 @@ library(car) #to apply transformations
 library(MVN) #to perform multivariate gaussianity check
 library(GGally) #for ggcorr
 library(ggplot2)
-library(elasticnet) #trying out sparse principal component analysis [spca()]
 library(tidyverse)
 ```
+
+Directories
 
 ```{r, setup}
 #DIRECTORIES
@@ -31,21 +29,25 @@ pisa_data <- read.csv(file=dataset_dir)
 colnames(pisa_data)
 head(pisa_data)
 ```
-# Modify dataset
+
+Adjustment on the dataset
+
 ```{r}
 pisa_data$X <- NULL
-pisa_data$CREACTIV <- as.factor(round(pisa_data$CREACTIV))
 pisa_data$CNT <- as.factor(pisa_data$CNT)
 pisa_data$SCHLTYPE <- as.factor(pisa_data$SCHLTYPE)
 head(pisa_data)
 # remove PV
-#pisa_data <- pisa_data %>% select(-starts_with("PV"))
+pisa_data <- pisa_data %>% select(-(starts_with("PV") & !contains("1")))
 # LMINS and MMINS averaged
 pisa_data$LM_MINS = (pisa_data$LMINS+pisa_data$MMINS)/2
 
 head(pisa_data)
 ```
-#standardize the variables
+
+## Data preprocessing 
+
+-\> standardize the variables
 
 ```{r}
 transformed_data <- as.data.frame(scale(select_if(pisa_data,is.numeric)))
@@ -53,75 +55,67 @@ data <- transformed_data
 
 col_names_pisa = colnames(pisa_data)
 col_names_data = colnames(data)
-facotor_vars <- setdiff(col_names_pisa,col_names_data)
-facotor_vars # those needed to be added later
+factor_vars <- setdiff(col_names_pisa,col_names_data)
+factor_vars # those needed to be added later
 ```
-# Remove variables that are already ok (numeric) + psyc that will be dealt differently
+
+-\> remove variables that we don't want to reduce
+
+-   Psychological variables are used to compute the well-being index that we want to predict
+
+-   Variables related to the economic status of the student's family are synthesized in ESCS
+
 ```{r}
+#variables that we won't use anymore
 remove_vars = c("EUDMO","SWBP","GFOFAIL", "RESILIENCE", "COMPETE",  #Psychological Well-being
                   "PERCOOP","PERCOMP","EMOSUPS","BELONG","BEINGBULLIED", #Social Well-Being
-                  "WEALTH","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI", # Family: ESCS is enpough
-                  "LMINS","MMINS" #just the average
-                  
+                  "WEALTH","HOMEPOS","BFMJ2","BMMJ1","HISCED","HISEI", # Family
+                  "LMINS","MMINS" #just the average (Total learning time)
 )
 
+#original variables kept
 original_vars = c("ESCS",
-                  "RATCMP1",
-                  "ICTSCH",
-                  "ICTRES",
                   "ENTUSE",
-                  "LM_MINS",
+                  "ICTRES",
                   "HEDRES",
-                  "STUBEHA",
-                  "ATTLNACT",
-                  "JOYREAD",
-                  "PROAT6",
+                  "CULTPOSS",
+                  "STUBEHA","ATTLNACT","JOYREAD","LM_MINS", #interest in studying
+                  "PROAT5AB","PROAT5AM","PROAT6", #Teachers' level of education
                   "TEACHBEHA",
-                  "STRATIO",
-                  "CLSIZE",
-                  "EDUSHORT",
-                  "STAFFSHORT",
-                  "PV1MATH","PV1READ"
-                  
-
+                  "STRATIO","CLSIZE","STAFFSHORT","EDUSHORT","RATCMP1","ICTSCH","CREACTIV", 
+                  "SCHSIZE", 
+                  "PV1MATH","PV1READ" #performances in pisa test
                   )
-                  
 ```
 
-# Groups
+# Rotated PCA
+
+## Groupings
+
 ```{r}
 grouped_variables <-list()
 #list of grouped variables
 
-grouped_variables[["Approach to ICT"]] <- c("AUTICT","COMPICT","INTICT")
-
-grouped_variables[["Use of ICT"]] <- c("HOMESCH","USESCH")
-
-##Teaching
-grouped_variables[["Teachers' degree"]] <- c("PROAT5AB","PROAT5AM")
-grouped_variables[["Teacher skill"]] <- c("TEACHINT","TEACHSUP","STIMREAD","PERFEED") 
-
-                  
+#Perceived Competence and Interest in ICT
+grouped_variables[["CompInt.ICT"]] <- c("AUTICT","COMPICT","INTICT")
+#Overall use of ICT related to school activities
+grouped_variables[["SchoolUse.ICT"]] <- c("HOMESCH","USESCH","ICTCLASS","ICTOUTSIDE")
+#Teaching ability
+grouped_variables[["Teacher.skills"]] <- c("TEACHINT","TEACHSUP","STIMREAD","PERFEED") 
 
 #groups
 group_list <- names(grouped_variables)
 
-names_grouped =c( (unlist(grouped_variables)),original_vars,facotor_vars,remove_vars)
+names_grouped =c( (unlist(grouped_variables)),original_vars,factor_vars,remove_vars)
 col_names_data = colnames(pisa_data)
 difference1 <- setdiff(col_names_data,names_grouped)
 difference1
 ```
 
-# Correlation within groups
-Some graphs to validate the choice made while grouping the variables
+### Correlation within groups
 
 ```{r}
 p_ <- GGally::print_if_interactive
-
-#overall correlation overview
-ggcorr(select_if(pisa_data, is.numeric),
-       label = TRUE,
-       label_size = 0.5)
 
 for(group_name in group_list){
   
@@ -132,10 +126,9 @@ for(group_name in group_list){
 
 ```
 
+## Selecting the number of factors per group
 
-## Selecting the number of factors
-
-the following methods are useful to select the initial number of factors. The final choice should be made based on the portion of variance explained
+The following methods are useful to select the initial number of factors. The final choice should be made based on the portion of variance explained
 
 (Note that scree plots are contained in parallel analysis)
 
@@ -161,8 +154,6 @@ for(group in group_list){
 }
 ```
 
-
-
 ```{r}
 nfactors_2 <- list()
 
@@ -175,15 +166,11 @@ for(group in group_list){
 
 -   principal(): performs PCA in a more sophisticated way, using rotations to inrease the interpretability of the components. See the documentation in this folder [package psych]
 
-what the next chunk does is
-- define a "soglia" of explained variance for every group
-- perform a first pca with the previously chosen number of components
-- increase by one the number of components until every group has an explained variance that reaches the "soglia"
+what the next chunk does is - define a "soglia" of explained variance for every group - perform a first pca with the previously chosen number of components - increase by one the number of components until every group has an explained variance that reaches the "soglia"
+
 ```{r}
 soglia = 0.40
 nfactors = nfactors_2
-
-
 
 iter = 1
 cum_var = list()
@@ -207,26 +194,24 @@ while(iter<5){  # it would be better to have a better check, but it's fast and w
 
   iter = iter +1
 }
+```
 
+Results
 
+```{r}
 # results
 for(group in group_list){
   cat("\n-----------Group:", group, "-----------\n")
   
   #number of factors and components
   cat("\nNumbr of components: ", nfactors[[group]])
-  cat("-> fit: ", fit_PCA_rotated[[group]]$fit,"\n")
-  cat("-> summary:\n")
-
-  print(cum_var[[group]])
-  #print(fit_PCA_rotated[[group]]$Vaccounted)
-
+  cat("\n-> fit: ", fit_PCA_rotated[[group]]$fit,"\n")
+  cat("-> cumulative variance explained:\n", cum_var[[group]],"\n")
 }
 ```
 
+## Loadings
 
-
-# Visualize the loadings:
 ```{r}
 for(group in group_list){
   for(i in 1:nfactors[[group]]){
@@ -235,54 +220,13 @@ for(group in group_list){
 }
 ```
 
+# Compute the scores dataset
 
-```{r}
-group_gg=group_list[5]
-
-for(i in grouped_variables[[group_gg]]){
-  print(paste0(i,"-"))
-  spiega(i)
-  print("   ")
-}
-
-for(i in 1:nfactors[[group_gg]]){
-  vals = fit_PCA_rotated[[group_gg]]$loadings[,i]
-  print(vals)
-}
-
-```
-
-# compute scores dataset
-```{r}
-orig_vars= c(original_vars,facotor_vars)
-
-scores_orig = list()
-for (i in orig_vars)
-  scores_orig[[i]] = list(pisa_data[,i])
-
-scores_orig = data.frame(scores_orig)
-colnames(scores_orig) = orig_vars
-head(scores_orig)
-
-scores <- function(fit,data){
-  return(as.data.frame(as.matrix(data)%*%fit$loadings))
-}
-
-
-scores_data = list()
-for(group in group_list){
-    scores_data[group] = list(scores(fit_PCA_rotated[[group]],pisa_data[,grouped_variables[[group]]]))
-}
-
-scores_data=data.frame(scores_data)
-colnames(scores_data)=group_list
-scores_data_final = cbind(scores_data,scores_orig)
-```
+## Well-being indeces
 
 ```{r}
 include_dir2 = paste(root_proj_dir,"/src/include/computing_WBindex.R",sep="")
 source(include_dir2) ###!!!including new file!!!###
-pisa_data <- read.csv(file=dataset_dir)
 ```
 
 Recall to scale the dataset
@@ -291,6 +235,7 @@ Recall to scale the dataset
 #standardize the variables
 transformed_data <- as.data.frame(scale(select_if(pisa_data,is.numeric)))
 transformed_data$CNT <- pisa_data$CNT #adding CNT column
+transformed_data$SCHLTYPE <- pisa_data$SCHLTYPE #adding CNT column
 
 pisa_data <- transformed_data
 rm(transformed_data)
@@ -306,26 +251,50 @@ colnames(scores_WB)=names_s
 head(scores_WB)
 ```
 
-# Final dataset
+## PCA results & original variables
+
 ```{r}
-scores_data_final= cbind(scores_data_final,scores_WB)
+#(1) addinng original vars
+original_vars= c(original_vars,factor_vars)
+
+scores_original = list()
+for (var in original_vars)
+  scores_original[[var]] = pisa_data[[var]]
+
+scores_original = data.frame(scores_original)
+head(scores_original)
+
+#(2) adding PCA scores
+scores <- function(fit,data){
+  return(as.data.frame(as.matrix(data)%*%fit$loadings))
+}
+
+scores_data = list()
+
+for(group in group_list){
+    scores_data[[group]] = scores(fit_PCA_rotated[[group]],
+                                  pisa_data[,grouped_variables[[group]]])
+}
+
+scores_data=data.frame(scores_data)
+colnames(scores_data)=group_list
+head(scores_data)
+
+scores_data_final = cbind(scores_data,scores_original)
 head(scores_data_final)
 ```
 
+## Final dataset
 
-#Save Dataframe of scores
 ```{r}
-write.csv(scores_data_final,"../../../data/pisa_scores_final.csv")
+scores_data_final= cbind(scores_WB,scores_data_final)
+head(scores_data_final)
 ```
 
+Save Dataframe of scores
 
+```{r}
+saving_path <- paste(root_proj_dir,"src/random-forest/std_scores_data.csv",sep="")
 
-
-
-
-
-
-
-
-
-
+write.csv(scores_data_final,saving_path)
+```
