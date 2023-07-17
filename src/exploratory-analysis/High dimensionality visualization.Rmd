@@ -49,7 +49,10 @@ plot3d(tsne_results_3d$Y, pch = 19, cex = 2, col = as.numeric(countrys), main = 
 tsne_results_2d <- Rtsne(pisa_data_cut,dim=2, perplexity=20, check_duplicates = FALSE, pca=FALSE)
 ```
 ```{r}
-plot(tsne_results_2d$Y, pch = 16, col = as.numeric(countrys), main = "Perplexity = 20")
+svg("tsne_totale.svg")
+par(mar=c(rep(0,4)))
+plot(tsne_results_2d$Y[,1],tsne_results_2d$Y[,2], pch = 16, col = as.numeric(countrys) )
+dev.off()
 ```
 
 ## social
@@ -133,6 +136,10 @@ pisa_data = as.data.frame(scale(pisa_data))
 ```{r}
 prova <- Rtsne(pisa_data,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
 #x11()
+```
+
+
+```{r}
 plot(prova$Y[,1],prova$Y[,2],
    col=countrys, 
    main = paste( model_variables[i],"Perplexity = 30 (darker is better)"),
@@ -142,8 +149,11 @@ legend("topright", legend = unique(countrys), col = unique(as.numeric(countrys))
 
 # Dataset completo
 ```{r}
-for (i in 1:length(model_variables) ){
+var_selected =which(model_variables=="Social.well.being")
 
+par(mar=c(rep(0,4)))
+#for (i in 1:length(model_variables) ){
+for (i in var_selected ){
 scelta = model_variables[i]
 print(scelta)
 
@@ -172,10 +182,10 @@ print(scelta)
 
 	bad= (rownames(data.frame(medie))[max(v1,v2):end(medie)])
 	plot(prova$Y[,1],prova$Y[,2],
-     col=ifelse(countrys %in% good,cols[1],ifelse(countrys %in% bad,cols[3],cols[2])), 
-     main = paste( model_variables[i],"Perplexity = 30 (darker is better)"),
-     pch =19)
+     col=ifelse(countrys %in% good,cols[1],ifelse(countrys %in% bad,cols[3],cols[2])),
+     pch =19, main = scelta)
 }
+ 
 ```
 # Dataset tagliato in base alla categoria
 ```{r}
