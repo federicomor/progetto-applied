@@ -509,11 +509,12 @@ for (i in 1:length(model_variables) ){
 ```{r}
 #################
 COLORI = colora(4,20)
-PLOT_BOXPLOT = 1
+PLOT_BOXPLOT = 0
 # sarebbero solo 3 ma il più chiaro con colora(3,) è troppo chiaro
 #################
-
-for (i in 1:length(model_variables) ){
+svg("maps anova_single.svg")
+#for (i in 1:length(model_variables) ){
+for (i in 1:1 ){
 	
 	scelta = model_variables[i]
 	group_ordered <- with(df_social,                      
@@ -620,7 +621,7 @@ for (i in 1:length(model_variables) ){
     
     )
 }
-
+dev.off()
 ```
 
 

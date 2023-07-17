@@ -1,9 +1,12 @@
 ---
 title: "R Notebook"
-output: html_notebook
+#output: html_notebook
 editor_options: 
   chunk_output_type: inline
 ---
+```{r}
+library(dplyr)
+```
 
 ```{r}
 linear_model_vars <- readLines( "../../data/non csv/lm_social_vars.txt")
@@ -51,37 +54,43 @@ for(group in categories_variables_filtered){
   k=k+1
 }
 
-sum_perc = tapply(var_df$explained_Variance,var_df$group_var,sum)
 ```
 
 
 ```{r}
-legend_labels <- paste0(names(sum_perc), ": ", round(sum_perc, 2), "%")
-# Manually create legend annotations
-legend_labels <- var_df %>%
-  group_by(group_var) %>%
-  summarize(value = sum(explained_Variance))
+# Calculate the total explained variance for each group
+group_explained_variance <- aggregate(explained_Variance ~ group_var, var_df, sum)
 
+# Order the groups by explained variance in reverse order
+group_explained_variance <- group_explained_variance[order(group_explained_variance$explained_Variance, decreasing = TRUE), ]
+var_df$group_var <- factor(var_df$group_var, levels = rev(group_explained_variance$group_var))
 
+# Plot the bar chart with explained variance labels
+plot <- ggplot(data = var_df, aes(x = 1, y = explained_Variance, fill = group_var)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  ylim(0, 100) +
+  scale_fill_viridis_d() +
+  theme_bw() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank(),
+    legend.title = element_blank(),
+    legend.position = "right",
+    legend.spacing = unit(0.2, "cm"),
+    legend.text = element_text(size = 10)
+  ) +
+   geom_text(data = group_explained_variance, aes(label = round(explained_Variance, 2)), position = position_stack(vjust = 0.5), size = 4)
 
-
-
-plot <- ggplot(data=var_df, aes(x=1, y=explained_variance, fill=group_var)) +
-  geom_bar(stat="identity", width = 0.5)+
-  ylim(0, 100)+
-  scale_fill_viridis_d() +  # Use the viridis color palette
-  theme_bw() +  # Use a minimal theme
-  theme(axis.text.x = element_blank(),  # Hide x-axis labels
-        axis.ticks.x = element_blank(),  # Hide x-axis ticks
-        axis.title.x = element_blank(),  # Hide x-axis title
-        legend.title = element_blank(),  # Hide legend title
-        legend.position = "right",  # Position the legend on the right
-        legend.spacing = unit(0.2, "cm"),  # Adjust spacing between legend elements
-        legend.text = element_text(size = 10))  # Adjust legend text size
-  #+scale_fill_manual(values=c("red","blue","green","yellow","purple"),guide = guide_legend(label = legend_labels))
-  #+
-
+svg("prop_explained.svg")
 plot
 
+dev.off()
+```
+
+```{r}
+pdf("explained variability.pdf")
+print(plot)
+dev.off()
 ```
 

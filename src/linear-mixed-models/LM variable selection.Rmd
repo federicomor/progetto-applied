@@ -62,7 +62,7 @@ rownames(data)=NULL
 
 # [1] Modello 1-Social.well.being
 ```{r}
-FORMULA_COMPLETE_SOCIAL =formula(Social.well.being~.-Psychological.well.being-CNT-IM_PUBLIC)
+FORMULA_COMPLETE_SOCIAL =formula(Social.well.being~.-Psychological.well.being-IM_PUBLIC)
 fit_social = lm(FORMULA_COMPLETE_SOCIAL,data=data)
 summary(fit_social)
 b=coefficients(fit_social)
@@ -72,7 +72,7 @@ names(b)
 
 # Modello 2-Psychological.well.being
 ```{r}
-FORMULA_COMPLETE_PSICO = formula(Psychological.well.being~.-Social.well.being-CNT-IM_PUBLIC)
+FORMULA_COMPLETE_PSICO = formula(Psychological.well.being~.-Social.well.being-IM_PUBLIC)
 fit_psico = lm(FORMULA_COMPLETE_PSICO,data=data)
 summary(fit_psico)
 b=coefficients(fit_psico)
@@ -106,82 +106,19 @@ ind
 coef(regfit.full, ind)
 ```
 
-##  Forward and Backward Stepwise Selection
-```{r, warning=FALSE, message=FALSE}
-# Forward
-regfit.fwd = regsubsets(FORMULA_LM,data=data,nvmax=nv_max,method="forward")
-plot(summary(regfit.fwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
 
-ind_fwd = which.max(summary(regfit.fwd)$adjr2)
-ind_fwd
-# Backward
-regfit.bwd = regsubsets(FORMULA_LM,data=data,nvmax=nv_max,method="backward")
-plot(summary(regfit.bwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-ind_bwd = which.max(summary(regfit.bwd)$adjr2)
-ind_bwd
-
-```
 
 ## Comparison- they are all the same
 ```{r, warning=FALSE, message=FALSE}
-max_vars = 18
+max_vars = 29
 full = names(coef(regfit.full,max_vars)) # Exhaustive search
+full
 
-fwd = names(coef(regfit.fwd,max_vars)) # Forward Stepwise Selection
-
-bwd = names(coef(regfit.bwd,max_vars)) # Backward Stepwise Selection
-
-all(full==bwd)
-all(fwd==bwd)
-bwd
-
-vars_chosen <- bwd[2:max_vars]
-```
-
-## **4.** Ridge Regression
-```{r, warning=FALSE, message=FALSE}
-lambda.c <- 10^seq(-5,5,0.01)
-# Optimal lambda
-fm.ridge = lm.ridge(FORMULA_LM, lambda = lambda.c,data=data)
-#select(fm.ridge)
-
-# Alternatives (optimal lambda)
-fm.ridge = lm.ridge(FORMULA_LM, lambda = lambda.c,data=data)
-lambda.opt = lambda.c[which.min(fm.ridge$GCV)]
-lambda.opt
-# Cofficients for optimal lambda
-coef.ridge = coef(fm.ridge)[which.min(fm.ridge$GCV),]
-coef.ridge
-```
-
-## **5.** Ridge Regression (2)
-```{r message=FALSE, warning=FALSE}
-x = model.matrix(FORMULA_LM,data=data)[,-1] # matrix of predictors
-y = Y # vector of response
-lambda.grid = 10^seq(5,-3,length=50)
-
-# Ridge regression
-fit.ridge = glmnet(x,y, lambda = lambda.grid, alpha=0) # alpha=0 -> ridge
-plot(fit.ridge,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
-legend('topright', dimnames(x)[[2]], col = rainbow(dim(x)[2]), lty=1, cex=1)
-
-# Set lambda via CV
-cv.ridge = cv.glmnet(x,y,alpha=0,nfolds=10,lambda=lambda.grid)
-bestlam.ridge = cv.ridge$lambda.min
-print("besta lambda by 10 fold CV")
-bestlam.ridge
-
-plot(cv.ridge)
-abline(v=log(bestlam.ridge), lty=1)
-coef.ridge <- predict(fit.ridge, s=bestlam.ridge, type = 'coefficients')
-ridge_vars = coef.ridge[which(abs(coef.ridge)> 0.01),]
-ridge_vars_names = names(ridge_vars)
-
-plot(fit.ridge,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
-abline(v=log(bestlam.ridge))
+vars_chosen <- full[14:max_vars]
 
 
 ```
+
 
 ## **6.** Lasso Regression
 ```{r, warning=FALSE, message=FALSE}
@@ -215,7 +152,9 @@ abline(v=log(bestlam.lasso))
 
 
 ```{r}
-final_vars = union(vars_chosen,union(lasso_vars_names[-1],ridge_vars_names[-1]))
+final_vars = union(vars_chosen,lasso_vars_names[-1])
+
+final_vars = vars_chosen
 setdiff(colnames(data),final_vars)
 
 
@@ -250,82 +189,16 @@ ind
 coef(regfit.full, ind)
 ```
 
-##  Forward and Backward Stepwise Selection
-```{r, warning=FALSE, message=FALSE}
-# Forward
-regfit.fwd = regsubsets(FORMULA_LM,data=data,nvmax=nv_max,method="forward")
-plot(summary(regfit.fwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
 
-ind_fwd = which.max(summary(regfit.fwd)$adjr2)
-ind_fwd
-# Backward
-regfit.bwd = regsubsets(FORMULA_LM,data=data,nvmax=nv_max,method="backward")
-plot(summary(regfit.bwd)$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
-ind_bwd = which.max(summary(regfit.bwd)$adjr2)
-ind_bwd
-
-```
 
 ## Comparison- they are all the same
 ```{r, warning=FALSE, message=FALSE}
 max_vars = 17
-full = names(coef(regfit.full,max_vars)) # Exhaustive search
-
-fwd = names(coef(regfit.fwd,max_vars)) # Forward Stepwise Selection
-
-bwd = names(coef(regfit.bwd,max_vars)) # Backward Stepwise Selection
-
-all(full==bwd)
-all(fwd==bwd)
-bwd
-
-vars_chosen <- bwd[2:max_vars]
+full = names(coef(regfit.full,max_vars))
+full
+vars_chosen <- full[2:max_vars]
 ```
 
-## **4.** Ridge Regression
-```{r, warning=FALSE, message=FALSE}
-lambda.c <- 10^seq(-5,5,0.01)
-# Optimal lambda
-fm.ridge = lm.ridge(FORMULA_LM, lambda = lambda.c,data=data)
-#select(fm.ridge)
-
-# Alternatives (optimal lambda)
-fm.ridge = lm.ridge(FORMULA_LM, lambda = lambda.c,data=data)
-lambda.opt = lambda.c[which.min(fm.ridge$GCV)]
-lambda.opt
-# Cofficients for optimal lambda
-coef.ridge = coef(fm.ridge)[which.min(fm.ridge$GCV),]
-coef.ridge
-```
-
-## **5.** Ridge Regression (2)
-```{r message=FALSE, warning=FALSE}
-x = model.matrix(FORMULA_LM,data=data)[,-1] # matrix of predictors
-y = Y # vector of response
-lambda.grid = 10^seq(5,-3,length=50)
-
-# Ridge regression
-fit.ridge = glmnet(x,y, lambda = lambda.grid, alpha=0) # alpha=0 -> ridge
-plot(fit.ridge,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
-legend('topright', dimnames(x)[[2]], col = rainbow(dim(x)[2]), lty=1, cex=1)
-
-# Set lambda via CV
-cv.ridge = cv.glmnet(x,y,alpha=0,nfolds=10,lambda=lambda.grid)
-bestlam.ridge = cv.ridge$lambda.min
-print("besta lambda by 10 fold CV")
-bestlam.ridge
-
-plot(cv.ridge)
-abline(v=log(bestlam.ridge), lty=1)
-coef.ridge <- predict(fit.ridge, s=bestlam.ridge, type = 'coefficients')
-ridge_vars = coef.ridge[which(abs(coef.ridge)> 0.01),]
-ridge_vars_names = names(ridge_vars)
-
-plot(fit.ridge,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
-abline(v=log(bestlam.ridge))
-
-
-```
 
 ## **6.** Lasso Regression
 ```{r, warning=FALSE, message=FALSE}
@@ -359,7 +232,7 @@ abline(v=log(bestlam.lasso))
 
 
 ```{r}
-final_vars = union(vars_chosen,union(lasso_vars_names[-1],ridge_vars_names[-1]))
+final_vars = union(vars_chosen,lasso_vars_names[-1])
 setdiff(colnames(data),final_vars)
 
 final_vars_psico <- final_vars
@@ -391,15 +264,14 @@ vars_to_discard <- c("RATCMP1",
                      "EDUSHORT")
 
 vars_to_discard <- c(
+        "Teachers..degree",
         "ESCS" ,
         "STUBEHA", 
         "PROAT6" ,
         "CLSIZE" ,
-        "EDUSHORT",
         "STAFFSHORT", 
         "CREACTIV" 
 )
-
 
 
 check_beta <- which(names(b)%in%vars_to_discard)
