@@ -512,12 +512,16 @@ COLORI = colora(4,20)
 PLOT_BOXPLOT = 0
 # sarebbero solo 3 ma il più chiaro con colora(3,) è troppo chiaro
 SAVE_SOCIAL_PLOT = 1
+TESTING = 0
 #################
 
 iters = length(model_variables)
 if(SAVE_SOCIAL_PLOT==1){
 svg("maps_anova_single.svg")
 	iters=1
+}
+if(TESTING==1){
+	iters=3
 }
 
 for (i in 1:iters ){
@@ -572,7 +576,7 @@ for (i in 1:iters ){
 	
 	obs = c(obs_good,obs_medium,obs_bad)
 	label = c(rep("Good",length(obs_good)),
-			  rep("Med",length(obs_medium)),
+			  rep("Medium",length(obs_medium)),
 			  rep("Bad",length(obs_bad)) )
 	label = factor(label)
 	
@@ -592,7 +596,7 @@ for (i in 1:iters ){
     ########### Discretization of means
 	means$mean_value[1:length(good)] = "Good"
 	# nstates = 13
-	means$mean_value[(length(good)+1):(nstates-length(bad))] = "Med"
+	means$mean_value[(length(good)+1):(nstates-length(bad))] = "Medium"
 	means$mean_value[(nstates-length(bad)+1):nstates] = "Bad"
 	means$mean_value = factor(means$mean_value)
     ########### Discretization of means
@@ -605,7 +609,7 @@ for (i in 1:iters ){
     scale_fill_manual(
       name = "legend", 
       # breaks = levels(means$mean_value),
-      breaks = c("Good","Med","Bad"),
+      breaks = c("Good","Medium","Bad"),
       ############### COLORI
       # values =brewer.pal(n = length(levels(means$mean_value)), name = "Blues"),
       # values =colora(length(levels(means$mean_value))),
@@ -620,12 +624,28 @@ for (i in 1:iters ){
       scale_x_continuous(limits = c(-10, 30)) +
       scale_y_continuous(limits = c(35, 70))+
       theme_void()+
+      # geom_text_repel(aes(x = X, y = Y, label = name),
+      #           data = subset(europe_joined, !is.na(mean_value)),
+      #           size = 3.5,                   # Increase the size of the labels
+      #           colour = "black",          # Set the color of the labels
+      #           fontface = "bold",          # Set the font weight to bold
+      #           ) 
+      # geom_text(aes(x = X, y = Y, label = name),
       geom_text_repel(aes(x = X, y = Y, label = name),
-                data = subset(europe_joined, !is.na(mean_value)),
-                size = 3.5,                   # Increase the size of the labels
-                colour = "black",          # Set the color of the labels
-                fontface = "bold",          # Set the font weight to bold
-                ) 
+        data = subset(europe_joined, !is.na(mean_value)),
+        size = 3,                   # Increase the size of the labels
+    	seed=26,
+        colour = "gray8",          # Set the color of the labels
+        # colour = "#19124D",          # Set the color of the labels
+        position = position_dodge(width = 0),
+        fontface = "bold",          # Set the font weight to bold
+        force=0.9,
+        # label.padding = unit(0.5, "lines"),   # Add padding around the label
+        # label.r = unit(0.2, "lines"),         # Set the radius of the label's rounded corners
+        # label.color = "black",                 # Set the color of the label's border
+        # label.size = 0.8,                      # Set the size of the label's border
+        # label.fill = "black"                    # Set the color of the label's background
+                )
     
     )
 }
