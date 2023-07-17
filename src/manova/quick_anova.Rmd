@@ -331,7 +331,7 @@ for (i in 1:length(model_variables) ){
 	
 	obs = c(obs_good,obs_medium,obs_bad)
 	label = c(rep("Good",length(obs_good)),
-			  rep("Med",length(obs_medium)),
+			  rep("Medium",length(obs_medium)),
 			  rep("Bad",length(obs_bad)) )
 	label = factor(label)
 			  
@@ -511,11 +511,19 @@ for (i in 1:length(model_variables) ){
 COLORI = colora(4,20)
 PLOT_BOXPLOT = 0
 # sarebbero solo 3 ma il più chiaro con colora(3,) è troppo chiaro
+SAVE_SOCIAL_PLOT = 1
 #################
-svg("maps anova_single.svg")
-#for (i in 1:length(model_variables) ){
-for (i in 1:1 ){
-	
+
+iters = length(model_variables)
+if(SAVE_SOCIAL_PLOT==1){
+svg("maps_anova_single.svg")
+	iters=1
+}
+
+for (i in 1:iters ){
+	if(SAVE_SOCIAL_PLOT==1){
+		i=12 # social wb
+	}
 	scelta = model_variables[i]
 	group_ordered <- with(df_social,                      
                   reorder(df_social$CNT,
@@ -621,7 +629,9 @@ for (i in 1:1 ){
     
     )
 }
-dev.off()
+if(SAVE_SOCIAL_PLOT==1){	
+	dev.off()
+}
 ```
 
 
