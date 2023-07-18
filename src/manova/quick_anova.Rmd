@@ -509,9 +509,9 @@ for (i in 1:length(model_variables) ){
 ```{r}
 #################
 COLORI = colora(4,20)
-PLOT_BOXPLOT = 0
+PLOT_BOXPLOT = 1
 # sarebbero solo 3 ma il più chiaro con colora(3,) è troppo chiaro
-SAVE_SOCIAL_PLOT = 1
+SAVE_SOCIAL_PLOT = 0
 TESTING = 0
 #################
 
@@ -662,6 +662,7 @@ if(SAVE_SOCIAL_PLOT==1){
 # do g*(g-1)/2 comparisons (all the pairs in g groups, g choose 2).
 # We use Bonferroni as we look simultaneously at the intervals
 g = length(levels(Glabel))
+COLORI = colori_fun(g,20)#[sample(g)]
 k = g*(g-1)/2
 n = dim(df_social)[1]
 treat = levels(Glabel)
@@ -700,13 +701,13 @@ for (k in 1:length(model_variables) ){
 	if( (ICrange[ind,1]<0 && ICrange[ind,2]<0) || (ICrange[ind,1]>0 && ICrange[ind,2]>0) ){
 	lines (c(h,h), c(ICrange[ind,1],ICrange[ind,2]), col='grey55');
 	# points(h, Mediag[i]-Mediag[j], pch=16, col='grey55');
-	points(h, ICrange[ind,1], col=colori_fun(g)[j], pch=16);
-	points(h, ICrange[ind,2], col=colori_fun(g)[i], pch=16);
+	points(h, ICrange[ind,1], col=COLORI[j], pch=16);
+	points(h, ICrange[ind,2], col=COLORI[i], pch=16);
 	}
 	h = h+1
 	}}
 	abline(h=0)
-	legend("topright",treat,fill=colori_fun(g),bty="n",cex=0.6)
+	legend("topright",treat,fill=COLORI,bty="n",cex=0.6)
 }
 ```
 
@@ -714,7 +715,8 @@ for (k in 1:length(model_variables) ){
 Non molto rilevante la parte da qui in poi.
 Quindi l'ho tolta.
 
-
 puf
+
+
 
 
