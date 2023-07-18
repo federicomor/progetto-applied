@@ -38,6 +38,43 @@ pisa_data$IM_PUBLIC <- as.factor(pisa_data$SCHLTYPE)
 countrys =pisa_data$CNT
 
 pisa_data_cut=as.data.frame(scale(select_if(pisa_data,is.numeric)))
+```
+#CMD SCALE
+```{r}
+df = pisa_data_cut
+Rk = 6
+dist_df = dist(df)
+df_dscaled = cmdscale(dist_df, k=Rk)
+plot(df_dscaled[,1], df_dscaled[,2], asp=1,axes=FALSE,
+     main="Mutli Dimensional Scaled data",col = as.numeric(countrys), xlab='',ylab='')
+
+#text(df_dscaled[,1], df_dscaled[,2], labels=colnames(as.matrix(df)), cex = 0.75, pos = 3)
+# compare the original matrix d_ij = d(x_i,x_j) and delta_ij = d(y_i,y_j)
+plot(dist_df, dist(df_dscaled))
+n = dim(df)[1]
+# visualize the most different distances
+par(cex = 0.75, mar = c(10,10,2,2))
+image(1:n, 1:n, asp=1, abs(as.matrix(dist(df_dscaled)) - as.matrix(dist_df)),
+      axes = F, xlab = '', ylab ='')
+axis(1, at = 1:21, labels = colnames(as.matrix(df)), las = 2, cex = 0.75)
+axis(2, at = 1:21, labels = colnames(as.matrix(df)), las = 1, cex = 0.75)
+box()
+# Compute the "stress": the higher it is, the worse the matching between original
+# distances and their geometrical representation through MDS
+Stressk = NULL
+kk = 10
+for(k in 1:kk) {
+  df_dscaled.k = cmdscale(dist_df, k)
+  Stress = (sum((as.vector(dist_df) - as.vector(dist(df_dscaled.k)))^2) /
+  sum( as.vector(df_dscaled.k)^2))^(1/2)
+  Stressk = c(Stressk, Stress)
+}
+plot(1:kk,Stressk,xlab='k',ylab='Stress',lwd=2)
+lines(1:kk,Stressk,xlab='k',ylab='Stress',lwd=2,type="b")
+```
+
+
+```{r}
 tsne_results_3d <- Rtsne(pisa_data_cut,dim=3, perplexity=30, check_duplicates = FALSE, pca=FALSE)
 ```
 ```{r}
@@ -134,6 +171,9 @@ pisa_data = as.data.frame(scale(pisa_data))
 ```
 # Dataset completo- all countrys
 ```{r}
+#shuffle data
+shuffled_rows_index <- sample(1:nrow(pisa_data))
+pisa_data <- pisa_data[shuffled_rows_index,]
 prova <- Rtsne(pisa_data,dim=2, perplexity=30, check_duplicates = FALSE, pca=FALSE)
 #x11()
 ```
@@ -152,8 +192,8 @@ legend("topright", legend = unique(countrys), col = unique(as.numeric(countrys))
 var_selected =which(model_variables=="Social.well.being")
 
 par(mar=c(rep(0,4)))
-#for (i in 1:length(model_variables) ){
-for (i in var_selected ){
+for (i in 1:length(model_variables) ){
+#for (i in var_selected ){
 scelta = model_variables[i]
 print(scelta)
 
