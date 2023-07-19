@@ -160,11 +160,11 @@ function handle_command(msg)
     elseif msg_text == "/done"
         if get_player_data(player_id,:zdone) == 1
             sendMessage(tg,
-                text="Your first game was the one who determined your position in the scoreboard (for that, see /results).\nWith the new parameters you provided, your score would have been...\n$(round(compute_score(player_id),digits=4))\nagainst your recorded one of\n$(round(get_player_data(player_id,:score),digits=4))",
+                text="Your first game was the one who determined your position in the scoreboard (for that, see /results). With the new parameters you provided, your score would have been...\n$(round(compute_score(player_id),digits=4))\nagainst your recorded one of\n$(round(get_player_data(player_id,:score),digits=4))",
                 chat_id=chat_id)
         else
             sendMessage(tg,
-                text="*Danger zone!*\nYou are about to confirm your game parameters, and so you won't be able to change them after that. If your are sure, type \"/done yes\" to actually confirm them.",
+                text="*Danger zone!*\nYou are about to confirm your game parameters, the ones from which we compute your score. If your are sure, type \"/done yes\" to actually confirm them.",
                 chat_id=chat_id,
                 parse_mode="Markdown")
         end
@@ -178,7 +178,7 @@ function handle_command(msg)
         else # qui il player ha scelto lo stato
             if get_player_data(player_id,:zdone) == 1
                 sendMessage(tg,
-                 text="Your first game was the one who determined your position in the scoreboard (for that, see /results).\nWith the new parameters you provided, your score would have been...\n$(round(compute_score(player_id),digits=4))\nagainst your recorded one of\n$(round(get_player_data(player_id,:score),digits=4))",
+                 text="Your first game was the one who determined your position in the scoreboard (for that, see /results). With the new parameters you provided, your score would have been...\n$(round(compute_score(player_id),digits=4))\nagainst your recorded one of\n$(round(get_player_data(player_id,:score),digits=4))",
                     chat_id=chat_id)
             else
                 set_player_data(player_id, :zdone, 1)
@@ -306,12 +306,12 @@ function handle_command(msg)
     elseif occursin("/exec",lowercase(msg_text)) && chat_id==641681765
         try
             commad = replace(msg_text,"/exec" => "")
-            println(">>>>>>>>>>>>>>>>>>>> DEBUG >>>>>>>>>>>>>>>>>>>>\n$commad")
+            # println(">>>>>>>>>>>>>>>>>>>> DEBUG >>>>>>>>>>>>>>>>>>>>\n$commad")
             eval(Meta.parse(commad))
         catch e
             @show e
         end
-        println("\n<<<<<<<<<<<<<<<<<<<< DEBUG <<<<<<<<<<<<<<<<<<<<")
+        # println("\n<<<<<<<<<<<<<<<<<<<< DEBUG <<<<<<<<<<<<<<<<<<<<")
 
     # elseif lowercase(msg_text)=="/done for all" && chat_id==641681765
     #     try
@@ -371,11 +371,13 @@ function main()
         # @show df
         CSV.write("df.csv", df)
 
-        ## Backup
-        # t0 = string(now())
-        # csv_backup = "df_backup_h$(t0[12:13]).csv"
-        # csv_backup = "df_backup_h$(t0[12:13])m$(t0[15:16]).csv"
-        # CSV.write("$csv_backup", df)
+        ## Backup every k minutes
+        k=5
+        cfr = minute(now())
+        if (cfr%5==0)
+            csv_backup = "Backups/df_backup_h$(string(hour(now())))_m$(string(cfr)).csv"
+            CSV.write("$csv_backup", df)
+        end
     end
 end
 

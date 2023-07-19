@@ -76,7 +76,7 @@ end
 # end
 
 function is_valid_keyword(text)
-    if (lowercase(text) in KEYWORDS) || (lowercase(text[2:end]) in KEYWORDS)
+    if (lowercase(text) in KEYWORDS) || ( (lowercase(text[2:end]) in KEYWORDS) && (text[1]=='/') )
         return true
     end
     return false
@@ -98,12 +98,12 @@ function process_keyword_value(text, player_id)
 
     if key == "callme" && done==0
         # maybe one can still change his/her player_name even after /done
-        # no, meglio non permetterlo
         if in(val,df[:,:player_name])
             return "Error: name already taken."
         else
             set_player_data(player_id, :player_name, replace(val,r"\n+"=>""))
-            return "Game parameters updated.\nSee them with /summary."
+            # return "Game parameters updated.\nSee them with /summary."
+            return summary_player(player_id)
         end
     elseif key == "play" && done==0
         if uppercase(val) in STATES || val in STATES
