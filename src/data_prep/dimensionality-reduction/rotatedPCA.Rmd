@@ -45,7 +45,7 @@ pisa_data$LM_MINS = (pisa_data$LMINS+pisa_data$MMINS)/2
 head(pisa_data)
 ```
 
-## Data preprocessing 
+## Data preprocessing
 
 -\> standardize the variables
 

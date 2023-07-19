@@ -1,3 +1,7 @@
+---
+---
+---
+
 # Indeces to measure Well-Being
 
 ## References
@@ -21,13 +25,13 @@ library(ggplot2)
 ```
 
 ```{r}
-#DIRECTORIES
-root_proj_dir = "../../.."
-dataset_dir = paste(root_proj_dir,"/data/pisa_wPV_grouped_bysch.csv",sep="")
-include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
-#INCLUDING UTILITIES
-source(include_dir)
-#IMPORTING THE DATASET
+#DIRECTORIES 
+root_proj_dir = "../../.." 
+dataset_dir = paste(root_proj_dir,"/data/dataset_vecchi/pisa_wPV_grouped_bysch.csv",sep="")
+include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="") 
+#INCLUDING UTILITIES 
+source(include_dir) 
+#IMPORTING THE DATASET 
 pisa_data <- read.csv(file=dataset_dir)
 ```
 
@@ -72,7 +76,7 @@ grouped_variables[["Psychological Well-being"]] <- c("EUDMO","SWBP", "RESILIENCE
 grouped_variables[["Social Well-Being"]] <- c("EMOSUPS","BELONG","BEINGBULLIED")
 
 #all together
-grouped_variables[["Overall Well-Being"]] <- c("EUDMO","SWBP", "RESILIENCE", "COMPETE","EMOSUPS","BELONG","BEINGBULLIED","PERCOOP")
+grouped_variables[["Overall Well-Being"]] <- c("EUDMO","SWBP", "RESILIENCE","EMOSUPS","BELONG","BEINGBULLIED")
 
 #groups
 group_list <- names(grouped_variables)
@@ -158,8 +162,9 @@ for(group in group_list){
 ## Loadings
 
 ```{r}
+threshold <- 0.4
+
 for(group in group_list){
-  
   #EFA
   for(i in 1:nfactors[[group]]$FA){
     barplot(fit_FA_MinRes[[group]]$loadings[,i], 
@@ -167,10 +172,36 @@ for(group in group_list){
   }
   #rotated PCA
   for(i in 1:nfactors[[group]]$PC){
-    barplot(fit_PCA_rotated[[group]]$loadings[,i], 
+    barplot(ifelse(abs(fit_PCA_rotated[[group]]$loadings[,i])<threshold,
+                   0,
+                   fit_PCA_rotated[[group]]$loadings[,i]), 
             main = paste(group,"- PCA: Rotated Component",i),las=2,cex.names=0.7)
   }
 }
+```
+
+For graph purposes: Overall well-being
+
+```{r, dev='png', fig.path="/fig"}
+threshold <- 0.4
+
+pdf("fig/Well-Being index.pdf")
+
+par(mfrow=c(2,1))
+barplot(ifelse(abs(fit_PCA_rotated[["Overall Well-Being"]]$loadings[,1])<threshold,
+                   0,
+                   fit_PCA_rotated[[group]]$loadings[,1]), 
+            main = "PCA: Rotated Component -> Social Well-Being",
+        las=1,
+        cex.names=0.7)
+
+barplot(ifelse(abs(fit_PCA_rotated[["Overall Well-Being"]]$loadings[,2])<threshold,
+                   0,
+                   fit_PCA_rotated[[group]]$loadings[,2]), 
+            main = "PCA: Rotated Component -> Psychological Well-Being",
+        las=1,
+        cex.names=0.7)
+dev.off()
 ```
 
 Thresholdings the loadings to compute alpha
@@ -290,6 +321,6 @@ psych::alpha(pisa_data[, c("EUDMO","SWBP", "RESILIENCE", "COMPETE","EMOSUPS","BE
 SocialWB <- fit_PCA_rotated[["Social Well-Being"]]$loadings
 PsychologicalWB <- fit_PCA_rotated[["Psychological Well-being"]]$loadings
 
-save(SocialWB, file = "SocialWB_loadings.RData")
-save(PsychologicalWB, file = "PsychologicalWB_loadings.RData")
+# save(SocialWB, file = "SocialWB_loadings.RData")
+# save(PsychologicalWB, file = "PsychologicalWB_loadings.RData")
 ```
