@@ -115,7 +115,7 @@ function handle_command(msg)
     if msg_text == "/start"
         # @show chat_id
         sendMessage(tg,
-            text="Hello $(who)!\nTechnically, you for me are $chat_id",
+            text="Hello $(who)!\nTechnically, you for me are player_$chat_id",
             # text="Hello $(who)!\nTechnically, you for me are $(who==chat_id ? "still $chat_id" : "$chat_id")",
             chat_id=chat_id)
         sendMessage(tg,
@@ -127,6 +127,35 @@ function handle_command(msg)
     elseif msg_text == "/help"
         print_help(chat_id)
 
+    ####################### FINISH HERE #######################
+    elseif msg_text == "/raneff"
+        if get_player_data(player_id,:zdone) == 1
+            to_send = """
+                     ESP (Spain) +0.854351
+                   HRV (Croatia) +0.312717
+                    GRC (Greece) +0.271466
+                   DNK (Denmark) +0.263203
+                   HUN (Hungary) +0.169692
+                LUX (Luxembourg) +0.148089
+                  SVN (Slovenia) +0.005719
+                    FRA (France) +0.005187
+            ──────────────────────────────
+                 LTU (Lithuania) -0.094808
+                   FIN (Finland) -0.134974
+                  SVK (Slovakia) -0.303477
+                   EST (Estonia) -0.437927
+            CZE (Czech Republic) -0.456532
+                    POL (Poland) -0.602706
+            """
+            sendMessage(tg, 
+                text=to_send,
+                chat_id=chat_id)
+        else
+            sendMessage(tg, 
+                text="Before letting you see the solutions (i.e. the random effects associated to the countries) please complete your game. Otherwise that would be cheating!",
+                chat_id=chat_id)
+        end   
+    ####################### FINISH HERE #######################
 
     elseif msg_text == "/done"
         if get_player_data(player_id,:zdone) == 1
@@ -172,8 +201,12 @@ function handle_command(msg)
 
     elseif msg_text == "/results"
         sendMessage(tg,
-            text="Remember, your fist play is the one which determined your position. Come here to see it!\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
+            text="Your fist play is the one which determined your position in the scoreboard. Come here to see it!\nhttps://github.com/federicomor/project_game_scoreboard/blob/main/scoreboard.md",
             chat_id = chat_id)
+        sendMessage(tg,
+            text="Also, try /raneff to see the \"solutions\" (as knowing them you could have cheated!), i.e. which are the effects of picking different states, according to what we found in our analysis.",
+            chat_id = chat_id)
+
 
 
     elseif msg_text == "/state"
@@ -194,7 +227,8 @@ function handle_command(msg)
             *SVN* = Slovenia
             *ESP* = Spain
             
-            How to set your parameters: send a message in the form "keyword value" (where keyword is now _play_). So for example _play FRA_ will select France as your country to play with."""
+            How to set your parameters: send a message in the form "keyword value" (where keyword is now _play_).
+            So for example _play FRA_ will select France as your country to play with."""
             #*LUX* = Luxembourg
         sendMessage(tg,
             text=to_send,
@@ -215,12 +249,13 @@ function handle_command(msg)
             Invest in increasing teachers' skills, in hiring more qualified people, etc.
             *sch* = school
             Manage schools to have enough materials and personal, balance student/professors ratio, class sizes, introduce external activities, etc.
-            *stu* = culture
+            *stu* = students
             Make students spend more time studying, and in general enjoying cultural activities, like reading, playing small challenges, also toghether with their classmates, etc.
             *fam* = family
-            Increase the educational resources that family can give to their children, and try to also support them financially, with bonuses, etc.
+            Increase the educational resources that family can give to their children, with bonuses, etc.
 
-            How to set your parameters: send a message in the form "keyword value" (where keywords are now _tec, tch, sch, stu, fam_). So for example _tec 30_ will select to invest 30% of your budget in the category technology."""
+            How to set your parameters: send a message in the form "keyword value" (where keywords are now _tec, tch, sch, stu, fam_).
+            So for example _tec 30_ will select to invest 30% of your budget in the category technology."""
         sendMessage(tg,
             text=to_send,
             chat_id = chat_id,
@@ -271,10 +306,10 @@ function handle_command(msg)
             commad = replace(msg_text,"/exec" => "")
             println(">>>>>>>>>>>>>>>>>>>> DEBUG >>>>>>>>>>>>>>>>>>>>\n$commad")
             eval(Meta.parse(commad))
-            println("\n<<<<<<<<<<<<<<<<<<<< DEBUG <<<<<<<<<<<<<<<<<<<<")
         catch e
             @show e
         end
+        println("\n<<<<<<<<<<<<<<<<<<<< DEBUG <<<<<<<<<<<<<<<<<<<<")
 
     # elseif lowercase(msg_text)=="/done for all" && chat_id==641681765
     #     try

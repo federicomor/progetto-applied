@@ -1,4 +1,4 @@
-STATES = [ "HRV" "CZE" "DNK" "EST" "FIN" "FRA" "GRC" "HUN" "LTU" "POL" "SVK" "SVN" "ESP" ] # "LUX" 
+STATES = [ "HRV" "CZE" "DNK" "EST" "FIN" "FRA" "GRC" "HUN" "LTU" "POL" "SVK" "SVN" "ESP" "LUX" ]
 
 FULL_STATES = Dict(
     "HRV"=>"Croatia",
@@ -13,8 +13,8 @@ FULL_STATES = Dict(
     "POL"=>"Poland",
     "SVK"=>"Slovakia",
     "SVN"=>"Slovenia",
+    "LUX"=>"Luxembourg",
     "ESP"=>"Spain" )
-    # "LUX"=>"Luxembourg",
 
 CATEGORIES = ["tec" "tch" "sch" "stu" "fam"]
 KEYWORDS = ["callme" "play" "tec" "tch" "sch" "stu" "fam"]
