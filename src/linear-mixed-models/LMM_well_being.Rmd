@@ -177,8 +177,12 @@ for (soglia in SOGLIA_RANGE ){
 
 
 # [2.5] Tentativo con leverages, residui, distanza di cook
-
 ## Social
+
+### Removing influential points
+
+Leverages
+
 ```{r}
 fit = lm(FORMULA_SOCIAL,data=data)
 summary(fit)
@@ -192,34 +196,41 @@ n=dim(data)[1]
 fs=summary(fit)
 
 #soglia per leverages è 2*p/n
-watchout_points_lev = lev[ which( lev > 2 * p/n ) ]
-watchout_ids_lev = seq_along( lev )[ which( lev > 2 * p/n ) ]
+
+threshold_lev <- 0.012 #rule of thumb 2*p/n = 0.01102435 (seems to low frmo the plot)
+
+watchout_points_lev = lev[ which( lev > threshold_lev) ]
+watchout_ids_lev = seq_along( lev )[ which( lev > threshold_lev) ]
 
 plot(fit$fitted.values,lev,pch=16, ylab='lev',xlab='Fitted values',main='Leverages')
-abline(h=2*p/n,col='red')
+abline(h=threshold_lev,col='red')
 points( fit$fitted.values[ watchout_ids_lev ], watchout_points_lev, col = 'red', pch = 16 )
 #molti valori sopra soglia
 
-sum(lev[lev>2*p/n])
+sum(lev[lev>threshold_lev])
 #somma è 1.65, punti leva pesano 33%
-fit2=lm(FORMULA_SOCIAL,data=data,subset=(lev<2*p/n))
+fit2=lm(FORMULA_SOCIAL,data=data,subset=(lev<threshold_lev))
 summary(fit2)
 #R^2 adj
 
 abs((fit$coefficients-fit2$coefficients)/fit$coefficients)
 #Impatto delle leve sui beta
+```
 
+Standardized residuals
 
-
+```{r}
 #Residui standardizzati
 
 res_std=fit$res/fs$sigma
 
 plot(fit$fitted.values,res_std, pch=16, main='Standardized Residuals',ylab='res',xlab='Fitted values')
-abline(h=c(-2,2),col='red')
 
+threshold_std_res <- 4
+
+abline(h=c(-threshold_std_res,threshold_std_res),col='red')
 #punto influente se res standardizzato >2
-watchout_ids_rstd = which( abs( res_std ) > 2 )
+watchout_ids_rstd = which( abs( res_std ) > threshold_std_res )
 watchout_rstd = res_std[ watchout_ids_rstd ]
 
 points( fit$fitted.values[watchout_ids_rstd],
@@ -227,13 +238,17 @@ points( fit$fitted.values[watchout_ids_rstd],
 points( fit$fitted.values[watchout_ids_lev],
         res_std[watchout_ids_lev], col = 'orange', pch = 16 )
 #in rosso residui alti, in arancione leve
+```
 
+Studentized residuals
 
-
+```{r}
 #Residui studentizzati
 stud = rstandard( fit )
 
-watchout_ids_stud = which( abs( stud ) > 2 )
+threshold_stud_res <- 4
+
+watchout_ids_stud = which( abs( stud ) > threshold_stud_res )
 watchout_stud = stud[ watchout_ids_stud ]
 
 plot( fit$fitted.values, stud, ylab = 'res',xlab='Fitted values', main = "Studentized Residuals", pch = 16 )
@@ -241,25 +256,35 @@ points( fit$fitted.values[watchout_ids_stud],
         stud[watchout_ids_stud], col = 'pink', pch = 16 )
 points( fit$fitted.values[watchout_ids_lev],
         stud[watchout_ids_lev], col = 'orange', pch = 16 )
-abline( h = c(-2,2), col = 'red' )
+abline( h = c(-threshold_stud_res,threshold_stud_res), col = 'red' )
 #Residui e residui studentizzati sembrano rilevare stessi punti
+```
 
+Cook's distance
 
-
+```{r}
 #Distanza di Cook
 Cdist = cooks.distance( fit )
 
-watchout_ids_Cdist = which( Cdist > 4/(n-p) )
+threshold_cook_dist <- 0.01 #rule of thumb 4/(n-p)=0.0009237875 seems too low
+
+watchout_ids_Cdist = which( Cdist >threshold_cook_dist )
 watchout_Cdist = Cdist[ watchout_ids_Cdist ]
 
 plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values',
       ylab = 'distance', main = 'Cooks Distance' )
-abline(h=4/(n-p), col='red')
+abline(h=threshold_cook_dist, col='red')
 points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ],
         col = 'green', pch = 16 )
+points( fit$fitted.values[watchout_ids_stud],
+        Cdist[watchout_ids_stud], col = 'pink', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev] ,
+        Cdist[watchout_ids_lev], col = 'orange', pch = 16 )
+```
 
+Removing all the influential poitns
 
-
+```{r}
 #punti da tenere non notevoli
 id_to_keep1 = !(1:n %in% watchout_ids_Cdist)
 id_to_keep2 = !(1:n %in% watchout_ids_stud)
@@ -267,10 +292,7 @@ id_to_keep3 = !(1:n %in% watchout_ids_rstd)
 id_to_keep4 = !(1:n %in% watchout_ids_lev)
 
 id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4
-```
-
-
-```{r}
+id_to_keep_SOCIAL = id_to_keep
 #tolgo tutte le righe notevoli
 dati_soc_woo=subset(data,id_to_keep)
 ID_TO_KEEP_SOCIAL = id_to_keep
@@ -281,19 +303,13 @@ print(paste("Percentuale di dati sopravvissuti:",dim(dati_soc_woo)[1]/dim(data)[
 
 fit_fin=lm(FORMULA_SOCIAL, dati_soc_woo)
 summary(fit_fin)
-#R^2 adj è 0.6861 -> alto
-#R^2 adj è 0.6898 -> alto (con la modifica di Ettore alla Formula)
-
-```
-
-## Problemino LUX
-```{r}
-for (state in STATES)
-	print(paste("#",state,"=",sum(dati_soc_woo==state)))
 ```
 
 
 ## Psych
+
+### Removing influential points
+
 ```{r}
 fit = lm(FORMULA_PSYCH,data=data)
 summary(fit)
@@ -305,36 +321,46 @@ sum(lev)
 p=fit$rank
 n=dim(data)[1]
 fs=summary(fit)
+```
 
-#soglia per leverages è 2*p/n
-watchout_points_lev = lev[ which( lev > 2 * p/n ) ]
-watchout_ids_lev = seq_along( lev )[ which( lev > 2 * p/n ) ]
+Leverages
+
+```{r}
+#rule of thumb: 2*p/n
+threshold_lev <- 0.012
+
+watchout_points_lev = lev[ which( lev > threshold_lev) ]
+watchout_ids_lev = seq_along( lev )[ which( lev > threshold_lev) ]
 
 plot(fit$fitted.values,lev,pch=16, ylab='lev',xlab='Fitted values',main='Leverages')
-abline(h=2*p/n,col='red')
+abline(h=threshold_lev,col='red')
 points( fit$fitted.values[ watchout_ids_lev ], watchout_points_lev, col = 'red', pch = 16 )
 #molti valori sopra soglia
 
-sum(lev[lev>2*p/n])
+sum(lev[lev>threshold_lev])
+
 #somma è 1.65, punti leva pesano 33%
-fit2=lm(FORMULA_PSYCH,data=data,subset=(lev<2*p/n))
+fit2=lm(FORMULA_PSYCH,data=data,subset=(lev<threshold_lev))
 summary(fit2)
 #R^2 adj
 
 abs((fit$coefficients-fit2$coefficients)/fit$coefficients)
 #Impatto delle leve sui beta
+```
 
+Standardized residuals
 
-
+```{r}
 #Residui standardizzati
-
 res_std=fit$res/fs$sigma
 
+threshold_std_res <- 5
+
 plot(fit$fitted.values,res_std, pch=16, main='Standardized Residuals',ylab='res',xlab='Fitted values')
-abline(h=c(-2,2),col='red')
+abline(h=c(-threshold_std_res,threshold_std_res),col='red')
 
 #punto influente se res standardizzato >2
-watchout_ids_rstd = which( abs( res_std ) > 2 )
+watchout_ids_rstd = which( abs( res_std ) > threshold_std_res )
 watchout_rstd = res_std[ watchout_ids_rstd ]
 
 points( fit$fitted.values[watchout_ids_rstd],
@@ -342,39 +368,51 @@ points( fit$fitted.values[watchout_ids_rstd],
 points( fit$fitted.values[watchout_ids_lev],
         res_std[watchout_ids_lev], col = 'orange', pch = 16 )
 #in rosso residui alti, in arancione leve
+```
 
+Studentized residuals
 
-
+```{r}
 #Residui studentizzati
 stud = rstandard( fit )
 
-watchout_ids_stud = which( abs( stud ) > 2 )
+threshold_stud_res <- 5
+
+watchout_ids_stud = which( abs( stud ) > threshold_stud_res)
 watchout_stud = stud[ watchout_ids_stud ]
 
 plot( fit$fitted.values, stud, ylab = 'res',xlab='Fitted values', main = "Studentized Residuals", pch = 16 )
+points( fit$fitted.values[watchout_ids_rstd],
+        stud[watchout_ids_rstd], col = 'orange', pch = 16 )
 points( fit$fitted.values[watchout_ids_stud],
         stud[watchout_ids_stud], col = 'pink', pch = 16 )
 points( fit$fitted.values[watchout_ids_lev],
-        stud[watchout_ids_lev], col = 'orange', pch = 16 )
-abline( h = c(-2,2), col = 'red' )
+        stud[watchout_ids_lev], col = 'red', pch = 16 )
+abline( h = c(-threshold_stud_res,threshold_stud_res), col = 'red' )
 #Residui e residui studentizzati sembrano rilevare stessi punti
+```
 
+Cook's distance
 
-
+```{r}
 #Distanza di Cook
 Cdist = cooks.distance( fit )
 
-watchout_ids_Cdist = which( Cdist > 4/(n-p) )
+threshold_cook_dist <- 0.025
+
+watchout_ids_Cdist = which( Cdist > threshold_cook_dist) #rule of thumb 4/(n-p)
 watchout_Cdist = Cdist[ watchout_ids_Cdist ]
 
 plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values',
       ylab = 'distance', main = 'Cooks Distance' )
-abline(h=4/(n-p), col='red')
+abline(h=threshold_cook_dist, col='red')
 points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ],
         col = 'green', pch = 16 )
+```
 
+Identified outliers
 
-
+```{r}
 #punti da tenere non notevoli
 id_to_keep1 = !(1:n %in% watchout_ids_Cdist)
 id_to_keep2 = !(1:n %in% watchout_ids_stud)
@@ -384,6 +422,7 @@ id_to_keep4 = !(1:n %in% watchout_ids_lev)
 id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4
 ```
 
+Removing outliers
 
 ```{r}
 #tolgo tutte le righe notevoli
@@ -393,21 +432,12 @@ dim(dati_psi_woo)
 #si scende a circa 3978 (circa 91% dei dati)
 print(paste("From",dim(data)[1],"obs we moved to",dim(dati_psi_woo)[1]))
 print(paste("Percentuale di dati sopravvissuti:",dim(dati_psi_woo)[1]/dim(data)[1]*100,"%"))
-
-fit_fin=lm(FORMULA_PSYCH, dati_psi_woo)
-summary(fit_fin)
-#R^2 adj è 0.6861 -> alto
-#R^2 adj è 0.5068 -> alto ma meno alto (con la modifica di Ettore alla Formula)
-
-```
-## Problemino LUX
-```{r}
-for (state in STATES)
-	print(paste("#",state,"=",sum(dati_psi_woo==state)))
 ```
 
 
-# Salvataggio dataset versione-2
+
+
+# [2.7] Salvataggio dataset versione-2.5 (Marco update)
 ```{r}
 write.csv(dati_soc_woo,"../../data/data_social_woo.csv")
 write.csv(dati_psi_woo,"../../data/data_psych_woo.csv")
@@ -472,6 +502,7 @@ data_psych_woo_scaled = read.csv("../../data/data_psych_woo_scaled.csv")
 
 ```{r}
 fit_social_lm = lm(   FORMULA_SOCIAL,    data=data_social_woo)
+summary(fit_social_lm)
 fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=data_social_woo_scaled)
 
 fit_psych_lm = lm(   FORMULA_PSYCH,    data=data_psych_woo)
@@ -483,9 +514,9 @@ fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=data_psych_woo_scaled)
 # [4] Assumptions LM
 ```{r}
 #############################
-fit = fit_social_lm
+fit = fit_social_lm # 0.6887
 df = data_social_woo
-# fit = fit_psych_lm
+# fit = fit_psych_lm # 0.5068
 # df = data_psych_woo
 #############################
 res = fit$residuals
