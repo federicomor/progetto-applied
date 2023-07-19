@@ -150,7 +150,11 @@ sigma_b/(sigma_b+sigma_eps)
 MERF
 
 ```{r}
-varImpPlot(fit_lmerf$forest.model)
+pdf("VarImpPlot.pdf")
+varImpPlot(fit_lmerf$forest.model, 
+           main = "Importance plot"
+           )
+dev.off()
 ```
 
 LMM
@@ -185,7 +189,7 @@ Significant variables: Teacher.skills, HEDRES, COMPINTICT, ATTLNACT, PV1READ
 significant_variables <- c("Teacher.skills", "HEDRES", "COMPINTICT", "ATTLNACT", "PV1READ")
 
 
-pdf("fig/significant_vars.pdf")
+pdf("fig/significant_vars2.pdf")
 par(mfrow=c(2,2))
 #pdf("fig/tch_skills.pdf")
 partialPlot(fit_lmerf$forest.model,
@@ -207,23 +211,31 @@ partialPlot(fit_lmerf$forest.model,
 abline(a = 0, b = betas$HEDRES, col = "red")
 #dev.off()
 
-#pdf("fig/ATTLNACT.pdf")
+#pdf("fig/ESCS.pdf")
 partialPlot(fit_lmerf$forest.model,
               pred.data = data,
-              x.var = "ATTLNACT",
-              main = "Dependence on students' attitude towards learning",
+              x.var = "ESCS",
+              main = "Dependence on students' economic status",
               ylab = "Social Well-Being"
             )
-abline(a = 0, b = betas$ATTLNACT, col = "red")
 #dev.off()
 
 #pdf("fig/PV1READ.pdf")
 partialPlot(fit_lmerf$forest.model,
               pred.data = data,
               x.var = "PV1READ",
-              main = "Dependence on students' performance in reading",
+              main = "Dependence on students performance: reading",
               ylab = "Social Well-Being"
             )
 abline(a = 0, b = betas$PV1READ, col = "red")
 dev.off()
+```
+
+```{r}
+partialPlot(fit_lmerf$forest.model,
+              pred.data = data,
+              x.var = "ESCS",
+              main = "Dependence on students' economic status",
+              ylab = "Social Well-Being"
+            )
 ```
