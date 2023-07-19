@@ -1,0 +1,87 @@
+---
+title: "R Notebook"
+# output: html_notebook
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r}
+library(car)
+library(MVN)
+library(mvtnorm)
+library(mvnormtest)
+
+library(ggplot2)
+library(grid)
+library(sf)
+library(dplyr)
+library(rnaturalearth)
+
+library(sp)
+
+library(ggrepel)
+library(tmap)
+library(knitr)
+
+```
+
+
+# [1] Definizione dataset finale
+Standardizziamo quello creato da Marco.
+
+```{r}
+data = read.csv("random-forest/std_scores_data_wo_outliers.csv")
+data = data[,-c(1)] # togliamo la X
+colnames(data)
+numerical_variables = c(1:28)
+boxplot(data[,numerical_variables], main="Before std")
+
+data_scaled = data
+data_scaled[,numerical_variables] = scale(data_scaled[,numerical_variables])
+boxplot(data_scaled[,numerical_variables], main="After std")
+
+write.csv(data_scaled,"data_woo_really_final.csv")
+```
+
+
+```{r}
+diag(var(data[,numerical_variables]))
+barplot(diag(var(data[,numerical_variables])),main="Before std")
+
+diag(var(data_scaled[,numerical_variables]))
+barplot(diag(var(data_scaled[,numerical_variables])),main="After std")
+```
+
+
+# [2] Definizione variabili finali
+Si trova qui nella formula, altrimenti nel file "data/non csv/lm_social_vars - Marco version.txt".
+```{r}
+FORMULA_SOCIAL = formula("Social.well.being ~
+						 CompInt.ICT+ Teacher.skills+ ENTUSE+ CULTPOSS+ ATTLNACT+ 
+						 LM_MINS+ PROAT5AB+ CLSIZE+ CREACTIV+ SCHSIZE+ PV1READ+ 
+						 (1|CNT)")
+fileConn<-file("../data/non csv/lm_social_vars - Marco version.txt")
+writeLines(c(
+	"CompInt.ICT",
+	"Teacher.skills",
+	"ENTUSE",
+	"CULTPOSS",
+	"ATTLNACT",
+	"LM_MINS",
+	"PROAT5AB",
+	"CLSIZE",
+	"CREACTIV",
+	"SCHSIZE",
+	"PV1READ"
+	), 
+	fileConn)
+close(fileConn)
+
+```
+
+
+
+
+
+
+

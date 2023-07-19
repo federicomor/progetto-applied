@@ -311,8 +311,9 @@ coef(regfit.fullSWB, num_var_SWB)
 # [5] Fitting
 
 ```{r}
+dati_final = read.csv("../../data/data_woo_really_final.csv")
 fit_social_lm = lm(   FORMULA_SOCIAL,    data=dati_soc_woo)
-fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=dati_soc_woo)
+fit_social_lmm = lmer(FORMULA_SOCIAL_LMM,data=dati_final)
 ```
 
 Summaries
