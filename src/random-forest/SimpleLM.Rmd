@@ -1,4 +1,4 @@
-# Linear Mixed Effects Model
+# Simple LM with CNT as covariate
 
 ## Settings
 
@@ -321,7 +321,9 @@ res <- residuals.lm(fit_social_lm)
 # homoschedasticity
 boxplot(res ~ df$CNT,las=2)
 
+pdf("residual_plot.pdf")
 plot(fitted(fit_social_lm), res, col = df$CNT)
+dev.off
 ```
 
 # [6] Evaluation

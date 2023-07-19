@@ -1,4 +1,4 @@
-# Linear Mixed Effects Model
+# LMM vs MERF
 
 ## Settings
 
@@ -14,6 +14,7 @@ library(lme4)
 library(nlmeU) ## --> for the dataset
 library(nlme)  ## --> for models implementation
 
+library(dplyr)
 library(corrplot)
 library(lattice)
 library(plot.matrix)
@@ -33,7 +34,7 @@ source("funzione_LMERF.R")
 #IMPORTING THE DATASET
 
 #using the new dataset in this very folder
-data <- read.csv(file="std_scores_data_wo_outliers.csv")
+data <- read.csv(file="scores_data_wo_outliers.csv")
 head(data)
 ```
 
@@ -69,6 +70,8 @@ data <- data[shuffled_rows_index,]
 
 #view the target
 boxplot(data$Social.well.being, main = "Social.well.being")
+
+write.csv(data, "very_last_dataset.csv")
 ```
 
 # [1] Definizione formule
@@ -76,15 +79,16 @@ boxplot(data$Social.well.being, main = "Social.well.being")
 ```{r}
 #MERF
 regressors <- names(data)
-to_discard <- c("CNT", "Social.well.being", "Psychological.well.being", "SCHLTYPE","SchoolUse.ICT")
+to_discard <- c("CNT", "Social.well.being", "Psychological.well.being", "SCHLTYPE","SchoolUse.ICT", "PV1MATH")
 regressors <- regressors[!regressors %in% to_discard]
 #formula object
 FORMULA_MERF <- paste(paste("Social.well.being","~"), paste(c(regressors,"(1|CNT)"), collapse = "+"))
 
 #LMM
-selected_regressors <- c("CompInt.ICT","Teacher.skills", "HEDRES","CULTPOSS","ATTLNACT","PROAT5AB","CLSIZE","CREACTIV","SCHSIZE","PV1READ","LM_MINS", "ENTUSE")
+selected_regressors <- c("CompInt.ICT","Teacher.skills","HEDRES","ATTLNACT","PROAT5AM","RATCMP1","JOYREAD","EDUSHORT","PV1READ","LM_MINS", "ENTUSE")
 
-FORMULA_LMM <- paste(paste("Social.well.being","~"), paste(c(selected_regressors,"(1|CNT)"), collapse = "+"))
+FORMULA_LMM <- "Social.well.being ~ PV1READ + ATTLNACT + Teacher.skills + CompInt.ICT +  
+    HEDRES + LM_MINS + JOYREAD + RATCMP1 + ENTUSE + PROAT5AM + EDUSHORT + (1 | CNT)"
 ```
 
 # [2] Fitting
@@ -180,38 +184,45 @@ Significant variables: Teacher.skills, HEDRES, COMPINTICT, ATTLNACT, PV1READ
 ```{r}
 significant_variables <- c("Teacher.skills", "HEDRES", "COMPINTICT", "ATTLNACT", "PV1READ")
 
-pdf("fig/tch_skills.pdf")
+
+pdf("fig/significant_vars.pdf")
+par(mfrow=c(2,2))
+#pdf("fig/tch_skills.pdf")
 partialPlot(fit_lmerf$forest.model,
               pred.data = data,
               x.var = "Teacher.skills",
-              main = "Dependence on Teaching skills"
+              main = "Dependence on Teaching skills",
+              ylab = "Social Well-Being"
             )
 abline(a = 0, b = betas$Teacher.skills, col = "red")
-dev.off()
+#dev.off()
 
-pdf("fig/HEDRES.pdf")
+#pdf("fig/HEDRES.pdf")
 partialPlot(fit_lmerf$forest.model,
               pred.data = data,
               x.var = "HEDRES",
-              main = "Dependence on students' perceived competence in using ICT"
+              main = "Dependence on educational resources at home",
+              ylab = "Social Well-Being"
             )
 abline(a = 0, b = betas$HEDRES, col = "red")
-dev.off()
+#dev.off()
 
-pdf("fig/ATTLNACT.pdf")
+#pdf("fig/ATTLNACT.pdf")
 partialPlot(fit_lmerf$forest.model,
               pred.data = data,
               x.var = "ATTLNACT",
-              main = "Dependence on students' attitude towards learning"
+              main = "Dependence on students' attitude towards learning",
+              ylab = "Social Well-Being"
             )
 abline(a = 0, b = betas$ATTLNACT, col = "red")
-dev.off()
+#dev.off()
 
-pdf("fig/PV1READ.pdf")
+#pdf("fig/PV1READ.pdf")
 partialPlot(fit_lmerf$forest.model,
               pred.data = data,
               x.var = "PV1READ",
-              main = "Dependence on students' performance in reading"
+              main = "Dependence on students' performance in reading",
+              ylab = "Social Well-Being"
             )
 abline(a = 0, b = betas$PV1READ, col = "red")
 dev.off()

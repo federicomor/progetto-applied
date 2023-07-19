@@ -1,4 +1,4 @@
-# Mixed Effect Random Forest
+# Mixed Effect Random Forest: SocialWB
 
 ## Settings
 

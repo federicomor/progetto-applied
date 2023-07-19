@@ -1,4 +1,4 @@
-# Linear Mixed Effects Model
+# Linear Mixed Effects Model: SocialWB
 
 ## Settings
 
