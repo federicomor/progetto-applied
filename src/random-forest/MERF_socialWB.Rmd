@@ -184,11 +184,16 @@ for(reg in regressors[randomForest::importance(fit_lmerf$forest.model) > thresho
 Dependence on teacher degree
 
 ```{r}
+n <- length(pisa_data$PROAT5AB)
+
+plot(pisa_data$PROAT5AB, 0*rep(0,n), type = "l")
 partialPlot(fit_lmerf$forest.model,
-              pred.data = pisa_data,
-              x.var = "PROAT5AB",
-              main = paste("Dependence on PROAT5AB")
+            pred.data = pisa_data,
+            x.var = "PROAT5AB",
+            main = paste("Dependence on PROAT5AB"),
+            add = TRUE
               )
+abline(h = 0)
 
 partialPlot(fit_lmerf$forest.model,
               pred.data = pisa_data,

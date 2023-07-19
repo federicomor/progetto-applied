@@ -17,6 +17,7 @@ library(nlme)  ## --> for models implementation
 library(corrplot)
 library(lattice)
 library(plot.matrix)
+library(dplyr)
 
 library(insight)
 ```
@@ -36,6 +37,13 @@ data <- read.csv(file="std_scores_data.csv")
 head(data)
 ```
 
+```{r}
+MSE <- function(fit, target){
+  y_hat <- fitted(fit)
+  return(mean((target-y_hat)^2))
+}
+```
+
 ## Data preprocessing
 
 ```{r}
@@ -47,6 +55,30 @@ IM_PUBLIC = rep(0,dim(data)[1])
 IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
 data$IM_PUBLIC = as.factor(IM_PUBLIC)
 data$SCHLTYPE <- NULL
+```
+
+Standardizing
+
+```{r}
+#standardizing
+transformed_data <- as.data.frame(scale(select_if(data,is.numeric)))
+transformed_data$CNT <- data$CNT #adding CNT column
+transformed_data$SCHLTYPE <- data$IM_PUBLIC
+
+data <- transformed_data
+rm(transformed_data)
+data$X <- NULL
+
+#check on data 
+boxplot(select_if(data,is.numeric),las=2)
+
+
+#shuffle data
+shuffled_rows_index <- sample(1:nrow(data))
+data <- data[shuffled_rows_index,]
+
+#view the target
+boxplot(data$Social.well.being, main = "Social.well.being")
 ```
 
 # [1] Definizione formule
@@ -75,6 +107,23 @@ FORMULA_COMPLETE_PSYCH_LMM <- paste(paste("Psychological.well.being","~"), paste
 ```
 
 # [2] Variable selection: first round
+
+TO DO: try this directly on mixed models
+
+```{r}
+# fm <- lme(distance ~age*Sex, random = ~ 1|Subject,data=Orthodont,method='ML')
+# Terms <- terms(fm)
+# todrop <-  1:length(attr(Terms,'term.labels'))
+# subs <- unlist(sapply(todrop,function(p)
+# combn(todrop,p,simplify=F)),recursive =F)
+# fm.subList <- lapply(subs[-length(subs)],function(s,...){
+#   newf<- formula(drop.terms(terms(fm),s,keep.response = TRUE))
+#   update(fm,newf)
+# })
+# names(fm.subList) <- sapply(fm.subList, function(x) paste('fm',attr(
+# terms(x),'term.labels'),sep='.'))
+# sort(sapply(fm.subList,BIC))   
+```
 
 ## Social WB
 
@@ -136,13 +185,13 @@ abline(v = which.min(reg.summaryPWB$bic), col = "red")
 # Note: ind = how many coefficients has the model
 num_var_PWB = which.min(reg.summaryPWB$bic)
 num_var_PWB
-coef(regfit.full, num_var_PWB)
+coef(regfit.fullPWB, num_var_PWB)
 ```
 
 Selected variables
 
 ```{r}
-full = names(coef(regfit.full,num_var_PWB)) # Exhaustive search
+full = names(coef(regfit.fullPWB,num_var_PWB)) # Exhaustive search
 
 selected_vars_PWB<- full[2:num_var_PWB]
 selected_vars_PWB
@@ -274,6 +323,9 @@ id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4
 
 #tolgo tutte le righe notevoli
 dati_soc_woo=subset(data,id_to_keep)
+
+write.csv(dati_soc_woo,"std_scores_data_wo_outliers.csv")
+
 ID_TO_KEEP_SOCIAL = id_to_keep
 dim(dati_soc_woo)
 #si scende a circa 3964 (circa 91% dei dati)
@@ -499,11 +551,11 @@ abline(v = which.min(reg.summaryPWB$bic), col = "red")
 # Note: ind = how many coefficients has the model
 num_var_PWB = which.min(reg.summaryPWB$bic)
 num_var_PWB
-coef(regfit.full, num_var_PWB)
+coef(regfit.fullPWB, num_var_PWB)
 ```
 
 ```{r}
-full = names(coef(regfit.full,num_var_PWB)) # Exhaustive search
+full = names(coef(regfit.fullPWB,num_var_PWB)) # Exhaustive search
 
 selected_vars_PWB<- full[2:num_var_PWB]
 selected_vars_PWB
@@ -525,7 +577,21 @@ fit_psych_lm = lm(   FORMULA_PSYCH,    data=dati_psi_woo)
 fit_psych_lmm = lmer(FORMULA_PSYCH_LMM,data=dati_psi_woo)
 ```
 
-## Assumptions 
+Summaries
+
+```{r}
+summary(fit_social_lm)
+
+summary(fit_social_lmm)
+```
+
+```{r}
+recap <- summary(fit_social_lmm)
+rownames(recap$coefficients)[2:13]
+
+```
+
+## Assumptions
 
 Fixed part
 
@@ -578,6 +644,10 @@ boxplot(res ~ df$CNT,las=2)
 
 ```{r}
 AIC(fit_social_lmm)
+
+
+
+MSE(fit_social_lm, dati_soc_woo$Social.well.being)
 ```
 
 # [7] Interpretations

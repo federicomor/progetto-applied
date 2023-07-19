@@ -1,0 +1,378 @@
+# Linear Mixed Effects Model
+
+## Settings
+
+```{r}
+library(mvtnorm)
+library(MASS)
+library(car)
+library(rgl)
+library(leaps)
+library(ISLR)
+library(glmnet)
+library(lme4)
+library(nlmeU) ## --> for the dataset
+library(nlme)  ## --> for models implementation
+
+library(corrplot)
+library(lattice)
+library(plot.matrix)
+library(dplyr)
+
+library(insight)
+```
+
+Directories
+
+```{r}
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/pisa_scores_final.csv",sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+
+#using the new dataset in this very folder
+data <- read.csv(file="std_scores_data.csv")
+head(data)
+```
+
+```{r}
+MSE <- function(fit, target){
+  y_hat <- fitted(fit)
+  return(mean((target-y_hat)^2))
+}
+```
+
+## Data preprocessing
+
+```{r}
+data$X <- NULL
+data$SCHLTYPE <- as.factor(data$SCHLTYPE)
+data$CNT <- as.factor(data$CNT)
+
+IM_PUBLIC = rep(0,dim(data)[1])
+IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
+data$IM_PUBLIC = as.factor(IM_PUBLIC)
+data$SCHLTYPE <- NULL
+```
+
+Standardizing
+
+```{r}
+#standardizing
+transformed_data <- as.data.frame(scale(select_if(data,is.numeric)))
+transformed_data$CNT <- data$CNT #adding CNT column
+transformed_data$SCHLTYPE <- data$IM_PUBLIC
+
+data <- transformed_data
+rm(transformed_data)
+data$X <- NULL
+
+#check on data 
+boxplot(select_if(data,is.numeric),las=2)
+
+
+#shuffle data
+shuffled_rows_index <- sample(1:nrow(data))
+data <- data[shuffled_rows_index,]
+
+#view the target
+boxplot(data$Social.well.being, main = "Social.well.being")
+```
+
+# [1] Definizione formule
+
+Social well-being
+
+```{r}
+regressors <- names(data)
+to_discard <- c("Social.well.being", "Psychological.well.being", "SCHLTYPE","PV1MATH", "SchoolUse.ICT")
+regressors <- regressors[!regressors %in% to_discard]
+
+#formula object
+FORMULA_COMPLETE_SOCIAL  <- paste("Social.well.being", paste(regressors, collapse = "+"), sep ="~")
+```
+
+# [2] Variable selection
+
+```{r}
+regfit.fullSWB = regsubsets(as.formula(FORMULA_COMPLETE_SOCIAL), 
+                            data=data, 
+                            nvmax=length(regressors), 
+                            method = "exhaustive")
+reg.summarySWB = summary(regfit.fullSWB)
+
+# Plots
+plot(reg.summarySWB$bic, xlab="Number of Variables", ylab="BIC", type="b")
+abline(v = which.min(reg.summarySWB$bic))
+
+plot(reg.summarySWB$adjr2)
+abline(v = which.max(reg.summarySWB$adjr2))
+abline(v = which.min(reg.summarySWB$bic), col = "red")
+
+# We want the model with max r.adj^2 so we extract the coefficients of that model
+# Note: ind = how many coefficients has the model
+num_var_SWB <- which.max(reg.summarySWB$adjr2)
+num_var_SWB 
+coef(regfit.fullSWB, num_var_SWB)
+```
+
+Selected variables
+
+```{r}
+fullSWB = names(coef(regfit.fullSWB, num_var_SWB)) # Exhaustive search
+
+selected_vars_SWB<- c(fullSWB[2:13],"CNT")
+
+FORMULA_SOCIAL  <- paste("Social.well.being", paste(selected_vars_SWB, collapse = "+"), sep ="~")
+
+#rapid check on the fit
+fit = lm(FORMULA_SOCIAL,data=data)
+summary(fit)
+```
+
+# [3] Gestione outliers
+
+## Removing influential points
+
+Leverages
+
+```{r}
+fit = lm(FORMULA_SOCIAL,data=data)
+summary(fit)
+
+#Punti leva
+lev=hatvalues(fit)
+sum(lev)
+
+p=fit$rank
+n=dim(data)[1]
+fs=summary(fit)
+
+#soglia per leverages è 2*p/n
+
+threshold_lev <- 0.04 #rule of thumb 2*p/n = 0.01102435 (seems to low frmo the plot)
+
+watchout_points_lev = lev[ which( lev > threshold_lev) ]
+watchout_ids_lev = seq_along( lev )[ which( lev > threshold_lev) ]
+
+plot(fit$fitted.values,lev,pch=16, ylab='lev',xlab='Fitted values',main='Leverages')
+abline(h=threshold_lev,col='red')
+points( fit$fitted.values[ watchout_ids_lev ], watchout_points_lev, col = 'red', pch = 16 )
+#molti valori sopra soglia
+
+sum(lev[lev>threshold_lev])
+#somma è 1.65, punti leva pesano 33%
+fit2=lm(FORMULA_SOCIAL,data=data,subset=(lev<threshold_lev))
+summary(fit2)
+#R^2 adj
+
+abs((fit$coefficients-fit2$coefficients)/fit$coefficients)
+#Impatto delle leve sui beta
+```
+
+Standardized residuals
+
+```{r}
+#Residui standardizzati
+
+res_std=fit$res/fs$sigma
+
+plot(fit$fitted.values,res_std, pch=16, main='Standardized Residuals',ylab='res',xlab='Fitted values')
+
+threshold_std_res <- 4
+
+abline(h=c(-threshold_std_res,threshold_std_res),col='red')
+#punto influente se res standardizzato >2
+watchout_ids_rstd = which( abs( res_std ) > threshold_std_res )
+watchout_rstd = res_std[ watchout_ids_rstd ]
+
+points( fit$fitted.values[watchout_ids_rstd],
+        res_std[watchout_ids_rstd], col = 'red', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev],
+        res_std[watchout_ids_lev], col = 'orange', pch = 16 )
+#in rosso residui alti, in arancione leve
+```
+
+Studentized residuals
+
+```{r}
+#Residui studentizzati
+stud = rstandard( fit )
+
+threshold_stud_res <- 4
+
+watchout_ids_stud = which( abs( stud ) > threshold_stud_res )
+watchout_stud = stud[ watchout_ids_stud ]
+
+plot( fit$fitted.values, stud, ylab = 'res',xlab='Fitted values', main = "Studentized Residuals", pch = 16 )
+points( fit$fitted.values[watchout_ids_stud],
+        stud[watchout_ids_stud], col = 'pink', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev],
+        stud[watchout_ids_lev], col = 'orange', pch = 16 )
+abline( h = c(-threshold_stud_res,threshold_stud_res), col = 'red' )
+#Residui e residui studentizzati sembrano rilevare stessi punti
+```
+
+Cook's distance
+
+```{r}
+#Distanza di Cook
+Cdist = cooks.distance( fit )
+
+threshold_cook_dist <- 0.008 #rule of thumb 4/(n-p)=0.0009237875 seems too low
+
+watchout_ids_Cdist = which( Cdist >threshold_cook_dist )
+watchout_Cdist = Cdist[ watchout_ids_Cdist ]
+
+plot( fit$fitted.values, Cdist, pch = 16, xlab = 'Fitted values',
+      ylab = 'distance', main = 'Cooks Distance' )
+abline(h=threshold_cook_dist, col='red')
+points( fit$fitted.values[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ],
+        col = 'green', pch = 16 )
+points( fit$fitted.values[watchout_ids_stud],
+        Cdist[watchout_ids_stud], col = 'pink', pch = 16 )
+points( fit$fitted.values[watchout_ids_lev] ,
+        Cdist[watchout_ids_lev], col = 'orange', pch = 16 )
+```
+
+Removing all the influential poitns
+
+```{r}
+#punti da tenere non notevoli
+id_to_keep1 = !(1:n %in% watchout_ids_Cdist)
+id_to_keep2 = !(1:n %in% watchout_ids_stud)
+id_to_keep3 = !(1:n %in% watchout_ids_rstd)
+id_to_keep4 = !(1:n %in% watchout_ids_lev)
+
+id_to_keep=id_to_keep1 & id_to_keep2 &id_to_keep3 & id_to_keep4
+
+#tolgo tutte le righe notevoli
+dati_soc_woo=subset(data,id_to_keep)
+
+#write.csv(dati_soc_woo,"std_scores_data_wo_outliers.csv")
+
+ID_TO_KEEP_SOCIAL = id_to_keep
+dim(dati_soc_woo)
+#si scende a circa 3964 (circa 91% dei dati)
+print(paste("From",dim(data)[1],"obs we moved to",dim(dati_soc_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(dati_soc_woo)[1]/dim(data)[1]*100,"%"))
+
+fit_fin=lm(FORMULA_SOCIAL, dati_soc_woo)
+summary(fit_fin)
+```
+
+## Comparing the assumptions
+
+```{r}
+suppressWarnings({fit_data = lm(FORMULA_SOCIAL,data=data)})
+res = residuals(fit_data)
+qqnorm(res,main="data", ylim=c(-6,6))
+qqline(res,col="red")
+
+suppressWarnings({fit_data_soc_woo = lm(FORMULA_SOCIAL,data=dati_soc_woo)})
+res = residuals(fit_data_soc_woo)
+qqnorm(res,main="data_soc_woo", ylim=c(-6,6))
+qqline(res,col="red")
+```
+
+# [4] Variable selection: second round on new data
+
+Keep same variables as before
+
+```{r}
+regfit.fullSWB = regsubsets(as.formula(FORMULA_SOCIAL), 
+                            data=dati_soc_woo, 
+                            nvmax=13)
+reg.summarySWB = summary(regfit.fullSWB)
+
+# Plots
+plot(reg.summarySWB$bic, xlab="Number of Variables", ylab="BIC", type="b")
+abline(v = which.min(reg.summarySWB$bic))
+
+plot(reg.summarySWB$adjr2)
+abline(v = which.max(reg.summarySWB$adjr2))
+abline(v = which.min(reg.summarySWB$bic), col = "red")
+
+# We want the model with max r.adj^2 so we extract the coefficients of that model
+# Note: ind = how many coefficients has the model
+num_var_SWB <- which.min(reg.summarySWB$bic)
+num_var_SWB 
+coef(regfit.fullSWB, num_var_SWB)
+```
+
+# [5] Fitting
+
+```{r}
+fit_social_lm = lm(FORMULA_SOCIAL,  data=dati_soc_woo)
+summary(fit_social_lm)
+
+```
+
+## Assumptions
+
+Fixed part
+
+```{r}
+df <- dati_soc_woo
+res <- residuals.lm(fit_social_lm)
+
+# homoschedasticity
+boxplot(res ~ df$CNT,las=2)
+
+plot(fitted(fit_social_lm), res, col = df$CNT)
+```
+
+# [6] Evaluation
+
+```{r}
+MSE(fit_social_lm, dati_soc_woo$Social.well.being)
+```
+
+# [7] Interpretations
+
+## Dotplots
+
+### Social
+
+```{r}
+fit = fit_social_lmm
+
+dotplot(ranef(fit, condVar=T))$CNT
+ranef(fit)
+```
+
+# [8] Analisi outliers
+
+```{r}
+data_out_social = subset(data,!ID_TO_KEEP_SOCIAL)
+dim(data_out_social)
+```
+
+## Social
+
+```{r}
+###########################
+df_out = data_out_social
+target = "Social.well.being"
+
+
+for (i in 1:length(STATES)) { # STATES sta in Utilities
+	print(paste(STATES[i],":",sum(df_out$CNT==STATES[i]),"outliers // out of",
+		  sum(data$CNT==STATES[i]),"obs originally // %lost =",
+					sum(df_out$CNT==STATES[i])/sum(data$CNT==STATES[i])*100))
+}
+```
+
+*Social*: CZE, FIN, LTU, POL, SVK =\> sono peggiori della medie dei dati "normali" ESP, LUX =\> sono migliori della medie dei dati "normali"
+
+Forse ci sta, già ESP era lo stato migliore secondo il LMM, e LUX è uno stato molto ricco. Quindi magari togliendo gli outliers sono state rimosse scuole fin troppo belle nella già bella SPA, e lo stesso vale per LUX.
+
+*Psych*: Sembra molto più sottile qui la questione. Ma comunque ancora ESP e LUX mostrano un comportamento superiore di poco alla media. Insieme ora anche a Croazia (HRV) e DNK.
+
+```{r}
+mean_target_woo = mean(df_out[,target])
+boxplot(df_out[,target] ~ df_out[,"CNT"],col = colora(14),las=2,main=target)
+abline(h=mean_target_woo)
+```
