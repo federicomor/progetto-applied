@@ -1,9 +1,9 @@
 ############# paramteri importanti #############
 CALLING_FROM_TERMINAL = 0
-FILTER_DONE = 0
+FILTER_DONE = 1
 
 ############# parametri meno importanti #############
-NEED_TO_COMPUTE_SCORE = 1
+NEED_TO_ASSIGN_SCORE = 0
 WRITE_NEW_DF_scored = 0
 
 if CALLING_FROM_TERMINAL==1
@@ -28,10 +28,10 @@ else
 	score_data=df
 end
 
-if NEED_TO_COMPUTE_SCORE==1
+if NEED_TO_ASSIGN_SCORE==1
 	println("Computing the score.")
 	for idd in df.player_id
-		compute_score(idd)
+		set_player_data(idd,:score,compute_score(idd))
 	end
 score_data=df
 end
@@ -45,7 +45,6 @@ else
 	score_data=df
 end
 
-
 # Filtering who actually provided a state
 score_data = score_data[.!isequal.(df.state,"missing"),:]
 
@@ -58,17 +57,42 @@ end
 # println("Sorting the data.")
 sort!(score_data,:score,rev=true)
 # ora il dataset è ordinato
-println(score_data)
+# println(score_data)
 
-correzione_punteggio = 0
-if minimum(score_data.score)<0
-	shift = abs(minimum(score_data.score))
-	pietà = 10+rand((MersenneTwister(34))) # punteggio minimo
-	correzione_punteggio = shift*100 + pietà
-	# correzione_punteggio = (shift+pietà)*100
-else
-	correzione_punteggio = 0
-end
+##### VERSIONE 1 #####
+# correzione_punteggio = 0
+# if minimum(score_data.score)<0
+# 	shift = abs(minimum(score_data.score))
+# 	pietà = 10+rand((MersenneTwister(34))) # punteggio minimo
+# 	correzione_punteggio = shift*100 + pietà
+# 	# correzione_punteggio = (shift+pietà)*100
+# else
+# 	correzione_punteggio = 0
+# end
+
+##### VERSIONE 2 #####
+# correzione_punteggio = 0
+# if minimum(score_data.score)<0
+# 	shift = abs(minimum(score_data.score))
+# 	pietà = rand((MersenneTwister(34))) # punteggio minimo
+# 	correzione_punteggio = (shift + 1 + pietà )*100 #+ pietà
+# 	# correzione_punteggio = (shift+pietà)*100
+# else
+# 	correzione_punteggio = 0
+# end
+
+# ##### VERSIONE 3 #####
+# correzione_punteggio = 0
+# b = 0
+# if minimum(score_data.score)<0
+# 	shift = abs(minimum(score_data.score))
+# 	b = 700
+# 	pietà = rand((MersenneTwister(34))) # punteggio minimo
+# 	correzione_punteggio = (shift+pietà)*100 #+ pietà
+# 	# correzione_punteggio = (shift+pietà)*100
+# else
+# 	correzione_punteggio = 0
+# end
 
 
 ############# Scoreboard 1 #############
@@ -98,13 +122,14 @@ end
 
 
 ############# Scoreboard 2 #############
-println("Writing scoreboard 2...")
+# println("Writing scoreboard 2...")
 f = open("project_game_scoreboard/scoreboard.md", "w")
 
 write(f,"# 🚩 Live Scoreboard\n")
-write(f,"Game ends at 19:00!   \n")
+write(f,"Game ends at 19:00!      \n")
 t = now()
-write(f,"Last update at time $(string(t)[12:16])\n")
+write(f,"Last update at time $(string(t)[12:16])      \n")
+# write(f,"*Scores have been scaled to better highlight subtle differences among players.*    \n")
 write(f,"```R\n")
 
 # t_end = Dates.Time(19,00,00)
@@ -114,11 +139,23 @@ write(f,"```R\n")
 
 # P = barplot(string.(data[:,:player_name]," [",string.(data[:,:state]),"] ",lpad.(1:size(data)[1],3)), # con spazio uguale tra stringhe e cifre
 
+# DILATION = 1.9
+# SHIFT = ceil(maximum(abs.(score_data[:,:score] .* DILATION)))
+# FINAL_SCALE = 100
+
+DILATION = 1
+pietà = rand((MersenneTwister(34)))
+SHIFT = abs.(minimum(score_data[:,:score] .* DILATION))+pietà
+FINAL_SCALE = 1
+
 P = barplot(string.(score_data[:,:player_name],
 	" [",string.(score_data[:,:state]),"] ", # mostra anche lo stato scelto
 	# " ", # così no invece, solo player_name
 	1:size(score_data)[1] ),
-	round.(score_data[:,:score] .* 100 .+ correzione_punteggio,digits=4),
+	round.( 
+		# (score_data[:,:score] .* 100 .+ correzione_punteggio)
+		(@. (score_data[:,:score] * DILATION + SHIFT)*FINAL_SCALE ) 
+		,digits=4),
 	# width=:auto,
 	width = 30, # così stretta che forse dal telefono si vede meglio
 	# nevermind si può scorrere
@@ -129,7 +166,7 @@ P = barplot(string.(score_data[:,:player_name],
 
 savefig(P,"plot.txt")
 
-println(P)
+# println(P)
 
 for line in eachline("plot.txt")
 	write(f,"$(replace("$line\n", r".*[┌|└].*" => ""))")

@@ -131,21 +131,21 @@ function handle_command(msg)
     elseif msg_text == "/raneff"
         if get_player_data(player_id,:zdone) == 1
             to_send = """
-                     ESP (Spain) +0.854351
-                   HRV (Croatia) +0.312717
-                    GRC (Greece) +0.271466
-                   DNK (Denmark) +0.263203
-                   HUN (Hungary) +0.169692
-                LUX (Luxembourg) +0.148089
-                  SVN (Slovenia) +0.005719
-                    FRA (France) +0.005187
-            ──────────────────────────────
-                 LTU (Lithuania) -0.094808
-                   FIN (Finland) -0.134974
-                  SVK (Slovakia) -0.303477
-                   EST (Estonia) -0.437927
-            CZE (Czech Republic) -0.456532
-                    POL (Poland) -0.602706
+            +0.906426  ESP (Spain)   
+            +0.279068  HRV (Croatia)   
+            +0.277136  GRC (Greece)   
+            +0.267955  DNK (Denmark)   
+            +0.190131  HUN (Hungary)   
+            +0.147317  LUX (Luxembourg)   
+            +0.043440  FRA (France)   
+            +0.011563  SVN (Slovenia)   
+            ───────────────
+            -0.092002  LTU (Lithuania)    
+            -0.170615  FIN (Finland)    
+            -0.305620  SVK (Slovakia)    
+            -0.419468  EST (Estonia)    
+            -0.472384  CZE (Czech Republic)    
+            -0.662948  POL (Poland)    
             """
             sendMessage(tg, 
                 text=to_send,
@@ -184,7 +184,8 @@ function handle_command(msg)
                 set_player_data(player_id, :zdone, 1)
                 sendMessage(tg,
                     text="Game parameters confirmed! We are now computing your score for the global scoreboard (see it through /results).\n*Alert*\nThis score, of your first play, is the one which will appear in the scoreboard. However you can still experiment with the bot, trying different parameters, see how your score would have changed, and so on.",
-                    chat_id=chat_id)
+                    chat_id=chat_id,
+                    parse_mode="Markdown")
                 set_player_data(player_id,:score,compute_score(player_id))
                 include("visualize_score.jl")
             end
@@ -221,6 +222,7 @@ function handle_command(msg)
             *FRA* = France
             *GRC* = Greece
             *HUN* = Hungary
+            *LUX* = Luxembourg
             *LTU* = Lithuania
             *POL* = Poland
             *SVK* = Slovakia

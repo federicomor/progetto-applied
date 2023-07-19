@@ -82,7 +82,7 @@ end
 
 ############# Creazione fit #############
 # data = DataFrame(CSV.File("data_social_woo.csv"))
-data = DataFrame(CSV.File("data_woo_really_final.csv"))
+data = DataFrame(CSV.File("very_last_dataset.csv"))
 
 v = names(data)
 cnames =replace.(v,"."=>"_")
@@ -90,18 +90,10 @@ rename!(data, Symbol.(cnames))
 
 FORMULA_social_LMM = @formula(
     Social_well_being ~
-    CompInt_ICT+ Teacher_skills+ HEDRES+  CULTPOSS+ ATTLNACT+ 
-    PROAT5AB+ CLSIZE+ CREACTIV+ SCHSIZE+ PV1READ+ LM_MINS+ ENTUSE
-    +(1|CNT))
+    CompInt_ICT+ Teacher_skills+ ENTUSE+ ATTLNACT+ LM_MINS+ PROAT5AM+
+    PV1READ+ HEDRES + JOYREAD + RATCMP1 + EDUSHORT+ 
+    (1|CNT))
 
-# Social_well_being ~
-#     Approach_to_ICT+ Use_of_ICT+ Teachers__degree+ Teacher_skill+ ESCS+ 
-#     RATCMP1+ ICTSCH+ HEDRES+ STUBEHA+ ATTLNACT+ JOYREAD+ PROAT6+ CLSIZE+
-#     EDUSHORT+ STAFFSHORT+ PV1MATH+ PV1READ+
-#     (1|CNT))
-
-
-# lmodel = lm(FORMULA_social_LM,data)
 lmmodel = fit(MixedModel, FORMULA_social_LMM, data)
 
 rnames = ["CNT","Intercept"]
@@ -122,68 +114,39 @@ function compute_score(player_id)
     ############# start prediction #############
     # usare mean(data[:,:ECC]) se vogliamo scartare le variabili che non riteniamo controllabili
 
+    
+
     nobs_LMM = Dict(
-        "Social_well_being" => 345,
-        "Approach_to_ICT" => quantile(data[:,:Approach_to_ICT],get_player_data(player_id,"tec")/100),
-        "Use_of_ICT" => quantile(data[:,:Use_of_ICT],get_player_data(player_id,"tec")/100),
-        "Teachers__degree" => quantile(data[:,:Teachers__degree],get_player_data(player_id,"tch")/100),
-        "Teacher_skill" => quantile(data[:,:Teacher_skill],get_player_data(player_id,"tch")/100),
-        "ESCS" => quantile(data[:,:ESCS],get_player_data(player_id,"fam")/100),
-        "RATCMP1" => quantile(data[:,:RATCMP1],get_player_data(player_id,"tec")/100),
-        "ICTSCH" => quantile(data[:,:ICTSCH],get_player_data(player_id,"tec")/100),
-        "HEDRES" => quantile(data[:,:HEDRES],get_player_data(player_id,"fam")/100),
-        "STUBEHA" => quantile(data[:,:STUBEHA],get_player_data(player_id,"stu")/100),
-        "ATTLNACT" => quantile(data[:,:ATTLNACT],get_player_data(player_id,"stu")/100),
-        "JOYREAD" => quantile(data[:,:JOYREAD],get_player_data(player_id,"stu")/100),
-        "PROAT6" => quantile(data[:,:PROAT6],get_player_data(player_id,"tch")/100),
-        "CLSIZE" => quantile(data[:,:CLSIZE],get_player_data(player_id,"sch")/100),
-        "EDUSHORT" => quantile(data[:,:EDUSHORT],get_player_data(player_id,"sch")/100),
-        "STAFFSHORT" => quantile(data[:,:STAFFSHORT],get_player_data(player_id,"sch")/100),
-        "PV1MATH" => quantile(data[:,:PV1MATH],get_player_data(player_id,"stu")/100),
-        "PV1READ" => quantile(data[:,:PV1READ],get_player_data(player_id,"stu")/100),
+        "Social_well_being" => 0, # julia vuole la response column inizializzata a qualcosa
+
+        "CompInt_ICT" => quantile(data[:,:CompInt_ICT],
+            min(get_player_data(player_id,"tec")/100+0.5,1)),
+        "Teacher_skills" => quantile(data[:,:Teacher_skills],
+            min(get_player_data(player_id,"tch")/100+0.5,1)),
+        "ENTUSE" => mean(data[:,:ENTUSE]),
+        "ATTLNACT" => mean(data[:,:ATTLNACT]),
+        "LM_MINS" => quantile(data[:,:LM_MINS],
+            min(get_player_data(player_id,"stu")/100+0.5,1)),
+        "PROAT5AM" => quantile(data[:,:PROAT5AM],
+            min(get_player_data(player_id,"tch")/100+0.5,1)),
+        "PV1READ" => quantile(data[:,:PV1READ],
+            min(get_player_data(player_id,"stu")/100+0.5,1)),
+        "HEDRES" => quantile(data[:,:HEDRES],
+            min(get_player_data(player_id,"fam")/100+0.5,1)),
+        "JOYREAD" => mean(data[:,:JOYREAD]),
+        "RATCMP1" => quantile(data[:,:RATCMP1],
+            min(get_player_data(player_id,"tec")/100+0.5,1)),
+        "EDUSHORT" => quantile(data[:,:EDUSHORT],
+            min(get_player_data(player_id,"sch")/100+0.5,1)),
+
         "CNT" => get_player_data(player_id,"state")
     )
     nobs_LMM = DataFrame(nobs_LMM)
-
-    # nobs_LM = 1 # intercetta
-    # nobs_LM = [nobs_LM quantile(data[:,:Approach_to_ICT],get_player_data(player_id,"tec")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:Use_of_ICT],get_player_data(player_id,"tec")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:Teachers__degree],get_player_data(player_id,"tch")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:Teacher_skill],get_player_data(player_id,"tch")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:ESCS],get_player_data(player_id,"fam")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:RATCMP1],get_player_data(player_id,"tec")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:ICTSCH],get_player_data(player_id,"tec")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:HEDRES],get_player_data(player_id,"fam")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:STUBEHA],get_player_data(player_id,"stu")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:ATTLNACT],get_player_data(player_id,"stu")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:JOYREAD],get_player_data(player_id,"stu")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:PROAT6],get_player_data(player_id,"tch")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:CLSIZE],get_player_data(player_id,"sch")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:EDUSHORT],get_player_data(player_id,"sch")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:STAFFSHORT],get_player_data(player_id,"sch")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:PV1MATH],get_player_data(player_id,"stu")/100) ]
-    # nobs_LM = [nobs_LM quantile(data[:,:PV1READ],get_player_data(player_id,"stu")/100) ]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "DNK"]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "ESP"]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "EST"]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "FIN"]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "FRA"]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "GRC"]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "HRV"]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "HUN"]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "LTU"]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "LUX"]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "POL"]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "SVK"]
-    # nobs_LM = [nobs_LM get_player_data(player_id,"state") == "SVN"]
-    # nobs_LM = [nobs_LM quantile(data[:,:IM_PUBLIC],1-get_player_data(player_id,"sch")/100) ]
-
-    # score_LM = predict(lmodel,nobs_LM)[1]
     score_LMM = predict(lmmodel,nobs_LMM)[1]
 
-    # score += 2*abs(minimum(data[:,:Social_well_being]))
-    # score *= 100
-    ## shift perché lo scoreboard non riesce a plottare valori negativi
+    # se vogliamo pesare di più la scelta dello stato
+    # score_LMM += raneff[raneff.CNT .== get_player_data(player_id,"state"),:Intercept][1]
+
     ## Update: aggiusta tutto dopo quando fa il grafico
     ############# end #############
     return score_LMM
