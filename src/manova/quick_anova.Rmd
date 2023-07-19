@@ -196,6 +196,7 @@ create_beautiful_radarchart <- function(data, color = "#7C7BB2",
 ############################
 SAVE_PLOTS=1
 ############################
+par(mar=c(0,5,1,3))
 
 for(i in 1:g){
 	# avg_vals_df[c(1,2,i),]
@@ -203,6 +204,8 @@ for(i in 1:g){
 	if(SAVE_PLOTS==1){
 		svg(name)
 		print(name)
+par(mar=c(0,5,1,3))
+
 		create_beautiful_radarchart(RADAR_MATRIX[c(1,2,i+2),],title=treat[i])
 		dev.off()
 	} else{
