@@ -1,0 +1,65 @@
+################ R ################
+Linear mixed model fit by REML ['lmerMod']
+Formula: Social.well.being ~ CompInt.ICT + Teacher.skills + ENTUSE + CULTPOSS +  
+    ATTLNACT + LM_MINS + PROAT5AB + CLSIZE + STAFFSHORT + CREACTIV +  
+    SCHSIZE + PV1READ + (1 | CNT)
+
+################ Julia ################
+Linear mixed model fit by maximum likelihood
+ Social_well_being ~ 1 + CompInt_ICT + Teacher_skills + HEDRES + CULTPOSS + ATTLNACT + PROAT5AB + CLSIZE + CREACTIV + SCHSIZE + PV1READ + LM_MINS + ENTUSE + (1 | CNT)
+
+
+Random effects:
+######################## R ###################################### Julia ########################
+Groups   Name        Variance Std.Dev.   //              Column   Variance Std.Dev.
+CNT      (Intercept) 0.1434   0.3787     //  CNT      (Intercept)  0.138079 0.371590
+Residual             0.4232   0.6505     //  Residual              0.418911 0.647233
+NNumber of obs: 4311, groups:  CNT, 14   //  Number of obs: 4311; levels of grouping factors: 14
+
+Fixed effects:
+######################## R ###################################### Julia ########################
+                Estimate Std. Error t value                            Coef.  Std. Error      z  Pr(>|z|)
+(Intercept)    -0.131509   0.102086  -1.288  //  (Intercept)     -0.133243     0.100196   -1.33    0.1836
+ATTLNACT        0.220221   0.012761  17.257  //  ATTLNACT         0.219615     0.012696   17.30    <1e-66
+CLSIZE         -0.007102   0.011775  -0.603  //  CLSIZE          -0.0108762    0.0117345  -0.93    0.3540
+CompInt.ICT     0.136509   0.014366   9.502  //  CompInt_ICT      0.13489      0.0142939   9.44    <1e-20
+CREACTIV       -0.003040   0.011052  -0.275  //  CREACTIV         1.43341e-5   0.0109955   0.00    0.9990
+CULTPOSS        0.009925   0.013802   0.719  //  CULTPOSS        -0.0191461    0.0146694  -1.31    0.1918
+ENTUSE         -0.023914   0.011763  -2.033  //  ENTUSE          -0.0337546    0.011833   -2.85    0.0043
+LM_MINS        -0.071261   0.017161  -4.153  //  HEDRES           0.0793376    0.0141635   5.60    <1e-07
+PROAT5AB        0.002600   0.016879   0.154  //  LM_MINS         -0.0682753    0.01705    -4.00    <1e-04
+PV1READ         0.282283   0.014538  19.417  //  PROAT5AB         0.00480912   0.0167905   0.29    0.7746
+SCHSIZE         0.015339   0.012368   1.240  //  PV1READ          0.260946     0.0149277  17.48    <1e-67
+STAFFSHORT      0.002412   0.010920   0.221  //  SCHSIZE          0.0140347    0.0122843   1.14    0.2532
+Teacher.skills  0.104590   0.010796   9.688  //  Teacher_skills   0.103898     0.0107416   9.67    <1e-21
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────
