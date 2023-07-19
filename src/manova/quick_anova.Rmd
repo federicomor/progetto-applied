@@ -38,13 +38,19 @@ df_social <- read.csv(file=path_social)
 df_psych <- read.csv(file=path_psych)
 ```
 
+## UPDATE dopo analisi finale
+```{r}
+df_social = read.csv("../../data/very_last_dataset.csv")
+```
+
+
 # On social
 ```{r}
 colnames(df_social)
 
 ##### Scegline uno per volta #####
-covariates <- readLines("../../data/non csv/lm_social_vars.txt")
-# covariates <- readLines("../../data/non csv/lm_psico_vars.txt")
+# covariates <- readLines("../../data/non csv/lm_social_vars.txt")
+covariates <- readLines("../../data/non csv/lm_social_vars - Marco version.txt")
 ##### Scegline uno per volta #####
 
 targets = c(
@@ -53,6 +59,39 @@ targets = c(
 )
 
 model_variables = c(covariates,targets)
+```
+
+## UPDATE riordiniamo per categorie le variabili
+```{r}
+model_variables_ord = c(
+	# target
+	"Social.well.being",
+	"Psychological.well.being",
+	# sch
+	"EDUSHORT",
+	# tch
+	"PROAT5AM",
+	"Teacher.skills" ,
+	# fam
+	 "HEDRES",
+	# stu
+	"JOYREAD",
+	"PV1READ",
+	"LM_MINS" ,
+	"ATTLNACT",
+	# tec
+	"RATCMP1",
+	"ENTUSE" ,
+	"CompInt.ICT"
+) 
+length(model_variables) == length(model_variables_ord)
+```
+
+
+
+
+```{r}
+model_variables = model_variables_ord
 Glabel = factor(df_social$CNT)
 Blabel = factor(df_social$IM_PUBLIC)
 GBlabel = factor(df_social$NEW_VAR)
@@ -135,7 +174,7 @@ for(i in 1:g){
 
 # prima color era questo #1A8FBF
 create_beautiful_radarchart <- function(data, color = "#7C7BB2", 
-                                        vlabels = colnames(data), vlcex = 0.8,
+                                        vlabels = colnames(data), vlcex = 1,
                                         caxislabels = NULL, title = NULL, ...){
   radarchart(
     data, axistype =0, calcex=0.7,
@@ -143,20 +182,33 @@ create_beautiful_radarchart <- function(data, color = "#7C7BB2",
     pcol = color, pfcol = scales::alpha(color, 0.3), plwd = 2, plty = 1,
     # Customize the grid
     # cglcol = "#BBBBBB", cglty = 1, cglwd = 0.8,
-    cglcol = "#C1C1C1", cglty = 1, cglwd = 0.8,
+    cglcol = "#C1C1C1", cglty = 1, cglwd = 1,
     # Customize the axis
     # axislabcol = "#889999", 
     axislabcol = "#A7C6DD", 
+    # vlabcol = colori_fun(3),
     # Variable labels
     vlcex = vlcex, vlabels = vlabels,
     caxislabels = caxislabels, title = title, ...
   )
 }
 # colors()
+############################
+SAVE_PLOTS=1
+############################
 
 for(i in 1:g){
 	# avg_vals_df[c(1,2,i),]
-	create_beautiful_radarchart(RADAR_MATRIX[c(1,2,i+2),],title=treat[i])
+	name = paste0("Plots/radar_plot_",treat[i],".svg")
+	if(SAVE_PLOTS==1){
+		svg(name)
+		print(name)
+		create_beautiful_radarchart(RADAR_MATRIX[c(1,2,i+2),],title=treat[i])
+		dev.off()
+	} else{
+		create_beautiful_radarchart(RADAR_MATRIX[c(1,2,i+2),],title=treat[i])
+		# abline(a = 0,b=2,lty=2,xlim=c(0,10))
+	}
 }
 
 ```
@@ -517,7 +569,7 @@ TESTING = 0
 
 iters = length(model_variables)
 if(SAVE_SOCIAL_PLOT==1){
-svg("maps_anova_single.svg")
+svg("Plots/maps_anova_single.svg")
 	iters=1
 }
 if(TESTING==1){
