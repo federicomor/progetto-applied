@@ -1,6 +1,6 @@
 ############# paramteri importanti #############
 CALLING_FROM_TERMINAL = 0
-FILTER_DONE = 1
+FILTER_DONE = 0
 
 ############# parametri meno importanti #############
 NEED_TO_ASSIGN_SCORE = 0
@@ -36,17 +36,15 @@ if NEED_TO_ASSIGN_SCORE==1
 score_data=df
 end
 
-if FILTER_DONE==1 && sum(isequal.(df.zdone,1))>=1
-	score_data = score_data[isequal.(df.zdone,1),:]
-end
-if FILTER_DONE==1
-	score_data = df[isequal.(df.zdone,1),:]
-else
-	score_data=df
-end
+# if FILTER_DONE==1 && sum(isequal.(df.zdone,1))>=1
+	# score_data = score_data[isequal.(df.zdone,1),:]
+# end
+# if FILTER_DONE==0
+	score_data = score_data[isequal.(score_data.zdone,1),:]
+# end
 
 # Filtering who actually provided a state
-score_data = score_data[.!isequal.(df.state,"missing"),:]
+score_data = score_data[.!isequal.(score_data.state,"missing"),:]
 
 
 if WRITE_NEW_DF_scored==1

@@ -13,7 +13,6 @@ using CSV
 dotenv()
 println(getMe())
 
-BOT_API = "6203755027:AAFvDKYwPUSFJeOHs97fjjpuzk2vF9kBaws"
 tg = TelegramClient(BOT_API)
 @show ARGS
 
@@ -157,20 +156,20 @@ function handle_command(msg)
         end   
     ####################### FINISH HERE #######################
 
+    # elseif msg_text == "/done"
+    #     if get_player_data(player_id,:zdone) == 1
+    #         sendMessage(tg,
+    #             text="Your first game was the one who determined your position in the scoreboard (for that, see /results). With the new parameters you provided, your score would have been...\n$(round(compute_score(player_id),digits=4))\nagainst your recorded one of\n$(round(get_player_data(player_id,:score),digits=4))",
+    #             chat_id=chat_id)
+    #     else
+    #         sendMessage(tg,
+    #             text="*Danger zone!*\nYou are about to confirm your game parameters, the ones from which we compute your score. If your are sure, type \"/done yes\" to actually confirm them.",
+    #             chat_id=chat_id,
+    #             parse_mode="Markdown")
+    #     end
+
+
     elseif msg_text == "/done"
-        if get_player_data(player_id,:zdone) == 1
-            sendMessage(tg,
-                text="Your first game was the one who determined your position in the scoreboard (for that, see /results). With the new parameters you provided, your score would have been...\n$(round(compute_score(player_id),digits=4))\nagainst your recorded one of\n$(round(get_player_data(player_id,:score),digits=4))",
-                chat_id=chat_id)
-        else
-            sendMessage(tg,
-                text="*Danger zone!*\nYou are about to confirm your game parameters, the ones from which we compute your score. If your are sure, type \"/done yes\" to actually confirm them.",
-                chat_id=chat_id,
-                parse_mode="Markdown")
-        end
-
-
-    elseif msg_text == "/done yes"
         if get_player_data(player_id,:state) == "missing"
             sendMessage(tg,
                 text="Please choose the state before confirming your parameters. See the options with /state.",
@@ -230,7 +229,7 @@ function handle_command(msg)
             *ESP* = Spain
             
             How to set your parameters: send a message in the form "keyword value" (where keyword is now _play_).
-            So for example _play FRA_ will select France as your country to play with."""
+            So for example *play FRA* will select France as your country to play with."""
             #*LUX* = Luxembourg
         sendMessage(tg,
             text=to_send,
@@ -257,7 +256,7 @@ function handle_command(msg)
             Increase the educational resources that family can give to their children, with bonuses, etc.
 
             How to set your parameters: send a message in the form "keyword value" (where keywords are now _tec, tch, sch, stu, fam_).
-            So for example _tec 30_ will select to invest 30% of your budget in the category technology."""
+            So for example *tec 30* will select to invest 30% of your budget in the category technology."""
         sendMessage(tg,
             text=to_send,
             chat_id = chat_id,

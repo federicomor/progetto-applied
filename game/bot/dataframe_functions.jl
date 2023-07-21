@@ -114,7 +114,7 @@ function compute_score(player_id)
     ############# start prediction #############
     # usare mean(data[:,:ECC]) se vogliamo scartare le variabili che non riteniamo controllabili
 
-    
+
 
     nobs_LMM = Dict(
         "Social_well_being" => 0, # julia vuole la response column inizializzata a qualcosa
@@ -161,7 +161,7 @@ function summary_player(player_id)
     amount_invested = get_amount_invested(player_id)
     str_return = "Total amount invested: $(round(amount_invested,digits=2)) "
     if amount_invested>100
-        str_return *= "(amount>100, we will normalize everything later, dont worry, or fix nom by inserting lower amounts) "
+        str_return *= "(amount>100, we will normalize everything later, dont worry, or fix now by inserting lower amounts) "
     end
 
     to_send = """
