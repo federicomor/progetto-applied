@@ -1,30 +1,41 @@
-# progetto-applied
-Progetto Applied Statistics
+# Final Project for the course of Applied Statistics
 
-# Utilizzo
-1. Scaricate github desktop.
-2. Fate il "clone" di questo repository in una vostra cartella locale.
+## Introduction
 
-I file qui online sono quelli ufficiali. Ognuno poi nel proprio pc ha questi file ufficiali a cui eventualmente può fare modifiche, che verranno poi "sincronizzate" con i file qui presenti. E github permette di gestire queste modifiche ai file in modo molto più easy:
+## Brief description of our analysis
 
-- quando ritenete definitive le modifiche che fate a certi file, e quindi volete caricarle qui nei file ufficiali, aprite l'app di Github Desktop e fate "push" di quelle modifiche (prima di fare push chiederà di fare commit, cioè di commentare/spiegare brevemente le modifiche fatte). 
+This project aims to analyze the well-being of students across various European countries by analyzing a range of several factors measured by OECD PISA questionnaires. The two main issues that we faced are the following:
 
-In questo modo anche tutti gli altri potranno poi scaricare la versione aggiornata dei file modificati.
+-   **Defining a proper score to measure the well-being of the students.** Indeed, the dataset contains various psychological measurements (such as scores for the students' degree of competitiviness, sense of belonging to the school, feeling of being bullied, ecc.), but no straight-forward definition of well-being is given. To define such score we relied on a rotated principal components analysis (rPCA) applied to groups of variables. The procedure we followed is described at `src/dimensionality-reduction`
 
-- quando volete scaricare i file aggiornati, o semplicemente controllare se ce ne sono, aprite l'app Github Desktop e (se ce ne sono) potete fare il "pull" dei file modificati, cioè scaricarli.
+-   **Deal with the hierarchical structure of the data.** Our dataset has a two-level hierarchical structure where students are nested in schools, which are nested in countries. We deal with this structure by:
 
-Questa operazione è consigliato farla praticamente sempre, per evitare di modificare file che in realtà erano già stati aggiornati da altri.
+    -   *Discarding the lower level of the hierarchy* (student level) by grouping by schools and taking the average over the students in the schools for each variable. Doing so we lost a lot of information at student level, but our choice was justified by the fact of comparing as many countries (i.e. school systems) as possible and working with so many students would have been unfeasible.
 
----
+    -   *Accounting for the grouping induced by countries using proper mixed effect models* to model the well-being scores that we computed. The models we used are Linear Mixed Effects Models (LMM) and Mixed Effects Random Forests (MERF). Details can be found at \`src/linear-mixed-models`and`\`src/random-forest\`
 
-Quindi è un modo per lavorare sempre con le versioni aggiornate dei file, e vedere quali update sono stati fatti, in quanto l'app di Github Desktop mostra anche gli update/le modifiche effettuate, cioè le differenze tra i file nuovi e quelli vecchi.
+## Structure
 
-# Struttura
-- *src* per i file di analisi effettiva, codice R, ecc
-- *data*, well, per i dataset, file csv, ecc
-- *showcase* per cose carine da includere nelle slide o nel potenziale poster, quindi grafici belli, interessanti, informativi, ecc, come anche solo promemoria
+-   `src` contains Rmarkdown notebooks where the analysis is actually performed
+-   `data` contains the datasets used in the analysis
+-   `showcase` contains the slides for the work-in-progress presentation and the final poster
+-   `game` contains the source code written in julia for the telegram bot used to show some results in the form of a game during the poster session
+-   `docs` contains some materials used as a reference in the analysis
+-   `renv` and `renv.lock` are used by the renv package to ease code reproducibility, listing and loaading all the packages used in the code
 
-# Recap termini
-- commit: confermare le proprie modifiche ai file, e aggiungere un piccolo commento/spiegazione
-- push: caricare, sul repository ufficiale su github, le proprie modifiche
-- pull: scaricare, dal repository ufficiale su github, i file aggiornati
+## Partecipants
+
+-   Ettore Modina
+
+-   Giulia Mezzadri
+
+-   Federico Angelo Mor
+
+-   Beatrice Re
+
+-   Marco Galliani
+
+## References
+
+-   James, G., Witten, D., Hastie, T., & Tibshirani, R. (2021). An introduction to statistical learning (2nd ed.) [PDF]. Springer. and the related online course and materials available [here](https://www.statlearning.com/resources-second-edition).
+-   
