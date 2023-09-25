@@ -32,9 +32,10 @@ library(insight)
 
 ```{r}
 set.seed(42)
+
 #DIRECTORIES
 root_proj_dir = "../../"
-dataset_dir = paste(root_proj_dir,"/data/pisa_scores_final.csv",sep="")
+dataset_dir = paste(root_proj_dir,"/data/revisedPCA-datasets/std_scores_data.csv",sep="")
 include_dir = paste(root_proj_dir,"/src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_dir)
@@ -42,7 +43,7 @@ source("funzione_LMERF.R")
 #IMPORTING THE DATASET
 
 #using new data in this very folder
-pisa_data <- read.csv(file="std_scores_data.csv")
+pisa_data <- read.csv(file=dataset_dir)
 ```
 
 ## Preprocessing

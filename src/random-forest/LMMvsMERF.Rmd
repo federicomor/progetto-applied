@@ -26,7 +26,8 @@ Directories
 
 ```{r}
 root_proj_dir = "../../"
-dataset_path = paste(root_proj_dir,"data/pisa_scores_final.csv",sep="")
+dataset_path = paste(root_proj_dir,"data/revisedPCA-datasets/scores_data_wo_outliers.csv",
+                     sep="")
 include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
 #INCLUDING UTILITIES
 source(include_path)
@@ -34,7 +35,7 @@ source("funzione_LMERF.R")
 #IMPORTING THE DATASET
 
 #using the new dataset in this very folder
-data <- read.csv(file="scores_data_wo_outliers.csv")
+data <- read.csv(file=dataset_path)
 head(data)
 ```
 
@@ -71,7 +72,9 @@ data <- data[shuffled_rows_index,]
 #view the target
 boxplot(data$Social.well.being, main = "Social.well.being")
 
-write.csv(data, "very_last_dataset.csv")
+saving_dir <- paste(root_proj_dir,"data/revisedPCA-datasets/final_scores.csv",
+                     sep="")
+# write.csv(data, "very_last_dataset.csv")
 ```
 
 # [1] Definizione formule
@@ -238,4 +241,59 @@ partialPlot(fit_lmerf$forest.model,
               main = "Dependence on students' economic status",
               ylab = "Social Well-Being"
             )
+```
+
+# [5] Appendix: Comparison with simple LM
+
+## Variable selection
+
+```{r}
+regressors <- names(data)
+to_discard <- c("Social.well.being", "Psychological.well.being", "SCHLTYPE","PV1MATH", "SchoolUse.ICT")
+regressors <- regressors[!regressors %in% to_discard]
+
+#formula object
+FORMULA_COMPLETE_SOCIAL  <- paste("Social.well.being", paste(regressors, collapse = "+"), sep ="~")
+
+regfit.fullSWB = regsubsets(as.formula(FORMULA_COMPLETE_SOCIAL), 
+                            data=data, 
+                            nvmax=length(regressors), 
+                            method = "exhaustive")
+reg.summarySWB = summary(regfit.fullSWB)
+
+# Plots
+plot(reg.summarySWB$bic, xlab="Number of Variables", ylab="BIC", type="b")
+abline(v = which.min(reg.summarySWB$bic))
+
+plot(reg.summarySWB$adjr2)
+abline(v = which.max(reg.summarySWB$adjr2))
+abline(v = which.min(reg.summarySWB$bic), col = "red")
+
+# We want the model with max r.adj^2 so we extract the coefficients of that model
+# Note: ind = how many coefficients has the model
+num_var_SWB <- which.max(reg.summarySWB$adjr2)
+num_var_SWB 
+coef(regfit.fullSWB, num_var_SWB)
+```
+
+Selected variables
+
+```{r}
+fullSWB = names(coef(regfit.fullSWB, num_var_SWB)) # Exhaustive search
+
+selected_vars_SWB<- c(fullSWB[2:13],"CNT")
+
+FORMULA_SOCIAL  <- paste("Social.well.being", paste(selected_vars_SWB, collapse = "+"), sep ="~")
+
+#rapid check on the fit
+fit = lm(FORMULA_SOCIAL,data=data)
+summary(fit)
+```
+
+## Comparison
+
+```{r}
+y_hat_LM <- fitted(fit)
+
+mean((y-y_hat_LM)^2)
 ```
