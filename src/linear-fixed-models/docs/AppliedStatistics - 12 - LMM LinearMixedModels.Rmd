@@ -1,0 +1,619 @@
+---
+title: "Linear Mixed Models"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+# **0.** Settings
+```{r setup}
+knitr::opts_knit$set(root.dir = normalizePath("G:/Il mio Drive/UNIVERSITA/APPLIED STATISTICS/LABS/Lab LMM")) 
+rm( list = ls() )
+
+list.files()
+graphics.off() # chiude tutti i device grafici
+cat("\014") #pulisci console
+
+library(nlmeU) ## --> for the dataset
+library(nlme)  ## --> for models implementation
+
+library(corrplot)
+library(lattice)
+library(plot.matrix)
+
+library(lme4)
+library(insight)
+
+library(ggplot2)
+
+```
+
+# **1.** Dataset
+```{r}
+data(armd) # Age-Related Macular Degeneration: dataset of interest
+data(armd0) # Age-Related Macular Degeneration: dataset for visualization
+
+data = armd
+data0 = armd0
+head(data)
+head(data0)
+```
+
+## **1.1.** exploration of a variable, subdivided by group 
+```{r}
+define_sequence_subgroups = seq(1, 240, 5)
+data0.subset <- subset(data0, as.numeric(subject) %in% define_sequence_subgroups) 
+
+xy1 <- xyplot(visual ~ time | treat.f,   
+                 groups = subject,
+                 data = data0.subset,
+                 type = "l", lty = 1)
+update(xy1, xlab = "Time (in weeks)",
+         ylab = "y",
+         grid = "h")
+
+
+## sample means across time and treatment
+flst <- list(data$time.f, data$treat.f)
+unique(unlist(flst))
+tMn <- tapply(data$visual, flst, FUN = mean)
+tMn
+
+## We confirm what we observe in the plot
+
+## Box-plots for visual acuity by treatment and time
+bw1 <- bwplot(visual ~ time.f | treat.f,
+        data = data0)
+  xlims <- c("Base", "4\nwks", "12\nwks", "24\nwks", "52\nwks")
+  update(bw1, xlim = xlims, pch = "|")
+```
+
+
+
+
+# **2.** Error Covariance Analysis
+  -Topics:
+   1. Linear Models with homoscedastic and independent errors
+   2. Linear Models with heteroscedastic and independent errors
+      2.1 VarIdent()
+      2.2 VarPower()
+   3. Linear Models with heteroscedastic and dependent errors
+      3.1 CorCompSym()
+      3.2 AR(1)
+      3.3 general
+      
+## **2.1.**. Linear Models with homogeneous and independent errors: 
+we start by considering all observations as independent, with homogeneous variance
+```{r}
+# the overall intercept is removed from the model by specifying the -1 term. So that I can have specific intercept 
+lm1.form <- lm(visual ~ -1 + visual0 + time.f + treat.f:time.f, data = data )
+summary(lm1.form)
+
+# variance-covariance matrix of Y  
+par(mar = c(4,4,4,4))
+res_std_err = summary(lm1.form)$sigma
+plot(diag(x=res_std_err^2,nrow=30, ncol=30), main='Variance-covariance matrix of Y')
+```
+
+
+### residual analysis
+```{r}
+plot(lm1.form$residuals) # they seem quite homoscedastic
+abline(h=0)
+
+qqnorm(lm1.form$residuals)
+qqline(lm1.form$residuals)
+
+shapiro.test(lm1.form$residuals)
+
+## observations are not independent and the variance of the visual measurements increases in time
+
+## let's color the residuals relative to different "subjects"
+colori = rainbow(length(unique(data$subject)))
+num_sub = table(data$subject)
+colori2 = rep(colori, num_sub)
+plot(lm1.form$residuals, col=colori2)
+abline(h=0)   ## --> not very informative
+
+boxplot(lm1.form$residuals ~ data$subject, col=colori,
+        xlab='Subjects', ylab='Residuals', main ='Distribution of residuals across subjects')  ## --> informative!
+abline(h=0)
+## let's color the residuals relative to different time instants
+set.seed(1)
+colori =rainbow(4)
+colori2 = colori[data$tp] # associate to each one of the 4 time instants a color
+plot(lm1.form$residuals, col=colori2, ylab='residuals')
+abline(h=0)
+legend(650, -25, legend=c("time 4wks", "time 12wks", "time 24wks", "time 52wks"),
+       col=colori, lty=1, cex=0.8)
+
+## We expect the residuals to be heterogeneous across different time instants observations
+
+boxplot(lm1.form$residuals ~ data$time.f, col=colori,
+        xlab='Time.f', ylab='Residuals')  ## -> the variance of th observations increases in time
+
+
+# The model does not take into account the correlation 
+# between the visual acuity observations obtained from the same subject. 
+# It also does not take into account the heterogeneous variability
+# present at different time points. Thus, it should not be used as a basis for inference.
+```
+## **2.2** Linear models with heteroscedastic and independent errors
+gls() function allows the inclusion of dependency and heteroscedasticity
+### 2.2.1 Option 1: VarIdent()
+```{r}
+fm9.1 <- gls(visual ~ -1 + visual0 + time.f + treat.f:time.f,  # the same as before
+             weights = varIdent(form = ~1|time.f), # Var. function; <delta, stratum>-group
+             data = data)
+summary(fm9.1)
+
+plot(fm9.1$residuals) 
+
+fm9.1$modelStruct$varStruct
+intervals(fm9.1, which = "var-cov")  ## 95% CI
+
+# Visualization of Variance-covariance matrix of Y 
+res_std_err = summary(fm9.1)$sigma
+var_estimate = c(1,as.numeric(intervals(fm9.1, which = "var-cov")$varStruct[,2]))
+
+first_n = 30
+par(mar = c(4,4,4,4))
+
+plot(diag(x=c(var_estimate^2*res_std_err^2), nrow=first_n, ncol=first_n),
+     main='Variance-covariance matrix of Y - VarIdent()')
+```
+
+### 2.2.2 Option 2: VarPower()
+```{r}
+## Now that we know the variance is increasing in time, we try a more parsimonious model
+
+fm9.2 <- update(fm9.1, weights = varPower(form = ~time)) # Var. function; <delta, v_it>-group
+summary(fm9.2)
+
+fm9.2$modelStruct$varStruct
+intervals(fm9.2, which = "var-cov")
+# Visualization of Variance-covariance matrix of Y (first 30 observations)
+var_estimate = as.numeric(fm9.2$modelStruct$varStruct)
+res_std_err = fm9.2$sigma
+values = c(4,12,24,52)
+par(mar = c(4,4,4,4))
+plot(diag(x=c(values^(2*var_estimate)*res_std_err^2), nrow=first_n, ncol=first_n),
+     main='Variance-covariance matrix of Y - VarPower()')
+
+
+
+# Test of the variance structure: power of time vs. timepoint-specific variances
+```
+
+### Model Comparison
+To formally test the hypothesis that the variances are timepoint specific, 
+we apply the anova() function. The LR test tests the null hypothesis of homoscedasticity.
+
+The anova() function will take the model objects as arguments, and return an ANOVA testing 
+whether the more complex model is significantly better at capturing the data than the simpler model. 
+```{r}
+anova(fm9.2, fm9.1)
+```
+
+
+### Residual analysis -
+we assess the fit of the model using residual plots. 
+```{r}
+fm = fm9.2
+## raw residuals 
+plot(fm, resid(., type = "response") ~ fitted(.)) # Raw vs. fitted
+# We observe an asymmetric pattern, with large positive (negative) residuals present mainly for small (large) fitted values.
+# but it can be a consequence of the fact that raw residuals are intrinsically heteroscedastic and correlated.
+
+plot(fm, resid(., type = "response") ~ time) # Raw vs. time (not shown)
+bwplot(resid(fm) ~ time.f, pch = "|", data = data)
+# The boxand-whiskers plots clearly show an increasing variance of the residuals.
+
+## Pearson residuals 
+## Pearson residuals are obtained from the raw residuals by dividing the latter by an
+## estimate of the appropriate residual standard deviation, so they should be more homoscedastic
+
+
+plot(fm, resid(., type = "pearson" ) ~ fitted(.)) # Pearson vs. fitted
+plot(fm,resid(., type = "pearson") ~ time) 
+bwplot( resid(fm, type = "pearson") ~ time.f, # Pearson vs. time.f
+        pch = "|", data = data)
+## this plot illustrate the effect of scaling: the variance of the residuals is virtually constant.
+```
+
+
+## **2.3.** Linear models with heteroscedastic and dependent errors
+
+We now modify the model, so that the measurements, obtained for the same individual,
+are allowed to be correlated.
+
+We can estimate the semivariogram to calculate correlation coefficients between Pearson
+residuals for every pair of timepoints, separately. 
+The semivariogram function can be defined as the complement of the correlation function.
+```{r}
+## Variogram per time difference 
+Vg1 <- Variogram(fm, form = ~ time | subject)
+Vg1
+plot(Vg1, smooth = FALSE, xlab = "Time difference",ylim=c(0,0.7),pch=16)
+
+## Variogram per time lag
+Vg2 <- Variogram(fm, form = ~tp | subject)
+Vg2
+plot(Vg2, smooth = FALSE, xlab = "Time Lag",ylim=c(0,0.7),pch=16)
+```
+
+### CORRELATION STRUCTURE
+```{r}
+lm1.form <- formula(visual ~ -1 + visual0 + time.f + treat.f:time.f )
+
+# model with a compound symmetry correlation structure.
+fm12.1 <- gls(lm1.form, weights = varPower(form = ~time),
+        correlation = corCompSymm(form = ~1|subject),
+        data = data)
+# AR(1)
+fm12.2 <- update(fm9.2, 
+                 correlation = corAR1(form = ~tp|subject),data = data)
+
+# general correlation structure
+fm12.3 <- update(fm12.2, 
+                 correlation = corSymm(form = ~tp|subject), data = data)
+```
+
+
+```{r}
+fm = fm12.3
+summary(fm)
+
+intervals(fm, which = "var-cov")
+
+nms <- as.vector(unique(data$time.f))
+dnms <- list(nms, nms) # Dimnames created
+dimnames(fm12.1vcov) <- dnms # Dimnames assigned
+```
+
+
+### marginal variance-covariance structure
+```{r}
+fmvcov <- getVarCov(fm, individual = "2")  #Estimate of R_i, e.g. i=2
+dimnames(fmvcov) <- dnms
+fmvcov
+
+fmcor <- cov2cor(fmvcov)  #Estimate of C_i
+print(fmcor, digits = 2, 
+        corr = TRUE, stdevs = FALSE)
+
+```
+
+### Visualization of the marginal variance-covariance matrix of Y
+```{r}
+R_i = as.table(fmvcov)
+R_i
+
+R = matrix(0, nrow=28, ncol=28)
+for(i in 0:6){
+        R[(i*4+1):(i*4+4),(i*4+1):(i*4+4)] = R_i
+}
+plot(R)
+
+```
+
+### Model Comparison
+```{r}
+## Test of independence vs. compound-symmetry correlation structure
+anova(fm12.3, fm12.1)
+```
+
+###  Model-Fit Diagnostics
+```{r}
+# (a) Plots (and boxplots) of raw residuals
+panel.bwxplot0 <- function(x,y, subscripts, ...){
+                        panel.grid(h = -1)
+                        panel.stripplot(x, y, col = "grey", ...)
+                        panel.bwplot(x, y, pch = "|", ...)
+                        }
+bwplot(resid(fm) ~ time.f | treat.f, 
+         panel = panel.bwxplot0,
+         ylab = "Residuals", data = data)
+# The box-and-whiskers plots clearly show an increasing variance of the residuals with timepoint. 
+# This reflects the heteroscedasticity.
+
+
+# (b) Plots of Pearson residuals vs. fitted values
+# Pearson residuals are obtained from the raw residuals by dividing the latter by an
+# estimate of the appropriate residual standard deviation, so they should be more homoscedastic
+
+plot(fm) 
+# Due to the correlation of the residuals corresponding to the measurements obtained
+# for the same patient at different timepoints, the plot reveals a pattern, with a few
+# large, positive residuals in the upper-left part and a few negative ones in the lower-right part.
+
+## We therefore decide to visualize the residuals for each time instants
+plot(fm, 
+       resid(., type = "p") ~ fitted(.) | time.f)
+stdres.plot <-
+        plot(fm, resid(., type = "p") ~ jitter(time) | treat.f,
+               id = 0.01, adj = c(-0.3, 0.5 ), grid = FALSE)
+plot(update(stdres.plot, # Fig. 12.4
+              xlim = c(-5,59), ylim = c(-4.9, 4.9), grid = "h"))
+```
+
+3-Topics:
+  LINEAR MIXED MODELS WITH HOMOSCEDASTIC RESIDUALS
+  1. Linear Models with random intercept (q=0) 
+  2. Linear Models with random intercept + slope (q=1)
+     2.1 general structure of D
+     2.2 diagonal D 
+  3. Interpretation of random effects and PVRE
+  4. Prediction
+  5. Diagnostic
+  6. Models comparison 
+
+
+Linear Mixed-Effects models (LMM)
+In the LMM approach, the hierarchical structure of the data is directly addressed, 
+with random effects that describe the contribution of the variability at different levels 
+of the hierarchy to the total variability of the observations.
+
+Two main R packages: 
+1. 'lme4' --> it does not handle heteroscedastic residuals but it has a lot of "accessories"
+2. 'nlme' --> it handles heteroscedastic residuals but it has less "accessories"
+
+We will use lmer() function in lme4 package for LMM models with homogeneous residuals and
+lme() function in nlme package for LMM models with heteroscedastic residuals
+LINEAR MIXED MODELS WITH HOMOSCEDASTIC RESIDUALS
+lme4 package --> lmer() function 
+
+# **3.** Models Random intercept, homoscedastic residuals
+```{r}
+# We now treat time as a numeric variable
+
+fm16.1mer <- lmer(visual ~ visual0 + time * treat.f + (1|subject),
+                  data = data)
+# random intercept + slope and homoscedastic residuals: general D
+fm16.2mer <- lmer(visual ~ visual0 + time * treat.f + (1+time|subject),
+                  data = data, control=lmerControl(optimizer="bobyqa",
+                                                   optCtrl=list(maxfun=2e5)))
+# diagonal D
+slope_bool = 0
+fm16.2dmer <- lmer(visual ~ visual0 + time * treat.f + (1|subject) + (0 + time|subject),
+                   data = data, control=lmerControl(optimizer="bobyqa",
+                                                    optCtrl=list(maxfun=2e5)))
+
+
+fm = fm16.1mer
+summary(fm)
+
+confint(fm,oldNames=TRUE)
+```
+
+## **3.1.** Var-Cov matrix of fixed-effects
+```{r}
+vcovb <- vcov(fm) 
+vcovb
+corb <- cov2cor(vcovb) 
+nms <- abbreviate(names(fixef(fm)), 5)
+rownames(corb) <- nms
+corb
+```
+
+## **3.2.** Var-Cov matrix of random-effects and errors
+```{r}
+print(vc <- VarCorr(fm16.1mer), comp = c("Variance", "Std.Dev."))
+
+sigma2_eps <- as.numeric(get_variance_residual(fm))
+sigma2_b <- as.numeric(get_variance_random(fm))
+
+
+if(slope_bool==1){
+sigma2_b <- as.numeric(get_variance_random(fm)) + mean(data$time^2)*as.numeric(get_variance_slope(fm)) 
+}
+
+```
+
+## **3.3.** conditional and marginal var-cov matrix of Y
+```{r}
+sgma <- summary(fm)$sigma
+
+A <- getME(fm, "A") # A  --> N x n, A represents the D (not italic)
+I.n <- Diagonal(ncol(A)) # IN  --> n x n
+
+## the conditional variance-covariance matrix of Y (diagonal matrix)
+SigmaErr = sgma^2 * (I.n)
+
+partic_subject <-3:6
+SigmaErr[partic_subject, partic_subject]  ## visualization of individual 2
+# Conditioned to the random effects b_i, we observe the var-cov of the errors
+# that are independent and homoscedastic
+
+## we visualize the first 20 rows/columns of the matrix
+first_n <- 1:20
+plot(as.matrix(SigmaErr[first_n,first_n]), main = 'Conditional estimated Var-Cov matrix of Y')
+
+## the marginal variance-covariance matrix of Y (block-diagonal matrix)
+V <- sgma^2 * (I.n + crossprod(A)) # V = s^2*(I_N+A*A) --> s^2*(I_N) is the error part, s^2*(A*A) is the random effect part
+V[partic_subject, partic_subject]  #-> V is a block-diagional matrix, the marginal var-cov matrix
+
+# visualization of the first 20 rows/columns
+plot(as.matrix(V[first_n,first_n]), main = 'Marginal estimated Var-Cov matrix of Y')
+```
+
+## **3.4.** PVRE
+Percentage of Variance explained by the Random Effect 
+This is also called the intraclass correlation (ICC), 
+because it is also an estimate of the within cluster correlation.
+```{r}
+PVRE <- sigma2_b/(sigma2_b+sigma2_eps)
+PVRE # 51% is very high!
+
+## visualization of the random intercepts with their 95% confidence intervals
+# Random effects: b_0i for i=1,...,234
+dotplot(ranef(fm, condVar=T))$subject
+
+# The dotplot shows the point and interval estimates for the random effects, 
+# ordering them and highlighting which are significantly different from the mean (0)
+```
+
+## **3.5.** Prediction
+```{r}
+# Let's now examine standard predictions vs. subject-specific predictions.
+# As with most R models, we can use the predict function on the model object.
+
+# Prediction from regression model
+lm1.form <- lm(visual ~ -1 + visual0 + time.f + treat.f:time.f, data = data )
+predict_lm <- predict(lm1.form)
+head(predict_lm)
+
+# Prediction from mixed model on the training set:
+# 1) Without random effects ->  re.form=NA
+predict_no_re <- predict(fm16.1mer, re.form=NA)
+head(predict_no_re) # (almost) same predictions
+
+# 2) With random effects
+predict_re <- predict(fm16.1mer)
+head(predict_re)
+```
+
+
+### Prediction from mixed model on a test observation from a subject not present in the training set:
+```{r}
+test.data= data.frame(subject= '400', treat.f='Active', visual0= 63, time = 12)
+
+# 1) Without random effects ->  re.form=NA
+predict_no_re <- predict(fm16.1mer, newdata = test.data, re.form=NA)
+predict_no_re # the same as before
+
+# 2) With random effects
+predict_re <- predict(fm16.1mer, newdata=test.data, allow.new.levels = T)
+predict_re # the same as before, it uses the average of the random intercept, i.e. 0
+
+re = ranef(fm16.1mer)[[1]]
+#plot(ranef(fm16.1mer))
+re[row.names(re)==test.data$subject,]
+```
+
+## **3.6.** Diagnostic plots 
+```{r}
+# 1) Assessing Assumption on the within-group errors
+plot(fm)  ## Pearson and raw residuals are the same now
+
+qqnorm(resid(fm))
+qqline(resid(fm), col='red', lwd=2)
+
+# 2) Assessing Assumption on the Random Effects
+
+qqnorm(unlist(ranef(fm)$subject), main='Normal Q-Q Plot - Random Effects on Intercept')
+qqline(unlist(ranef(fm)$subject), col='red', lwd=2)
+
+# only if there's the slope
+slope_bool = 0
+if(slope_bool==1){
+  qqnorm(unlist(ranef(fm16.2mer)$subject[,2]), main='Normal Q-Q Plot - Random Effects on Slope')
+  qqline(unlist(ranef(fm16.2mer)$subject[,2]), col='red', lwd=2)
+}
+
+```
+## **3.7.** Comparing models
+```{r}
+anova(fm16.1mer, fm16.2mer)
+```
+
+# **4.** LINEAR MIXED MODELS WITH HETEROSCEDASTIC RESIDUALS
+nlme package --> lme() function 
+```{r}
+## fixed-effects formula
+lm2.form <- formula(visual ~ visual0 + time + treat.f + treat.f:time ) 
+
+# LMM with homoscedastic residuals
+fm16.1 <- lme(lm2.form, random = ~1|subject, data = data)
+
+# update fm16.1 including heteroscedastic residuals
+fm16.2 <- update(fm16.1,
+                 weights = varPower(form = ~ time), 
+                 data = data)
+
+# random intercept + slope (correlated), heteroscedastic residuals
+fm16.3 <- update(fm16.2,
+                 random = ~1 + time | subject,data = data)
+
+# random intercept + slope independent, heteroscedastic residuals
+fm16.4 <- update(fm16.3,
+                 random = list(subject = pdDiag(~time)), # Diagonal D
+                 data = data) 
+
+fm = fm16.1
+```
+
+
+```{r}
+summary(fm)
+VarCorr(fm)  
+
+## var-cov matrix of the errors (i.e. of Y, conditional to the random effects), that are independent but heteroscedastic 
+fm.ccov = getVarCov(fm, type = "conditional",  individual = "2")
+fm.ccov
+plot(as.matrix(fm.ccov[[1]]), main = expression(paste('Conditional estimated Var-Cov matrix of ', Y[2])))
+
+## var-cov matrix of Y_i
+fm.mcov = getVarCov(fm, type = "marginal", individual = "2")
+fm.mcov 
+plot(as.matrix(fm.mcov[[1]]), main = expression(paste('Marginal estimated Var-Cov matrix of ', Y[2])))
+
+fm.recov = getVarCov(fm, individual = "2")  # D_i italic (i=2)
+fm.recov
+plot(as.matrix(fm.recov[[1]]), main = expression(paste('Random Effect estimated Var-Cov matrix of ', Y[2])))
+
+
+# var-cov matrix of y_i is the same for each subject i, 
+# except for the number of observations, ranging from 1 to 4
+
+## correlation matrix of Y_i
+cov2cor(fmcov[[1]])
+
+intervals(fm, which = "var-cov")  # Estimate of theta_D, delta e sigma
+```
+
+## **4.1.** ANALYSIS OF RESIDUALS
+```{r}
+# Default residual plot of conditional Pearson residuals
+plot(fm)
+
+# Plots (and boxplots) of Pearson residuals per time and treatment
+plot(fm, resid(., type = "pearson") ~ time | treat.f,
+     id = 0.05)
+bwplot(resid(fm, type = "p") ~ time.f | treat.f, 
+       panel = panel.bwplot, # User-defined panel (not shown)
+       data = data)
+# Despite standardization, the variability of the residuals seems to vary a bit.
+
+# Normal Q-Q plots of Pearson residuals 
+qqnorm(fm, ~resid(.) | time.f)
+```
+
+## **4.2.** ANALYSIS OF RANDOM EFFECTS
+```{r}
+# Normal Q-Q plots of predicted random effects
+qqnorm(fm, ~ranef(.))  
+
+## Computing predictions comparing population average predictions with patient-specific predictions
+
+aug.Pred <- augPred(fm,
+                    primary = ~time, # Primary covariate
+                    level = 0:1, # fixed/marginal (0) and subj.-spec.(1)
+                    length.out = 2) # evaluated in two time instants (4 e 52 wks)
+
+
+
+plot(aug.Pred, layout = c(4, 4, 1))
+plot(aug.Pred, layout = c(4, 4, 1), columns = 2) 
+```
+
+## **4.3.** Compare Models
+```{r}
+anova(fm16.4, fm16.3) 
+```
+
+
+
+
+
+
+

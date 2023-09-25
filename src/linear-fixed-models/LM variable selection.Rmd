@@ -1,0 +1,415 @@
+---
+title: "R Notebook"
+# output: html_notebook
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r}
+rm( list = ls() )
+
+graphics.off() # chiude tutti i device grafici
+cat("\014") #pulisci console
+library(mvtnorm)
+library(MASS)
+library(car)
+library(rgl)
+library(dplyr)
+library(mvtnorm)
+
+library(glmnet)
+
+library(leaps)
+library(ISLR)
+```
+
+```{r}
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/pisa_scores_final.csv",sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+data <- read.csv(file=dataset_path)
+head(data)
+```
+
+# [0] DATA PREP
+
+```{r}
+data$X <- NULL
+data$SCHLTYPE <- as.factor(data$SCHLTYPE)
+data$CNT <- as.factor(data$CNT)
+
+IM_PUBLIC = rep(0,dim(data)[1])
+IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
+data$IM_PUBLIC = as.factor(IM_PUBLIC)
+data$SCHLTYPE <- NULL
+dim(data)
+```
+
+# scaling the data
+
+```{r}
+data_scaled = as.data.frame(scale(select_if(data,is.numeric)),data$CNT,data$IM_PUBLIC)
+dim(data_scaled)
+data = cbind("CNT" =data$CNT,"IM_PUBLIC"=data$IM_PUBLIC,data_scaled)
+dim(data)
+rownames(data)=NULL
+```
+
+# [1] Modello 1-Social.well.being
+
+```{r}
+FORMULA_COMPLETE_SOCIAL =formula(Social.well.being~.-Psychological.well.being-IM_PUBLIC)
+fit_social = lm(FORMULA_COMPLETE_SOCIAL,data=data)
+summary(fit_social)
+b=coefficients(fit_social)
+nv_max = length(b)-1
+names(b)
+```
+
+# Modello 2-Psychological.well.being
+
+```{r}
+FORMULA_COMPLETE_PSICO = formula(Psychological.well.being~.-Social.well.being-IM_PUBLIC)
+fit_psico = lm(FORMULA_COMPLETE_PSICO,data=data)
+summary(fit_psico)
+b=coefficients(fit_psico)
+nv_max = length(b)-1
+names(b)
+```
+
+#SOCIAL
+
+```{r}
+fm = fit_social
+Y=data$Social.well.being
+FORMULA_LM = FORMULA_COMPLETE_SOCIAL
+```
+
+# [2] Variable selection
+
+## Best Subset Selection (exhaustive search)
+
+```{r, warning=FALSE, message=FALSE}
+regfit.full = regsubsets(FORMULA_LM, data=data, nvmax=nv_max)
+reg.summary = summary(regfit.full)
+
+# Which one we choose:
+#reg.summary$which
+# Plots
+plot(reg.summary$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
+
+
+# We want the model with max r.adj^2 so we extract the coefficients of that model
+# Note: ind = how many coefficients has the model
+ind = which.max(reg.summary$adjr2)
+ind
+coef(regfit.full, ind)
+```
+
+## Comparison- they are all the same
+
+```{r, warning=FALSE, message=FALSE}
+max_vars = 29
+full = names(coef(regfit.full,max_vars)) # Exhaustive search
+full
+
+vars_chosen <- full[14:max_vars]
+
+
+```
+
+## **6.** Lasso Regression
+
+```{r, warning=FALSE, message=FALSE}
+x = model.matrix(FORMULA_LM,data=data)[,-1] # matrix of predictors
+y = Y # vector of response
+lambda.grid = 10^seq(4,-5,length=50)
+
+
+# Lasso regression
+fit.lasso = glmnet(x,y, lambda = lambda.grid, alpha=1) # alpha=1 -> lasso
+plot(fit.lasso,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
+legend('topright', dimnames(x)[[2]], col = rainbow(dim(x)[2]), lty=1, cex=1)
+
+
+# Set lambda via CV
+cv.lasso = cv.glmnet(x,y,alpha=1,nfolds=10,lambda=lambda.grid)
+bestlam.lasso = cv.lasso$lambda.min
+bestlam.lasso
+
+plot(cv.lasso)
+abline(v=log(bestlam.lasso), lty=1)
+
+# Get the coefficients for the optimal lambda
+coef.lasso.cv = predict(fit.lasso, s=bestlam.lasso, type = 'coefficients')
+lasso_vars = coef.lasso.cv[which(abs(coef.lasso.cv)> 0.01),]
+lasso_vars_names = names(lasso_vars)
+
+plot(fit.lasso,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
+abline(v=log(bestlam.lasso))
+```
+
+```{r}
+final_vars = union(vars_chosen,lasso_vars_names[-1])
+
+final_vars = vars_chosen
+setdiff(colnames(data),final_vars)
+
+
+final_vars_social <- final_vars
+```
+
+# PSYCHO
+
+```{r}
+fm = fit_psico
+Y=data$Psychological.well.being
+FORMULA_LM = FORMULA_COMPLETE_PSICO
+```
+
+# [2] Variable selection
+
+## Best Subset Selection (exhaustive search)
+
+```{r, warning=FALSE, message=FALSE}
+regfit.full = regsubsets(FORMULA_LM, data=data, nvmax=nv_max)
+reg.summary = summary(regfit.full)
+
+# Which one we choose:
+#reg.summary$which
+# Plots
+plot(reg.summary$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="b")
+
+
+# We want the model with max r.adj^2 so we extract the coefficients of that model
+# Note: ind = how many coefficients has the model
+ind = which.max(reg.summary$adjr2)
+ind
+coef(regfit.full, ind)
+```
+
+## Comparison- they are all the same
+
+```{r, warning=FALSE, message=FALSE}
+max_vars = 17
+full = names(coef(regfit.full,max_vars))
+full
+vars_chosen <- full[2:max_vars]
+```
+
+## **6.** Lasso Regression
+
+```{r, warning=FALSE, message=FALSE}
+x = model.matrix(FORMULA_LM,data=data)[,-1] # matrix of predictors
+y = Y # vector of response
+lambda.grid = 10^seq(4,-5,length=50)
+
+
+# Lasso regression
+fit.lasso = glmnet(x,y, lambda = lambda.grid, alpha=1) # alpha=1 -> lasso
+plot(fit.lasso,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
+legend('topright', dimnames(x)[[2]], col = rainbow(dim(x)[2]), lty=1, cex=1)
+
+
+# Set lambda via CV
+cv.lasso = cv.glmnet(x,y,alpha=1,nfolds=10,lambda=lambda.grid)
+bestlam.lasso = cv.lasso$lambda.min
+bestlam.lasso
+
+plot(cv.lasso)
+abline(v=log(bestlam.lasso), lty=1)
+
+# Get the coefficients for the optimal lambda
+coef.lasso.cv = predict(fit.lasso, s=bestlam.lasso, type = 'coefficients')
+lasso_vars = coef.lasso.cv[which(abs(coef.lasso.cv)> 0.01),]
+lasso_vars_names = names(lasso_vars)
+
+plot(fit.lasso,xvar='lambda',label=TRUE, col = rainbow(dim(x)[2]))
+abline(v=log(bestlam.lasso))
+```
+
+```{r}
+final_vars = union(vars_chosen,lasso_vars_names[-1])
+setdiff(colnames(data),final_vars)
+
+final_vars_psico <- final_vars
+
+```
+
+# LINEAR HYP
+
+```{r}
+linear_model_vars <- c(final_vars_social
+                      ,"CNT"
+                      )
+
+vars = c(linear_model_vars)
+FORMULA_SOCIAL <- paste(paste("Social.well.being","~"), paste(vars, collapse = "+"))
+fit_social_lm = lm(FORMULA_SOCIAL,data=data)
+
+summary(fit_social_lm)
+```
+
+## SOCIAL
+
+```{r}
+b=coefficients(fit_social_lm)
+
+vars_to_discard <- c("RATCMP1",
+                     "JOYREAD",
+                     "PROAT6",
+                     "EDUSHORT")
+
+vars_to_discard <- c(
+        "Teachers..degree",
+        "ESCS" ,
+        "STUBEHA", 
+        "PROAT6" ,
+        "CLSIZE" ,
+        "STAFFSHORT", 
+        "CREACTIV" 
+)
+
+
+check_beta <- which(names(b)%in%vars_to_discard)
+C <- c()
+for( i in 1: length(check_beta)){
+  vect <- rep(0,fit_social_lm$rank)
+  vect[check_beta[i]] <- 1
+  C <- rbind(C,vect)
+}
+linearHypothesis(fit_social_lm, C, rep(0,length(check_beta)))
+
+```
+
+```{r}
+vars_final = vars[!(vars%in%c(vars_to_discard,"CNT"))]
+FORMULA_SOCIAL <- paste(paste("Social.well.being","~"), paste(c(vars_final,"CNT"), collapse = "+"))
+
+writeLines(vars_final,"../../data/non csv/lm_social_vars.txt")
+
+fit_social_lm = lm(FORMULA_SOCIAL,data=data)
+summary(fit_social_lm)
+```
+
+## PSYCHO
+
+```{r}
+linear_model_vars <-c(final_vars_psico
+                      ,"CNT"
+                      )
+
+vars = c(linear_model_vars)
+FORMULA_PSYCH <- paste(paste("Psychological.well.being","~"), paste(vars, collapse = "+"))
+fit_psych_lm = lm(FORMULA_PSYCH,data=data)
+```
+
+```{r}
+summary(fit_psych_lm)
+```
+
+```{r}
+b=coefficients(fit_psych_lm)
+vars_to_discard <- c("RATCMP1",
+                     "PROAT6",
+                     "EDUSHORT",
+                     "JOYREAD",
+                     "TEACHBEHA",
+                     "STUBEHA")
+
+vars_to_discard = c("Use.of.ICT",
+                    "ESCS",
+                    "RATCMP1",
+                    "ICTRES",
+                    "PROAT6",
+                    "CLSIZE",
+                    "EDUSHORT",
+                    "PV1READ",
+                    "JOYREAD",
+                    "TEACHBEHA",
+                    "CREACTIV",
+                    "STUBEHA"
+                    )
+
+
+
+
+check_beta <- which(names(b)%in%vars_to_discard)
+C <- c()
+for( i in 1: length(check_beta)){
+  vect <- rep(0,fit_psych_lm$rank)
+  vect[check_beta[i]] <- 1
+  C <- rbind(C,vect)
+}
+linearHypothesis(fit_psych_lm, C, rep(0,length(check_beta)))
+
+```
+
+```{r}
+vars_final = vars[!(vars%in%c(vars_to_discard,"CNT"))]
+FORMULA_PSYCH <- paste(paste("Psychological.well.being","~"), paste(c(vars_final,"CNT"), collapse = "+"))
+
+writeLines(vars_final, "../../data/non csv/lm_psico_vars.txt")
+
+fit_psych_lm = lm(FORMULA_PSYCH,data=data)
+summary(fit_psych_lm)
+```
+
+# Grouped variables remaining
+
+## social
+
+```{r}
+linear_model_vars <- readLines("../../data/non csv/lm_social_vars.txt")
+
+filter <- function(category,var_lm) {
+  risultato <- c()
+  
+  for (elemento in category) {
+    if (elemento %in% var_lm) {
+      risultato <- c(risultato, elemento)
+    }
+  }
+  
+  return(risultato)
+}
+
+
+categories_variables_filtered=list()
+
+for(cat in cat_var_names ){
+  categories_variables_filtered[[cat]]=filter(categories_variables[[cat]],linear_model_vars)
+}
+
+categories_variables_filtered
+```
+
+## psico
+
+```{r}
+linear_model_vars <- readLines("../../data/non csv/lm_psico_vars.txt")
+
+filter <- function(category,var_lm) {
+  risultato <- c()
+  
+  for (elemento in category) {
+    if (elemento %in% var_lm) {
+      risultato <- c(risultato, elemento)
+    }
+  }
+  
+  return(risultato)
+}
+
+
+categories_variables_filtered=list()
+
+for(cat in cat_var_names ){
+  categories_variables_filtered[[cat]]=filter(categories_variables[[cat]],linear_model_vars)
+}
+
+categories_variables_filtered
+```
