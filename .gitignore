@@ -3,3 +3,4 @@
 *.nb.html
 *.Rhistory
 
+.Rproj.user
