@@ -1,0 +1,479 @@
+# LMM: attempt for variable selection
+
+## Settings
+
+```{r}
+library(mvtnorm)
+library(MASS)
+library(car)
+library(rgl)
+library(leaps)
+library(ISLR)
+library(glmnet)
+library(lme4)
+library(nlmeU) ## --> for the dataset
+library(nlme)  ## --> for models implementation
+
+library(corrplot)
+library(lattice)
+library(plot.matrix)
+
+library(dplyr)
+
+library(insight)
+```
+
+Directories
+
+```{r}
+root_proj_dir = "../../"
+dataset_path = paste(root_proj_dir,"data/revisedPCA-datasets/std_scores_data.csv", sep="")
+include_path = paste(root_proj_dir,"src/include/Utilities.R",sep="")
+#INCLUDING UTILITIES
+source(include_path)
+#IMPORTING THE DATASET
+
+#using the new dataset in this very folder
+data <- read.csv(file=dataset_path)
+head(data)
+```
+
+Utility
+
+```{r}
+MSE <- function(fit, target){
+  y_hat <- fitted(fit)
+  return(mean((target-y_hat)^2))
+}
+```
+
+## Data preprocessing
+
+```{r}
+data$X <- NULL
+data$SCHLTYPE <- as.factor(data$SCHLTYPE)
+data$CNT <- as.factor(data$CNT)
+
+IM_PUBLIC = rep(0,dim(data)[1])
+IM_PUBLIC [which(data$SCHLTYPE=="Public")] = 1
+data$IM_PUBLIC = as.factor(IM_PUBLIC)
+data$SCHLTYPE <- NULL
+```
+
+```{r}
+#standardizing
+transformed_data <- as.data.frame(scale(select_if(data,is.numeric)))
+transformed_data$CNT <- data$CNT #adding CNT column
+transformed_data$SCHLTYPE <- data$IM_PUBLIC
+
+data <- transformed_data
+rm(transformed_data)
+data$X <- NULL
+
+#check on data 
+boxplot(select_if(data,is.numeric),las=2)
+
+
+#shuffle data
+shuffled_rows_index <- sample(1:nrow(data))
+data <- data[shuffled_rows_index,]
+
+#view the target
+boxplot(data$Social.well.being, main = "Social.well.being")
+```
+
+# [1] Definizione formule
+
+Social well-being
+
+```{r}
+regressors <- names(data)
+to_discard <- c("CNT", "Social.well.being", "Psychological.well.being", "SCHLTYPE","SchoolUse.ICT", "PV1MATH")
+regressors <- regressors[!regressors %in% to_discard]
+ME_regressors = c(regressors,"(1|CNT)")
+
+#formula object
+
+FORMULA_SOCIAL_COMPLETE_LMM <- paste(paste("Social.well.being","~"), paste(ME_regressors, collapse = "+"))
+```
+
+# [2] Variable selection
+
+Too long
+
+```{r eval=FALSE, include=FALSE}
+# fm<- lmer(as.formula(FORMULA_SOCIAL_COMPLETE_LMM),
+#            data = data)
+# 
+# Terms <- terms(fit_LMM)
+# 
+# todrop <-  1:length(attr(Terms,'term.labels'))
+# subs <- unlist(sapply(todrop,
+#                       function(p){
+#                         combn(todrop,p,simplify=F)
+#                         }
+#                       ),
+#                recursive =F)
+# 
+# fm.subList <- lapply(subs[-length(subs)],
+#                      function(s,...){
+#                        newf<- formula(drop.terms(terms(fm),s,keep.response = TRUE))
+#                        update(fm,newf)
+#                        }
+#                      )
+# 
+# names(fm.subList) <- sapply(fm.subList,
+#                             function(x){
+#                               paste('fm',attr(terms(x),'term.labels'),sep='.')
+#                               }
+#                             )
+# sort(sapply(fm.subList,BIC))
+```
+
+## Backward selection algorithm
+
+```{r}
+FORMULA_LMM <- FORMULA_SOCIAL_COMPLETE_LMM
+selected_regressors <- regressors
+
+var_todrop <- "not none"
+
+while(var_todrop != "<none>"){
+
+ FORMULA_LMM <- paste(paste("Social.well.being","~"),
+                      paste(c(selected_regressors,"(1|CNT)"), collapse = "+"))
+
+ fit_LMM<- lmer(as.formula(FORMULA_LMM),
+           data = data)
+
+ todrop <- drop1(fit_LMM)
+ index_todrop <- which.min(todrop$AIC)
+ var_todrop <- rownames(todrop[index_todrop,])
+
+ cat(var_todrop, "was dropped\n")
+
+ selected_regressors <- selected_regressors[selected_regressors != var_todrop]
+} 
+```
+
+```{r}
+FORMULA_LMM <- paste(paste("Social.well.being","~"),
+                       paste(c(selected_regressors,"(1|CNT)"), collapse = "+"))
+
+fit_LMM_bwd<- lmer(as.formula(FORMULA_LMM),
+              data = data)
+summary(fit_LMM_bwd)
+
+#AIC
+AIC(fit_LMM_bwd)
+
+#dotplot
+dotplot(ranef(fit_LMM_bwd))
+
+#PVRE
+sigma_eps <- get_variance_residual(fit_LMM_bwd)
+sigma_b <- get_variance_random(fit_LMM_bwd)
+
+sigma_b/(sigma_b+sigma_eps)
+```
+
+## Forward selection algorithm
+
+```{r}
+add1 <- function(fit, regressors, regs_toadd){
+  AIC_improvements <- data.frame(added_regressor = c("<none>", regs_toadd),
+                                 AIC = rep(0,length(regs_toadd)+1))
+
+  AIC_improvements$AIC[1] <- extractAIC(fit)[2]
+
+  for(i in 2:(length(regs_toadd)+1)){
+    new_formula <- paste(paste("Social.well.being","~"),
+                       paste(c(regressors,regs_toadd[i-1],"(1|CNT)"), collapse = "+"))
+
+    AIC_improvements$AIC[i] <- extractAIC(lmer(as.formula(new_formula),
+                                               data = data))[2]
+  }
+  return(AIC_improvements)
+}
+```
+
+```{r}
+candidate_regressors <- regressors
+selected_regressors <- NULL
+
+var_toadd <- "not null"
+
+FORMULA_LMM <- "Social.well.being ~ (1|CNT)"
+fit_LMM<- lmer(as.formula(FORMULA_LMM),
+            data = data)
+
+continue_toadd <- TRUE
+
+while(continue_toadd){
+
+  toadd <- add1(fit = fit_LMM,
+                regressors = selected_regressors,
+                regs_toadd = candidate_regressors)
+
+  index_toadd <- which.min(toadd$AIC)
+  var_toadd <- toadd[index_toadd,]$added_regressor
+
+  cat(var_toadd, "was added\n")
+
+  continue_toadd <- var_toadd != "<none>"
+
+  if(continue_toadd){
+    candidate_regressors <- candidate_regressors[candidate_regressors != var_toadd]
+    selected_regressors <- c(selected_regressors, var_toadd)
+
+    new_formula <- paste(paste("Social.well.being","~"),
+                         paste(c(selected_regressors,var_toadd,"(1|CNT)"), collapse = "+"))
+    fit_LMM <- update(fit_LMM, new_formula)
+  }
+}
+```
+
+```{r}
+fit_LMM_fwd <- fit_LMM
+
+fit_LMM_fwd
+
+#AIC
+AIC(fit_LMM_fwd)
+
+#dotplot
+dotplot(ranef(fit_LMM_fwd))
+
+#PVRE
+sigma_eps <- get_variance_residual(fit_LMM_fwd)
+sigma_b <- get_variance_random(fit_LMM_fwd)
+
+sigma_b/(sigma_b+sigma_eps)
+```
+
+## Comparison
+
+They are the same
+
+```{r}
+anova(fit_LMM_bwd,fit_LMM_fwd)
+```
+
+# [3] Assumptions
+
+Final model
+
+```{r}
+fit_LMM <- fit_LMM_bwd # also fwd, they are the same
+```
+
+Residual plots
+
+```{r}
+plot(fit_LMM)
+
+#fixed effect
+qqnorm(resid(fit_LMM))
+qqline(resid(fit_LMM), col='red', lwd=2)
+
+#mixed effect
+res = residuals(fit_LMM)
+raneff = unlist(ranef(fit_LMM))
+alpha = 0.05
+
+qqnorm(raneff)
+qqline(raneff,col="red")
+
+print(paste("Normality of rand effects?",shapiro.test(raneff)$p>alpha))
+
+# homoschedasticity
+boxplot(res ~ data$CNT,las=2)
+```
+
+## Removing influential points
+
+Leverages
+
+```{r}
+#Punti leva
+lev=hatvalues(fit_LMM)
+sum(lev)
+
+p = 14
+n =dim(data)[1]
+fs=summary(fit_LMM)
+
+#soglia per leverages è 2*p/n
+
+threshold_lev <- 0.05 #rule of thumb 2*p/n = 0.01102435 (seems to low frmo the plot)
+
+watchout_points_lev = lev[ which( lev > threshold_lev) ]
+watchout_ids_lev = seq_along( lev )[ which( lev > threshold_lev) ]
+
+plot(fitted(fit_LMM),lev,pch=16, ylab='lev',xlab='fitted values',main='Leverages')
+abline(h=threshold_lev,col='red')
+points( fitted(fit_LMM)[ watchout_ids_lev ], watchout_points_lev, col = 'red', pch = 16 )
+#molti valori sopra soglia
+
+sum(lev[lev>threshold_lev])
+```
+
+Standardized residuals
+
+```{r}
+#Residui standardizzati
+res_std = residuals(fit_LMM)/fs$sigma
+
+plot(fitted(fit_LMM),res_std, pch=16, main='Standardized Residuals',ylab='res',xlab='Fitted values')
+
+threshold_std_res <- 4
+
+abline(h=c(-threshold_std_res,threshold_std_res),col='red')
+#punto influente se res standardizzato >2
+watchout_ids_rstd = which( abs( res_std ) > threshold_std_res )
+watchout_rstd = res_std[ watchout_ids_rstd ]
+
+points( fitted(fit_LMM)[watchout_ids_rstd],
+        res_std[watchout_ids_rstd], col = 'red', pch = 16 )
+points( fitted(fit_LMM)[watchout_ids_lev],
+        res_std[watchout_ids_lev], col = 'orange', pch = 16 )
+#in rosso residui alti, in arancione leve
+```
+
+Studentized residuals: I failed
+
+Cook's distance
+
+```{r}
+#Distanza di Cook
+Cdist = cooks.distance(fit_LMM)
+
+threshold_cook_dist <- 0.02 #rule of thumb 4/(n-p)=0.0009237875 seems too low
+
+watchout_ids_Cdist = which( Cdist >threshold_cook_dist )
+watchout_Cdist = Cdist[ watchout_ids_Cdist ]
+
+plot( fitted(fit_LMM), Cdist, pch = 16, xlab = 'Fitted values',
+      ylab = 'distance', main = 'Cooks Distance' )
+abline(h=threshold_cook_dist, col='red')
+points( fitted(fit_LMM)[ watchout_ids_Cdist ], Cdist[ watchout_ids_Cdist ],
+        col = 'green', pch = 16 )
+
+points( fitted(fit_LMM)[watchout_ids_lev] ,
+        Cdist[watchout_ids_lev], col = 'orange', pch = 16 )
+```
+
+Removing all the influential poitns
+
+```{r}
+#punti da tenere non notevoli
+id_to_keep1 = !(1:n %in% watchout_ids_Cdist)
+id_to_keep2 = !(1:n %in% watchout_ids_rstd)
+id_to_keep3 = !(1:n %in% watchout_ids_lev)
+
+id_to_keep=id_to_keep1 & id_to_keep2 & id_to_keep3
+
+#tolgo tutte le righe notevoli
+dati_soc_woo=subset(data,id_to_keep)
+
+write.csv(dati_soc_woo,"scores_data_wo_outliers.csv")
+
+ID_TO_KEEP_SOCIAL = id_to_keep
+dim(dati_soc_woo)
+#si scende a circa 3964 (circa 91% dei dati)
+print(paste("From",dim(data)[1],"obs we moved to",dim(dati_soc_woo)[1]))
+print(paste("Percentuale di dati sopravvissuti:",dim(dati_soc_woo)[1]/dim(data)[1]*100,"%"))
+```
+
+Fitting on new data
+
+```{r}
+FORMULA_LMM <- paste(paste("Social.well.being","~"),
+                       paste(c(selected_regressors,"(1|CNT)"), collapse = "+"))
+
+fit_LMM<- lmer(as.formula(FORMULA_LMM),
+              data = dati_soc_woo)
+
+summary(fit_LMM)
+```
+
+## Comparing the assumptions
+
+```{r}
+suppressWarnings({fit_data = lmer(FORMULA_LMM,data=data)})
+res = residuals(fit_data)
+qqnorm(res,main="data", ylim=c(-3,3))
+qqline(res,col="red")
+
+suppressWarnings({fit_data_soc_woo = lmer(FORMULA_LMM,data=dati_soc_woo)})
+res = residuals(fit_data_soc_woo)
+qqnorm(res,main="data_soc_woo", ylim=c(-3,3))
+qqline(res,col="red")
+```
+
+## 
+
+## Homoschedasticity
+
+```{r}
+# homoschedasticity
+res <- residuals(fit_LMM)
+boxplot(res ~ dati_soc_woo$CNT,las=2)
+```
+
+# [5] Interpretations
+
+## Dotplots
+
+```{r}
+#############################
+dotplot(ranef(fit_LMM, condVar=T))$CNT
+ranef(fit_LMM)
+```
+
+# [6] Analisi outliers
+
+```{r}
+data_out_social = subset(data,!ID_TO_KEEP_SOCIAL)
+dim(data_out_social)
+```
+
+## Social or Psych
+
+```{r}
+df_out = data_out_social
+target = "Social.well.being"
+
+for (i in 1:length(STATES)) { # STATES sta in Utilities
+	print(paste(STATES[i],":",sum(df_out$CNT==STATES[i]),"outliers // out of",
+		  sum(data$CNT==STATES[i]),"obs originally // %lost =",
+					sum(df_out$CNT==STATES[i])/sum(data$CNT==STATES[i])*100))
+}
+```
+
+*Social*: CZE, FIN, LTU, POL, SVK =\> sono peggiori della medie dei dati "normali" ESP, LUX =\> sono migliori della medie dei dati "normali"
+
+Forse ci sta, già ESP era lo stato migliore secondo il LMM, e LUX è uno stato molto ricco. Quindi magari togliendo gli outliers sono state rimosse scuole fin troppo belle nella già bella SPA, e lo stesso vale per LUX.
+
+*Psych*: Sembra molto più sottile qui la questione. Ma comunque ancora ESP e LUX mostrano un comportamento superiore di poco alla media. Insieme ora anche a Croazia (HRV) e DNK.
+
+```{r}
+mean_target_woo = mean(df_out[,target])
+boxplot(df_out[,target] ~ df_out[,"CNT"],col = colora(14),las=2,main=target)
+abline(h=mean_target_woo)
+```
+
+```{r}
+table(df_out$CNT)
+
+outl_indeces <- as.numeric(rownames(df_out))
+
+significant_variables <- c("PV1READ", "ATTLNACT", "ESCS", "HEDRES", "CompInt.ICT", "Teacher.skills", "LM_MINS")
+
+for(var in significant_variables){
+  plot(data[[var]])
+  points(x=outl_indeces, 
+         y=data[[var]][outl_indeces],
+         col="red")
+}
+```
